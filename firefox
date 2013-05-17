@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# A shell script to start firefox on Mac OS X.
+open -a Firefox "$@"

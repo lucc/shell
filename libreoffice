@@ -1,0 +1,8 @@
+#!/bin/sh
+# vim: set ft=sh
+
+if [ `uname` = Darwin ]; then
+  open -a LibreOffice "$@"
+else
+  echo Error >&2
+fi
