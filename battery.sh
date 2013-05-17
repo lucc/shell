@@ -101,6 +101,43 @@ battery_bar () {
   echo "$OUT"
 }
 
+battery_bar_for_prompt () {
+  select_utf8_char "$UTF8CHOISE"
+  if [ ${IsCharging} = "Yes" ]; then
+    CHAR="$RIGHT"
+  else
+    CHAR="$LEFT"
+  fi
+  local fill=$((`battery_percentage` / 10))
+  unset OUT
+  i=$fill
+  while [ $i -gt 0 ]; do OUT="$OUT$CHAR"; i=$((i - 1)); done
+  i=$((10 - fill))
+  while [ $i -gt 0 ]; do OUT=" $OUT"; i=$((i - 1)); done
+  if [ ${AvgTimeToEmpty} -le 5 ]; then OUT="    ${AvgTimeToEmpty} min "; fi
+  if $color; then
+    if [ $fill -le 2 ]; then color=red
+    elif [ $fill -le 4 ]; then color=yellow
+    else color=green
+    fi
+    if [ "$escape" = bash ]; then
+      bash_colors $fg_bg $color
+    elif [ "$escape" = tmux ]; then
+      if [ $fg_bg = fg ]; then fg_bg=bg; else fg_bg=fg; fi
+      tmux_colors $fg_bg $color
+    elif [ "$escape" = zsh ]; then
+      zsh_colors $fg_bg $color
+    else
+      terminal_colors $fg_bg $color
+    fi
+  else
+    unset color
+  fi
+  OUT="[$color$OUT$default"
+  if [ ${ExternalConnected} = "Yes" ]; then OUT="=$OUT"; fi
+  echo -n "$OUT"
+}
+
 # utf8 functions {{{1
 
 select_utf8_char () {
@@ -226,6 +263,7 @@ select_color () {
 
 # init {{{1
 BAR=false
+PROMPT=false
 escape=
 verbose=false
 fg_bg=fg
@@ -242,11 +280,11 @@ fi
 while getopts abce:hnpuU:v FLAG; do
   case $FLAG in
     a) UTF8=false;;
-    b) BAR=true verbose=false;;
+    b) BAR=true verbose=false PROMPT=false;;
     c) color=true;;
     e) escape=$OPTARG color=true;;
     n) color=false escape=;;
-    p) echo Not yet implemented. >&2 && exit 2;;
+    p) PROMPT=true BAR=false verbose=false;;
     u) UTF8=true;;
     U) UTF8=true UTF8CHOISE="$OPTARG";;
     v) verbose=true BAR=false;;
@@ -284,7 +322,9 @@ DATA=`ioreg -rc AppleSmartBattery | sed -En -e 's/[" ]*//g'            \
 eval $DATA
 
 # process data {{{1
-if $BAR; then
+if $PROMPT; then
+  battery_bar_for_prompt
+elif $BAR; then
   battery_bar
 elif $verbose; then
   verbose_battery_info
