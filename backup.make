@@ -149,6 +149,7 @@ INCLUDE      = $(CONFIGDIRS) $(CONFIGFILES) $(OTHERDIRS) files.txt
 #exclude {{{2
 EXCLUDE      = \
 	      .DS_Store              \
+	      .git                   \
 	      /.wine/dosdevices      \
 	      /.wine/drive_c/users   \
 	      /.wine/drive_c/windows \
