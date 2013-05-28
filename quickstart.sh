@@ -23,7 +23,7 @@ case `uname` in
       open -ga iTerm
       open -ga MacVim
       open -g  http://luc42.lima-city.de
-      open -ga iTunes
+      #open -ga iTunes
       open -ga iCal
       osascript -e 'tell application "Skype"
 	send command "SET USERSTATUS INVISIBLE" script name "quickstart.sh"
@@ -48,8 +48,9 @@ esac
 if ! tmux has-session -t daemon; then
   # TODO: try screen or dtach instead of tmux
   tmux new-session -d -n torrent -s daemon rtorrent
-  #tmux new-window -t daemon -n music mpg123
+  tmux new-window -t daemon -n music 'mpd --no-daemon'
 fi
+#mpd
 
 # mount the netrc file and then start the fetchmail daemon to retrieve mail
 ( secure.sh -gm && fetchmail ) &
