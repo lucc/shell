@@ -32,7 +32,7 @@ load () {
   url=${url%.h264.mp4}${size}.h264.mp4
   # go to final download directory
   cd $HOME/Desktop || cd
-  eval load_to_file $quiet $url
+  load_to_file $quiet $url
 }
 
 view () {
