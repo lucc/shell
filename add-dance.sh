@@ -87,3 +87,4 @@ fi
 # write the dance to the files
 $just_print \
 metaflac --set-tag=DANCE=$dance "$@" "$additional"
+metaflac --block-type=VORBIS_COMMENT --list "$@" "$additional"
