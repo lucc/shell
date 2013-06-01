@@ -53,14 +53,14 @@ fix_dance_name () {
 # print the filename of the current song from mpd
 mpd_current () {
   local conf dir file
-  if [ -r ~/.mpdconf ]; then
-    conf=~/.mpdconf
-  elif [ -r ~/.mpd/mpd.conf ]; then
-    conf=~/.mpd/mpd.conf
+  if [ -r $HOME/.mpdconf ]; then
+    conf=$HOME/.mpdconf
+  elif [ -r $HOME/.mpd/mpd.conf ]; then
+    conf=$HOME/.mpd/mpd.conf
   else
     return 1
   fi
-  dir="`sed -n '/music_directory/s/.*"\(.*\)"/\1/p' $conf`"
+  dir="`sed -n '/music_directory/{s/.*"\(.*\)"/\1/;s#\~#'$HOME'#;p;}' $conf`"
   file="`mpc --format %file% current`"
   echo "$dir/$file"
 }
