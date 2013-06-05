@@ -1,13 +1,17 @@
 #!/bin/sh
 
-OPTIONS=
+OPTIONS='--noctrl --nometa --lower-case'
 RECURSIVE=flase
-RENAME_PATTERN_1='s/[^.~_\w\/-]/_/g;tr/[A-Z]/[a-z]/;s/^/_/'
-RENAME_PATTERN_2='s/^_*//'
+RENAME_PATTERN_1='s/[^.~_\w\/-]/_/g;tr/[A-Z]/[a-z]/;s/$/_/'
+RENAME_PATTERN_2='s/_*$//'
+
+first () {
+  rename 
+}
 
 while getopts nr FLAG; do
   case $FLAG in
-    n) OPTIONS=-n;;
+    n) OPTIONS="$OPTIONS -n";;
     r) RECURSIVE=true;;
   esac
 done
