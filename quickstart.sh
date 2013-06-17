@@ -2,6 +2,11 @@
 # A script to quickly start several programs.
 
 STARTGUI=true
+for dir in /usr/local/bin $HOME/src/shell; do
+  if ! echo $PATH | grep $dir; then
+    PATH=$dir:$PATH
+  fi
+done
 
 ask_terminal () {
   local answer=

@@ -58,14 +58,14 @@ INCLUDE      = \
 
 #exclude {{{2
 EXCLUDE      = \
-	      .DS_Store              \
-	      .git                   \
-	      /.config/mpd/music     \
-	      /.wine/dosdevices      \
-	      /.wine/drive_c/users   \
-	      /.wine/drive_c/windows \
-	      /.subversion/auth      \
-	      '/*'                   \
+	      .DS_Store                \
+	      .git                     \
+	      /.config/music/mpd/music \
+	      /.wine/dosdevices        \
+	      /.wine/drive_c/users     \
+	      /.wine/drive_c/windows   \
+	      /.subversion/auth        \
+	      '/*'                     \
 
 # targets {{{1
 

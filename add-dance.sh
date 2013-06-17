@@ -20,29 +20,19 @@ help () {
 
 # print a canonicalized dance name
 fix_dance_name () {
-  case `echo "$1"|tr '[[:upper:]] _.:,;/' '[[:lower:]]-------'` in
-    walzer|waltz|slow\ waltz|langsamer\ walzer|lw)
-      echo slow-waltz;;
-    wiener|wiener-walzer|viennese|viennese-waltz|vw|schneller-walzer|ww)
-      echo viennese-waltz;;
-    quickstep|qs)
-      echo quickstep;;
-    jive)
-      echo jive;;
-    salsa)
-      echo salsa;;
-    chacha|chachacha|cha|cha-cha|cha-cha-cha)
-      echo cha-cha;;
-    rumba)
-      echo rumba;;
-    slowfox|sf|slow-fox|slowfoxtrott|slow-fox-trott)
-      echo slow-fox;;
-    dicofox|disco-fox)
-      echo discofox;;
-    samba)
-      echo samba;;
-    tango)
-      echo tango;;
+  case `echo "$1"|sed -E 's/[ _-.:,;]+/-/g;s/.*/\L&/'` in
+    chacha|chachacha|cha|cha-cha|cha-cha-cha) echo Cha-Cha;;
+    dicofox|disco-fox)                        echo Discofox;;
+    foxtrott|fox-trott)                       echo Foxtrott;;
+    jive)                                     echo Jive;;
+    quickstep)                                echo Quickstep;;
+    rumba)                                    echo Rumba;;
+    salsa)                                    echo Salsa;;
+    samba)                                    echo Samba;;
+    slowfox|slow-fox)                         echo Slow-Fox;;
+    tango)                                    echo Tango;;
+    walzer|waltz|slow-waltz|langsamer-walzer) echo Slow-Waltz;;
+    wiener|viennese|viennese-waltz)           echo Viennese-Waltz;;
     *)
       echo Unknown dance. >&2
       return 1

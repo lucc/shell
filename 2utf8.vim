@@ -1,5 +1,8 @@
+#!/usr/bin/env vim -e -s -S
 #!/usr/bin/env vim -v -T dumb -u NONE -S
-set lazyredraw backup hidden
-silent bufdo silent set nobomb filetype=utf8
+"set lazyredraw
+set backup
+set hidden
+bufdo set nobomb filetype=utf8
 wall
 quit
