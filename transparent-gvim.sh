@@ -5,6 +5,10 @@
 
 # find a vim server
 SERVER=`vim --serverlist | head -n 1`
+if [ -z $SERVER ]; then
+  ( gvim && sleep 2 ) >/dev/null 2>&1
+fi
+SERVER=`vim --serverlist | head -n 1`
 CMD=vimserver
 #if [ -z "$SERVER" ]; then
 #  echo No VIM server running. Aborting ... >&2
