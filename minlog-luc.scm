@@ -1,6 +1,6 @@
 #!/usr/bin/env petite --quiet --script
 
-(load "~/tmp/minlog/init.scm")
+(load "~/minlog/init.scm")
 (set! COMMENT-FLAG #f)
 (add-pvar-name "A" "B" "C" "D" (make-arity))
 (set-goal (pf (for-each string-append (cdr (command-line)))))

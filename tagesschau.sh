@@ -9,7 +9,7 @@ view=false
 
 usage () {
   local prog="`basename "$0"`"
-  echo "Usage: $prog [ -s | -m | -l ] [ -q ] [ -b ]"
+  echo "Usage: $prog [ -s | -m | -l ] [ -q ] [ -b ] [ -x ]"
   echo "       $prog -h"
 }
 
@@ -22,6 +22,7 @@ options () {
   echo "-s, -m, -l  size to download"
   echo "-q          supress output"
   echo "-b          work in background"
+  echo "-x          debugging output"
 }
 
 load () {
@@ -33,11 +34,15 @@ load () {
   # go to final download directory
   cd $HOME/Desktop || cd
   load_to_file $quiet $url
+  if $view; then
+    wait
+    view
+  fi
 }
 
 view () {
   case `uname` in
-    Darwin) open "`basename "$URL"`";;
+    Darwin) open "`basename "$url"`";;
     *) echo "Not implemente yet!" >&2; exit 1;;
   esac
 }
@@ -64,7 +69,7 @@ else
 fi
 
 # give help on commandline
-while getopts bhlmqsv FLAG; do
+while getopts bhlmqsvx FLAG; do
   case $FLAG in
     b) background='&';;
     h) help; usage; options; exit;;
@@ -73,18 +78,13 @@ while getopts bhlmqsv FLAG; do
     q) quiet=$quiet_switch;;
     s) size=;;
     v) view=true;;
+    x) set -x;;
     *) usage >&2; exit 2;;
   esac
 done
 
-
 # load the file
 eval load $background
-
-if $view; then
-  wait
-  view
-fi
 
 exit
 
