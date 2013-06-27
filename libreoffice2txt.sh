@@ -36,4 +36,10 @@ libreoffice2pdf () {
   libreoffice_to pdf "$dir" "$@"
 }
 
-echo source "$0"
+if [ -z "$PS1" ]; then
+  echo source "$0"
+else
+  echo libreoffice2pdf
+  echo libreoffice2txt
+  echo libreoffice_to
+fi
