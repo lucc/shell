@@ -32,7 +32,6 @@ load () {
     sed -n '/<enclosure url/{s/<enclosure url="\([^"]*\)" length.*\/>/\1/p;q;}'`
   url=${url%.h264.mp4}${size}.h264.mp4
   # go to final download directory
-  cd $HOME/Desktop || cd
   load_to_file $quiet $url
   if $view; then
     wait
@@ -84,6 +83,8 @@ while getopts bhlmqsvx FLAG; do
 done
 
 # load the file
+cd $HOME/Desktop || cd
+cd $HOME/tmp || cd
 eval load $background
 
 exit

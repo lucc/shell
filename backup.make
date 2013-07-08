@@ -10,7 +10,8 @@ DATETIME     = $(subst -,,$(DATE))$(subst :,,$(TIME))
 TAROPTIONS   = -cpvz --exclude .DS_Store
 TAREXT       = .gz
 CPOPTIONS    = -pR
-RSYNCOPTIONS = --copy-unsafe-links \
+RSYNCOPTIONS = \
+	       --copy-unsafe-links \
                --delete-during     \
                --delete-excluded   \
                --devices           \
@@ -23,38 +24,37 @@ RSYNCOPTIONS = --copy-unsafe-links \
                --specials          \
                --times             \
                --update            \
-               --verbose
+               --verbose           \
+
 SCPOPTIONS   = -prv
 
 # files {{{1
 BAK          = ~/bak
 # configfiles {{{2
 INCLUDE      = \
-	      .config                                   \
-	      apply                                     \
-	      art                                       \
-	      bank                                      \
-	      bib                                       \
-	      bin                                       \
-	      cook                                      \
-	      dsa                                       \
-	      etc                                       \
-	      files                                     \
-	      files.txt                                 \
-	      go                                        \
-	      leh                                       \
-	      Library/Calendars                         \
-	      'Library/Application Support/AddressBook' \
-	      lit                                       \
-	      log                                       \
-	      mail                                      \
-	      phon                                      \
-	      sammersee                                 \
-	      schule                                    \
-	      src                                       \
-	      TODO                                      \
-	      uni                                       \
-	      zis                                       \
+	      .config    \
+	      apply      \
+	      art        \
+	      bank       \
+	      bib        \
+	      bin        \
+	      cook       \
+	      dsa        \
+	      etc        \
+	      files      \
+	      files.txt  \
+	      go         \
+	      leh        \
+	      lit        \
+	      log        \
+	      mail       \
+	      phon       \
+	      sammersee  \
+	      schule     \
+	      src        \
+	      TODO       \
+	      uni        \
+	      zis        \
 
 #exclude {{{2
 EXCLUDE      = \
