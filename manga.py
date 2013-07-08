@@ -26,6 +26,10 @@ VERSION_STRING = PROG + ' ' + str(MAIOR_VERSION) + '.' + str(MINOR_VERSION)
 # variables {{{1
 quiet = True
 debug = False
+global_mangadir = os.getenv("MANGADIR")
+if global_mangadir is None or global_mangadir == "":
+    global_mangadir = os.path.join(os.getenv("HOME"), "comic")
+global_mangadir = os.path.realpath(global_mangadir)
 
 def noop(*args): #{{{1
     pass
@@ -322,7 +326,7 @@ class SiteHandler(): #{{{1
 
 
     def start_at(self, url): #{{{2
-        'Load all images starting at a specific url.' 
+        'Load all images starting at a specific url.'
         debug_enter(SiteHandler)
         try:
             self.load_intelligent(url)
@@ -538,11 +542,8 @@ if __name__ == '__main__': #{{{1
 
         mangadir = '.'
         if not directory == '.' and not os.path.sep in directory:
-            mangadir = os.getenv("MANGADIR")
-            if mangadir is None or mangadir == "":
-                mangadir = os.path.join(os.getenv("HOME"), "comic")
-            mangadir = os.path.realpath(mangadir)
-        directory = os.path.realpath(os.path.join(mangadir, directory))
+            mangadir = global_mangadir
+            directory = os.path.realpath(os.path.join(mangadir, directory))
         if os.path.exists(directory):
             if not os.path.isdir(directory):
                 raise EnvironmentError("Path exists but is not a directory.")
@@ -568,6 +569,15 @@ if __name__ == '__main__': #{{{1
         worker.start_after(url)
 
 
+    def resume_all(): #{{{2
+        debug_enter(None)
+        for d in [os.path.join(global_mangadir, dd) for dd in
+                os.listdir(global_mangadir)]:
+            os.chdir(d)
+            print_info('Working in ' + os.path.realpath(os.path.curdir) + '.')
+            resume(os.path.join(global_mangadir, d), 'manga.log')
+
+
     def automatic(string): #{{{2
         if os.path.exists(os.path.join(args.directory, string)):
             pass
@@ -588,7 +598,7 @@ if __name__ == '__main__': #{{{1
         elif not args.resume and args.url is None:
             parser.error('You must specify -r or an url.')
         print(args)
-        # running 
+        # running
         if args.resume:
             resume(args.directory, args.logfile)
         else:
@@ -609,7 +619,7 @@ if __name__ == '__main__': #{{{1
         elif not args.resume and args.name is None:
             parser.error('You must specify -r or an url.')
         debug_info(args)
-        # running 
+        # running
         if args.resume:
             resume(args.directory, args.logfile)
         else:
@@ -670,12 +680,14 @@ if __name__ == '__main__': #{{{1
         #if args.auto:
         #    automatic(args.string)
         #el
-        if args.resume and (args.name is not None or args.missing):
+        if args.resume_all:
+            resume_all()
+        elif args.resume and (args.name is not None or args.missing):
             parser.error('You can only use -r or -m or give an url.')
         elif not args.resume and args.name is None and not args.missing:
             parser.error('You must specify -r or -m or an url.')
         debug_info(args)
-        # running 
+        # running
         if args.resume:
             resume(args.directory, args.logfile)
             print_info('args.missing was', args.missing)
@@ -702,6 +714,10 @@ if __name__ == '__main__': #{{{1
                     'Not waiting for other threads.')
 
 
+    def interrupt_cleanup(): #{{{2
+        """Stop all threads and write the logfile before exiting.  This
+        function should be called when an interrupt signal is called."""
+        pass
     # defining the argument parser {{{2
     parser = argparse.ArgumentParser(prog=PROG,
             description="Download manga from some websites.")
@@ -728,7 +744,7 @@ if __name__ == '__main__': #{{{1
     # automatically.
     unimplemented.add_argument('-a', '--auto', action='store_true',
             default=True, help='do everything automatically')
-    unimplemented.add_argument('-x', '--debug', action='store_true', 
+    unimplemented.add_argument('-x', '--debug', action='store_true',
             help='give verbose debugging output')
     # or use the logfile from within for downloading.
     ## idea for "archive": tar --wildcards -xOf "$OPTARG" "*/$LOGFILE"
@@ -738,6 +754,8 @@ if __name__ == '__main__': #{{{1
 
     unimplemented.add_argument('-r', '--resume', action='store_true',
             help='resume from a logfile')
+    unimplemented.add_argument('-R', '--resume-all', action='store_true',
+            help='visit all directorys in the manga dir and resume there')
     #general group {{{3
     parser.add_argument('-V', '--version', action='version',
             version=VERSION_STRING, help='print version information')
