@@ -1,7 +1,7 @@
 #!/bin/sh
 
 
-libreoffice_to () {
+office2 () {
   # find path to LO
   local lo=
   if [ `uname` = Darwin ]; then
@@ -10,36 +10,26 @@ libreoffice_to () {
     lo=libreoffice
   fi
   type="$1"
-  dir="$2"
-  shift 2
+  shift
   "$lo"                  \
     --nologo             \
     --nodefault          \
     --nolockcheck        \
     --nofirststartwizard \
     --convert-to "$type" \
-    --outdir "$dir"      \
+    --outdir ./          \
     "$@"
 }
 
-libreoffice2txt () {
-  # dir ?
-  dir=.
-  # shift ?
-  libreoffice_to txt:Text "$dir" "$@"
-}
-
-libreoffice2pdf () {
-  # dir ?
-  dir=.
-  # shift ?
-  libreoffice_to pdf "$dir" "$@"
-}
+office2pdf () { office2 pdf      "$@"; }
+office2tex () { office2 tex      "$@"; }
+office2txt () { office2 txt:Text "$@"; }
 
 if [ -z "$PS1" ]; then
   echo source "$0"
 else
-  echo libreoffice2pdf
-  echo libreoffice2txt
-  echo libreoffice_to
+  echo office2pdf
+  echo office2tex
+  echo office2txt
+  echo office_to
 fi
