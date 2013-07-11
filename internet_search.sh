@@ -31,13 +31,38 @@ TEXT='elinks --dump'
 FALLBACK='wget --output-document=-'
 TYPE=XORG
 
+for CLI in lynx elinks links w3m w3; do
+  if which $CLI >/dev/null 2>&1; then
+    break
+  fi
+  CLI=
+done
+if [ -z $CLI ]; then
+  echo 'Error: No command line browser found!' >&2
+fi
+
 case `uname` in
   linux|Linux|LINUX) XORG=firefox CLIPBOARD=xsel;;
   Darwin)	     XORG=open CLIPBOARD=pbpaste;;
   *)		     TYPE=CLI;; #unknown system. some kind of unix?
 esac
 
-while getopts cdfgltwxy FLAG; do
+help () {
+  echo search engines:
+  echo '  -d    duckduckgo.com'
+  echo '  -f    www.commandlinefu.com'
+  echo '  -g    www.google.de'
+  echo '  -l    dict.leo.org'
+  echo '  -w    de.wikipedia.org'
+  echo '  -y    www.youtube.com'
+  echo
+  echo other options:
+  echo '  -c    use a command line browser'
+  echo '  -t    display results as text'
+  echo '  -x    use a graphical browser'
+}
+
+while getopts cdfghltwxy FLAG; do
   case $FLAG in
     # general options
     h) help; exit;;
@@ -145,7 +170,7 @@ wiki () {
 
 yt () {
   # from:
-  # http://www.commandlinefu.com/commands/view/6689/stream-youtube-url-directly-to-mplayer 
+  # http://www.commandlinefu.com/commands/view/6689/stream-youtube-url-directly-to-mplayer
   mplayer -fs -quiet $(youtube-dl -g "$1")
 }
 
