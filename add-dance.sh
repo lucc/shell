@@ -20,19 +20,36 @@ help () {
 
 # print a canonicalized dance name
 fix_dance_name () {
-  case `echo "$1"|sed -E 's/[ _-.:,;]+/-/g;s/.*/\L&/'` in
-    chacha|chachacha|cha|cha-cha|cha-cha-cha) echo Cha-Cha;;
-    dicofox|disco-fox)                        echo Discofox;;
-    foxtrott|fox-trott)                       echo Foxtrott;;
-    jive)                                     echo Jive;;
-    quickstep)                                echo Quickstep;;
-    rumba)                                    echo Rumba;;
-    salsa)                                    echo Salsa;;
-    samba)                                    echo Samba;;
-    slowfox|slow-fox)                         echo Slow-Fox;;
-    tango)                                    echo Tango;;
-    walzer|waltz|slow-waltz|langsamer-walzer) echo Slow-Waltz;;
-    wiener|viennese|viennese-waltz)           echo Viennese-Waltz;;
+  #case `echo "$1"|sed -E 's/[ _.:,;-]+/-/g;s/.*/\L&/'` in
+  case `echo "$1"|sed -E 's/[[:punct:]]+//g' | tr '[A-Z]' '[a-z]'` in
+    chacha|chachacha|cha)
+      echo Cha-Cha;;
+    blues)
+      echo Blues;;
+    boogie)
+      echo Boogie;;
+    dicofox|df)
+      echo Discofox;;
+    foxtrott|ft)
+      echo Foxtrott;;
+    jive)
+      echo Jive;;
+    quickstep|qs)
+      echo Quickstep;;
+    rumba)
+      echo Rumba;;
+    salsa)
+      echo Salsa;;
+    samba)
+      echo Samba;;
+    slowfox|sf)
+      echo Slow-Fox;;
+    tango)
+      echo Tango;;
+    walzer|waltz|slowwaltz|langsamerwalzer|lw)
+      echo Slow-Waltz;;
+    wiener|viennese|viennesewaltz|ww)
+      echo Viennese-Waltz;;
     *)
       echo Unknown dance. >&2
       return 1
@@ -58,12 +75,13 @@ mpd_current () {
 # parse command line options
 prog=`basename "$0"`
 dance=
-while getopts cd:hnx FLAG; do
+while getopts cd:hnvx FLAG; do
   case $FLAG in
     c) additional="`mpd_current`" || exit 3;;
     d) dance=`fix_dance_name "$OPTARG"` || exit 2;;
     h) help; exit;;
     n) just_print=echo;;
+    v) metaflac --block-type=VORBIS_COMMENT --list `mpd_current` && exit;;
     x) set -x;;
   esac
 done

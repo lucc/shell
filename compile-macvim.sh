@@ -38,7 +38,6 @@ config_macvim () {
     --enable-pythoninterp=yes         \
     --enable-rubyinterp               \
     --enable-tclinterp                \
-    --enable-tclinterp                \
     --with-lua-prefix=`brew --prefix lua` \
     --with-tlib=ncurses               \
 

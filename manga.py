@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
-# vim: foldmethod=marker
+
+# TODO list {{{1
+# 1. use try ... except ... to handle missing packages
+# 2. docstrings & comments
+# 3. better logging mechanism
+# 4. understanding threading
+# 5. handle more pages
 
 # imports {{{1
-# TODO: use try ... except ... to handle missing packages
 import argparse
 import datetime
 import inspect
@@ -10,12 +15,28 @@ import os
 import re
 import signal
 import sys
-#import _thread
-import threading
+# see file:///Users/luc/tmp/python-3.3.0-docs-html/library/concurrency.html
+import threading, queue
 import traceback
 import urllib.request
 
 from bs4 import BeautifulSoup
+
+# a new start (from scratch?) {{{1
+class Manager(): #{{{2
+    '''
+    The Manager class manages the downloading and saving of images and writes
+    the log file.  It uses other classes to do the actual parsing of the html.
+    '''
+
+    # variables {{{3
+    log = {}
+    logfile = None
+    dir = ''
+    threads = []
+
+    # classmethods/staticmethods {{{3
+
 
 # constants {{{1
 MAIOR_VERSION = 1
@@ -46,13 +67,14 @@ def debug_info(*strings): #{{{1
 
 def debug_enter(cls, *strings): #{{{1
     if debug:
-        if type(cls) is type:
-            name = 'of ' + cls.__name__
-        else:
-            name = ''
+        name = 'of ' + cls.__name__ if type(cls) is type else ''
+        #if type(cls) is type:
+        #    name = 'of ' + cls.__name__
+        #else:
+        #    name = ''
         stack = inspect.stack(context=0)
         print('Debug: Entering', stack[1][3], name)
-        if not strings is ():
+        if strings is not None and len(strings) > 0:
             print('Debug:', *strings)
 
 
@@ -239,6 +261,8 @@ class SiteHandler(): #{{{1
 
     @classmethod
     def expand_rel_url(cls, url): #{{{2
+        '''Expand the given string into a valid URL.  The string is assumed to
+        be relative to the site handled by the class cls.'''
         if '://' in url:
             return url
         elif '//' == url[0:2]:
@@ -682,6 +706,7 @@ if __name__ == '__main__': #{{{1
         #el
         if args.resume_all:
             resume_all()
+            sys.exit()
         elif args.resume and (args.name is not None or args.missing):
             parser.error('You can only use -r or -m or give an url.')
         elif not args.resume and args.name is None and not args.missing:
@@ -718,9 +743,12 @@ if __name__ == '__main__': #{{{1
         """Stop all threads and write the logfile before exiting.  This
         function should be called when an interrupt signal is called."""
         pass
+
+
     # defining the argument parser {{{2
     parser = argparse.ArgumentParser(prog=PROG,
             description="Download manga from some websites.")
+
     # general group {{{3
     general = parser.add_argument_group(title='General options')
     general.add_argument('-b', '--background', action='store_true',
@@ -738,6 +766,7 @@ if __name__ == '__main__': #{{{1
             dest='missing',
             help='Load all files which are stated in the logfile but ' +
             'are missing on disk.')
+
     # unimplemented group {{{3
     unimplemented = parser.add_argument_group('These are not yet implemented')
     # the idea for 'auto' was to find the manga name and the directory
@@ -756,12 +785,14 @@ if __name__ == '__main__': #{{{1
             help='resume from a logfile')
     unimplemented.add_argument('-R', '--resume-all', action='store_true',
             help='visit all directorys in the manga dir and resume there')
+
     #general group {{{3
     parser.add_argument('-V', '--version', action='version',
             version=VERSION_STRING, help='print version information')
     #parser.add_argument('url', nargs='+')
     #parser.add_argument('url', nargs='?')
     parser.add_argument('name', nargs='?', metavar='url/name')
+
 
     # running everything {{{2
     args = parser.parse_args()
@@ -771,3 +802,5 @@ if __name__ == '__main__': #{{{1
     parse_args_version_4()
     join_threads()
     debug_info('Exiting ...')
+
+# vim: foldmethod=marker
