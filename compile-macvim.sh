@@ -1,5 +1,17 @@
 #!/bin/sh
 
+MACVIM_DIR=$HOME/macvim
+
+download () {
+  if [ -d $MACVIM_DIR/.git ]; then
+    cd $MACVIM_DIR
+    git pull
+  else
+    cd
+    git checkout https://github.com/b4winckler/macvim.git $MACVIM_DIR
+  fi
+}
+
 python_setenv () {
     LDFLAGS="$LDFLAGS -L."
     LDFLAGS="$LDFLAGS -L/usr/local/opt/python3/Frameworks/Python.framework/Versions/3.3/lib/python3.3/config-3.3m"
@@ -12,12 +24,12 @@ python_setenv () {
 }
 
 clean_macvim () {
-  make -C ~/macvim clean distclean
+  make -C $MACVIM_DIR clean distclean
 }
 
 config_macvim () {
   python_setenv
-  cd ~/macvim && \
+  cd $MACVIM_DIR && \
   ./configure          \
     --with-compiledby=luc@mbp         \
     --with-features=huge              \
@@ -45,8 +57,8 @@ config_macvim () {
 
 make_macvim () {
   python_setenv
-  make -C ~/macvim/src/MacVim/icons getenvy
-  make -C ~/macvim/src
+  make -C $MACVIM_DIR/src/MacVim/icons getenvy
+  make -C $MACVIM_DIR/src
 }
 
 if [ -z "$PS1" ]; then

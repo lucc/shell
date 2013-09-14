@@ -136,6 +136,186 @@ def download_missing(directory, logfile): #{{{1
             start_thread(download_image, (index, img, filename, logger))
 
 
+class Page: #{{{1
+
+    # constants {{{2
+    PROTOCOL = None
+    DOMAIN = None
+
+    #variables {{{2
+    url = None
+    manga = None
+    volme = None
+    chapter = None
+    page = None
+    image = None
+    filename = None
+    next_url = None
+
+    pass
+
+
+class Chapter: #{{{1
+
+    # constants {{{2
+    PROTOCOL = None
+    DOMAIN = None
+
+    #variables {{{2
+    number = None
+    page_count = None
+    pass
+
+
+class Manga: #{{{1
+
+    # constants {{{2
+    PROTOCOL = None
+    DOMAIN = None
+
+    #variables {{{2
+    name = None
+    main_page = None
+    chapter_count = None
+    pass
+
+
+class PageParser(): #{{{1
+
+    # constants {{{2
+    PROTOCOL = None
+    DOMAIN = None
+
+    #variables {{{2
+    url = None
+    manga = None
+    volme = None
+    chapter = None
+    page = None
+    image = None
+    filename = None
+    next_url = None
+
+    def __init__(self, url): #{{{2
+        self.url = url
+
+    def set_generic_values(self): #{{{2
+        self.filename = self.manga + '-' + str(self.chapter) + '-page-' + str(self.page) + self.image.split('.')[-1]
+        self.key = str(self.chapter) + '-' + str(self.page)
+
+    @classmethod
+    def expand_rel_url(cls, url): #{{{2
+        '''Expand the given string into a valid URL.  The string is assumed to
+        be relative to the site handled by the class cls.'''
+        if '://' in url:
+            return url
+        elif '//' == url[0:2]:
+            return cls.PROTOCOL + ':' + url
+        elif '/' == url[0]:
+            return cls.PROTOCOL + '://' + cls.DOMAIN + url
+        else:
+            return cls.PROTOCOL + '://' + cls.DOMAIN + '/' + url
+
+
+class PPMangaReader(PageParser): #{{{1
+
+    # constants {{{2
+    PROTOCOL = 'http'
+    DOMAIN = 'www.mangareader.net'
+
+    def __init__(self, url): #{{{2
+        html = BeautifulSoup(urllib.request.urlopen(url))
+        self.url = url
+        self.next_url = PPMangaReader.expand_rel_url(html.find(id='img').parent['href'])
+        self.image = html.find(id='img')['src']
+        self.manga = re.sub(r'(.*) [0-9]+$', r'\1', html.find(id='mangainfo').h1.string)
+        self.volume = None
+        self.chapter = int(html.find(id='mangainfo').h1.string.split()[-1])
+        self.page = int(html.find(id='mangainfo').span.string.split()[1])
+        #self.filename = re.sub(r'[ -]+', '-', html.find(id="img")["alt"]).lower() + '.' + self.image.split('.')[-1]
+        self.set_generic_values()
+        # special values
+        #self.page_count = len(html.find(id='pageMenu').find_all('option'))
+        #self.page_urls = [PPMangareader.expand_rel_url(o['value']) for o in html.find(id='pageMenu').find_all('option')]
+        #self.main_page = PPMangaReader.expand_rel_url(html.find(id='mangainfo').h2.a['href'])
+        #self.chapter_count = len(html.find(id='chapterlist').find_all('a'))
+
+
+class PPUnixManga(PageParser): #{{{1
+
+    # class constants {{{2
+    PROTOCOL = 'http'
+    DOMAIN = 'unixmanga.com'
+
+    def __init__(self, url): #{{{2
+        cls = self.__class__
+        html = BeautifulSoup(urllib.request.urlopen(url))
+        self.url = url
+        tmp = html.find_all(class_='navnext')[0].script.string.split('\n')[1]
+        self.next_url = re.sub(r'var nextlink = "(.*)";', r'\1', tmp)
+
+
+class PPMangaFox(PageParser): #{{{1
+
+    # class constants {{{2
+    PROTOCOL = 'http'
+    DOMAIN = 'mangafox.me'
+
+    def __init__(self, url): #{{{2
+        cls = self.__class__
+        html = BeautifulSoup(urllib.request.urlopen(url))
+        self.url = url
+        for tmp in html.findAll('link'):
+            if tmp.has_key['rel'] and tmp['rel'] == 'canonical':
+                val = tmp['href'].split('/')
+                break
+        if re.march(r'^[0-9]+\.html$', val[-1]) != None:
+            self.page = int(val[-1].split('.')[0])
+        else:
+            raise BaseException('wrong string while parsing')
+        if re.match(r'^c[0-9]+$', val[-2]) != None:
+            self.chapter = int(val[-2][1:])
+        else:
+            raise BaseException('wrong string while parsing')
+        if re.match(r'^v[0-9]+$', val[-3]) != None:
+            self.volume = int(val[-3][1:])
+            i = -4
+        else:
+            self.volume = None
+            i = -3
+        self.manga = val[i]
+        self.next_url =
+        self.image = html.find(id='viewer').a.img['src']
+        self.set_generic_values()
+
+        # shell version {{{3
+        ###############
+        # get_next_mangafox_me () {
+        #   # TODO: filenames are to short so chapters overwrite each other.
+        #   if [ -z "$1" ]; then exit -1 ; fi
+        #   local TMP=`load_to_pipe "$1"`
+        #   NEXT=`echo "$TMP" | \
+        #     sed -n '/return enlarge/{
+        #         s/.*href="\([^"]*\)".*src="\([^"]*\)".*/\1 \2/p
+        #       }'`
+        #   # NEXT should now contain two fields. The first field might be just a
+        #   # relative path.
+        #   IMG=${NEXT#* }
+        #   FILE=${1#http://mangafox.me/manga/}
+        #   FILE=`echo $FILE | sed 's#/#_#g'`
+        #   FILE=${FILE%.html}.${IMG##*.}
+        #   FILE=${FILE##*/}
+        #   if [ "${NEXT%% *}" = "javascript:void(0);" ]; then
+        #     NEXT=`echo "$TMP" | \
+        #       sed -n '/Next Chapter:/{s/.*href="\([^"]*\)".*/\1/p;}'`
+        #   elif [ "$NEXT" = "" ]; then
+        #     return 1
+        #   else
+        #     NEXT=${1%/*}/${NEXT%% *}
+        #   fi
+        #   return 0
+        # }
+
 class BaseLogger(): #{{{1
 
     def __init__(self, logfile, quiet=False): #{{{2
@@ -245,7 +425,7 @@ class SiteHandler(): #{{{1
     def extract_key(html): raise NotImplementedError()
     def extract_next_url(html): raise NotImplementedError()
     def extract_img_url(html): raise NotImplementedError()
-    def extract_filename(html): raise NotImplementedError()
+    def extract_manga_name(html): raise NotImplementedError()
     def load_intelligent(self, url): raise NotImplementedError()
 
     def __init__(self, directory, logfile): #{{{2
@@ -279,6 +459,17 @@ class SiteHandler(): #{{{1
         debug_info('The class argument is', cls)
         return str(cls.extract_chapter_nr(html)) + '-' + str(
                 cls.extract_page_nr(html))
+
+    @classmethod
+    def extract_filename(cls, html): #{{{2
+        return ('_'.join(cls.extract_manga_name(html).split()) + '-' +
+                str(cls.extract_chapter_nr(html)) + '-' +
+                str(cls.extract_page_nr(html)) + '.' +
+                os.path.splitext(cls.extract_img_url(html))[1]).lower()
+
+    @classmethod
+    def extract_image_extension(cls, html): #{{{2
+        return .split('.')[-1]
 
     @classmethod
     def extract_linear(cls, html): #{{{2
@@ -380,10 +571,10 @@ class Mangareader(SiteHandler): #{{{1
         debug_enter(Mangareader)
         super().__init__(directory, logfile)
 
-    def extract_key(html): #{{{2
-        debug_enter(Mangareader)
-        return str(Mangareader.extract_chapter_nr(html)) + '-' + str(
-                Mangareader.extract_page_nr(html))
+    #def extract_key(html): #{{{2
+    #    debug_enter(Mangareader)
+    #    return str(Mangareader.extract_chapter_nr(html)) + '-' + str(
+    #            Mangareader.extract_page_nr(html))
 
     def extract_next_url(html): #{{{2
         debug_enter(Mangareader)
@@ -547,6 +738,44 @@ class Mangafox(SiteHandler): #{{{1
         raise NotImplementedError()
         # TODO
         return html.find_all(class_='next_page')[0]['href']
+    def extract_key(html): raise NotImplementedError()
+    def extract_next_url(html): raise NotImplementedError()
+
+    def extract_img_url(html): #{{{2
+        return html.find(id='viewer').a.img['src']
+
+    def extract_filename(html): #{{{2
+        keys = extract_key_helper(html)
+        return keys[0] + ' ' + str(keys[2]) + ' page ' + str(keys[3]) + \
+                extract_img_url(html).split('.')[-1]
+
+    def extract_chapter_nr(html): #{{{2
+        return extract_key_helper()[2]
+
+    def extract_page_nr(html): #{{{2
+        return extract_key_helper()[3]
+
+    def extract_key_helper(html): #{{{2
+        for tmp in html.findAll('link'):
+            if tmp.has_key['rel'] and tmp['rel'] == 'canonical':
+                val = tmp['href'].split('/')
+                break
+        if re.march(r'^[0-9]+\.html$', val[-1]) != None:
+            page = int(val[-1].split('.')[0])
+        else:
+            raise BaseException('wrong string while parsing')
+        if re.match(r'^c[0-9]+$', val[-2]) != None:
+            chapter = int(val[-2][1:])
+        else:
+            raise BaseException('wrong string while parsing')
+        if re.match(r'^v[0-9]+$', val[-3]) != None:
+            volume = int(val[-3][1:])
+            i = -4
+        else:
+            volume = None
+            i = -3
+        manga = val[i]
+        return (manga, volume, chapter, page)
 
 
 if __name__ == '__main__': #{{{1
