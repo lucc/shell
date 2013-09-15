@@ -10,7 +10,8 @@ parse_mail () {
   local to=
   local subject=
   for arg; do
-    from=`sed -n '/^From:/{s/^From:[[:space:]]*//;s/[[:space:]]*<.*$//;p;}' $arg`
+    from=`sed -n '/^From:/{s/^From:[[:space:]]*//;s/[[:space:]]*<.*$//;p;}' \
+      $arg`
     subject=`sed -n '/^Subject:/s/^Subject:\s*//p' $arg`
     echo "$from: $subject"
   done
@@ -29,7 +30,9 @@ send_note () {
 daemon () {
   local new=
   while true; do
-    new=`find ~/mail -name spam -prune -path '*/new/*' -o -regex '.*/cur/.*,[^,S]*'`
+    new=`find ~/mail -path '*/new/*' -o -regex '.*/cur/.*,[^,S]*' | \
+      grep -v ~/mail/spam`
+    #find ~/mail -name spam -prune -path '*/new/*' -o -regex '.*/cur/.*,[^,S]*'
     if [ -n "$new" ]; then
       parse_mail $new | send_note
     fi
@@ -39,7 +42,7 @@ daemon () {
 
 case "$1" in
   start)
-    if psgrep -no pid,ppid,args "$PROG" 2>&1 | grep -v $PID; then
+    if psgrep -no pid,ppid,args "$PROG" 2>&1 | grep -qv $PID; then
       echo Already running. >&2
       exit
     else
