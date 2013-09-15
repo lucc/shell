@@ -3,13 +3,7 @@
 # a script to check for new mail and notify the user.
 
 PROG=`basename "$0"`
-ID="$PROG-$$-$RANDOM"
 PID=$$
-TMP=`mktemp -t "$PROG".XXXXX`
-
-new_mail () {
-  find ~/mail -name spam -prune -path '*/new/*' -o -regex '.*/cur/.*,[^,S]*'
-}
 
 parse_mail () {
   local from=
@@ -25,7 +19,7 @@ parse_mail () {
 send_note () {
   growlnotify \
     --icon eml \
-    --identifier "$ID" \
+    --identifier "$PROG" \
     --name "$PROG" \
     --sticky \
     --message "${1:--}" \
@@ -35,33 +29,12 @@ send_note () {
 daemon () {
   local new=
   while true; do
-    new=`new_mail`
+    new=`find ~/mail -name spam -prune -path '*/new/*' -o -regex '.*/cur/.*,[^,S]*'`
     if [ -n "$new" ]; then
       parse_mail $new | send_note
     fi
     sleep 60
   done
-}
-
-running () {
-  psgrep -no pid,ppid,args "$PROG" 2>&1 | grep -v $PID
-}
-
-start () {
-  echo Starting daemon with PID $$ >&2
-  daemon &
-}
-
-stop () {
-  local string=`psgrep -no pid,ppid,args "$PROG" | \
-    grep -v '^\([0-9]\+ \)\?'$PID`
-  if [ -z "$string" ]; then
-    echo Daemon not running. >&2
-    exit 1
-  else
-    kill ${string%% *}
-    exit
-  fi
 }
 
 case "$1" in
@@ -70,11 +43,19 @@ case "$1" in
       echo Already running. >&2
       exit
     else
-      start
+      echo Starting daemon with PID $$. >&2
+      daemon &
     fi
     ;;
   stop)
-    stop
+    process=`psgrep -no pid,ppid,args "$PROG" | grep -v '^\([0-9]\+ \)\?'$PID`
+    if [ -z "$process" ]; then
+      echo Daemon not running. >&2
+      exit 1
+    else
+      kill ${process%% *}
+      exit
+    fi
     ;;
   *)
     echo You must say \'start\' or \'stop\'. >&2
