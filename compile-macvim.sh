@@ -1,6 +1,6 @@
 #!/bin/sh
 
-MACVIM_DIR=$HOME/macvim
+MACVIM_DIR=${MACVIM_DIR:-$HOME/src/macvim-git}
 
 download () {
   if [ -d $MACVIM_DIR/.git ]; then
@@ -61,8 +61,24 @@ make_macvim () {
   make -C $MACVIM_DIR/src
 }
 
+link_macvim () {
+  ln -fsv $MACVIM_DIR/src/MacVim/build/Release/MacVim.app /Applications
+  ln -fsv $MACVIM_DIR/src/MacVim/mvim /usr/local/bin/mvim
+  ln -fsv $MACVIM_DIR/src/MacVim/mvim /usr/local/bin/gvim
+  ln -fsv $MACVIM_DIR/src/MacVim/mvim /usr/local/bin/vim
+}
+
 if [ -z "$PS1" ]; then
+  download
   clean_macvim
   config_macvim
   make_macvim
+  link_macvim
+else
+  echo download
+  echo python_setenv
+  echo clean_macvim
+  echo config_macvim
+  echo make_macvim
+  echo link_macvim
 fi
