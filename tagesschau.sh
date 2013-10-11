@@ -9,7 +9,7 @@ view=false
 
 usage () {
   local prog="`basename "$0"`"
-  echo "Usage: $prog [ -s | -m | -l ] [ -q ] [ -b ] [ -x ]"
+  echo "Usage: $prog [ -s | -m | -l ] [ -q ] [ -b ] [ -v ] [ -x ]"
   echo "       $prog -h"
 }
 
@@ -22,6 +22,7 @@ options () {
   echo "-s, -m, -l  size to download"
   echo "-q          supress output"
   echo "-b          work in background"
+  echo "-v          open file after downloading"
   echo "-x          debugging output"
 }
 

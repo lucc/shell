@@ -1,11 +1,13 @@
 #!/bin/sh
 
-alias git='git --work-tree="$arg" --git-dir="$arg"/.git'
-pwd
+# For each argument that is a directory with a git repository, commit
+# all changes and label them "autocomit".
+
 for arg; do
-  if [ -d "$arg" ]; then
-    if [ "`git status --short --untracked-files=no`" != "" ]; then
-      git commit --all --message=autocomit
-    fi
-  fi
+  git                     \
+    --work-tree="$arg"    \
+    --git-dir="$arg"/.git \
+    commit                \
+    --all                 \
+    --message=autocomit
 done
