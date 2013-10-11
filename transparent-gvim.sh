@@ -12,7 +12,7 @@ if [ -z "`vim --serverlist`" ]; then
   gvim &
 fi
 
-#CMD=vimserver
+CMD=tab
 
 # other functions
 save_stdin () { cat > $TMP; }
@@ -20,7 +20,7 @@ save_stdin () { cat > $TMP; }
 # wrapper functions for basic interaction with Vim
 #vimserver ()  { vim --servername "$SERVER" "$@"; }
 #call ()       { vimserver --remote-expr "$@"; }
-foreground () { wait_server && vim --remote-expr 'foreground()' > /dev/null; }
+foreground () { wait_server && vim --remote-expr 'foreground()' >/dev/null; }
 #send ()       { vimserver --remote-send "<C-\><C-N>$*"; }
 tab ()        { wait_server && vim --remote-tab-wait-silent "$@"; }
 wait_server () {
@@ -33,7 +33,7 @@ doc () {
     echo Topic needed >&2
     exit 2
   fi
-  call "LucTManWrapper('"$1"', '"${@:2}"')" > /dev/null
+  call "luc.man.tabopen('"$1"', '"${@:2}"')" > /dev/null
   #foreground
 }
 doc () {
@@ -46,10 +46,10 @@ doc () {
       sleep 100m
     endwhile
     let s = split(serverlist())[0]
-    call remote_expr(s, 'LucTManWrapper(\"$1\", \"${@:2}\")')
+    call remote_expr(s, 'luc.man.tabopen(\"$1\", \"${@:2}\")')
     call remote_foreground(s)
     quit
-  "
+  " >/dev/null 2>&1 &
 }
 
 # wrapper functions for individual help systems
@@ -86,4 +86,4 @@ fi
 
 #$CMD "$@"
 #$WAIT && wait
-$CMD "${new_args[@]}" >/dev/null
+$CMD "${new_args[@]}"
