@@ -16,14 +16,16 @@ import re
 import signal
 import sys
 # see file:///Users/luc/tmp/python-3.3.0-docs-html/library/concurrency.html
-import threading, queue
+import threading
+import queue
 import traceback
 import urllib.request
 
 from bs4 import BeautifulSoup
 
+
 # a new start (from scratch?) {{{1
-class Manager(): #{{{2
+class Manager():  # {{{2
     '''
     The Manager class manages the downloading and saving of images and writes
     the log file.  It uses other classes to do the actual parsing of the html.
@@ -52,20 +54,21 @@ if global_mangadir is None or global_mangadir == "":
     global_mangadir = os.path.join(os.getenv("HOME"), "comic")
 global_mangadir = os.path.realpath(global_mangadir)
 
-def noop(*args): #{{{1
+
+def noop(*args):  # {{{1
     pass
 
 
-def timestring(): #{{{1
+def timestring():  # {{{1
     return datetime.datetime.now().strftime('%H:%M:%S')
 
 
-def debug_info(*strings): #{{{1
+def debug_info(*strings):  # {{{1
     if debug:
         print('Debug:', *strings)
 
 
-def debug_enter(cls, *strings): #{{{1
+def debug_enter(cls, *strings):  # {{{1
     if debug:
         name = 'of ' + cls.__name__ if type(cls) is type else ''
         #if type(cls) is type:
@@ -78,18 +81,19 @@ def debug_enter(cls, *strings): #{{{1
             print('Debug:', *strings)
 
 
-def print_info(string, *strings): #{{{1
+def print_info(string, *strings):  # {{{1
     if not quiet:
         print(string, *strings)
 
-def start_thread(function, arguments): #{{{1
+
+def start_thread(function, arguments):  # {{{1
     #t = _thread.start_new_thread(function, arguments)
     #return
     t = threading.Thread(target=function, args=arguments)
     t.start()
     #threads.append(t)
 
-def download_image(key, url, filename, logger): #{{{1
+def download_image(key, url, filename, logger):  # {{{1
     debug_enter(None)
     #raise NotImplementedError()
     try:
@@ -103,7 +107,7 @@ def download_image(key, url, filename, logger): #{{{1
     logger.remove(key)
 
 
-def find_class_from_url(url): #{{{1
+def find_class_from_url(url):  # {{{1
     '''
     Parse the given url and try to find a class that can load from that
     domain.  Return the class.
@@ -123,7 +127,7 @@ def find_class_from_url(url): #{{{1
             'There is no class available to work with this url.')
 
 
-def download_missing(directory, logfile): #{{{1
+def download_missing(directory, logfile):  # {{{1
     '''
     Load all images which are mentioned in the logfile but not present in the
     directory.
@@ -135,6 +139,34 @@ def download_missing(directory, logfile): #{{{1
         if not os.path.exists(filename):
             start_thread(download_image, (index, img, filename, logger))
 
+
+class Controller(): #{{{1
+    '''
+    This class will control the downloading of the image files.
+    '''
+    parser = None
+    logfile = None
+    threads = None
+    queue = None
+    def __init__(self, target, back=False):
+        '''doc'''
+        pass
+    def find_class_from_url(url):
+        '''doc'''
+        pass
+    def background_load(url, filename):
+        '''Load the url to filename and report to self.'''
+        pass
+
+
+    pass
+
+    def queue_page(url):
+        '''Add a page to the queue of pages to parse.'''
+        pass
+    def queue_image(url, filename):
+        '''Add an image to the queue to be downloaded.'''
+        pass
 
 class Page: #{{{1
 
@@ -284,7 +316,7 @@ class PPMangaFox(PageParser): #{{{1
             self.volume = None
             i = -3
         self.manga = val[i]
-        self.next_url =
+        self.next_url = ''
         self.image = html.find(id='viewer').a.img['src']
         self.set_generic_values()
 
@@ -422,11 +454,13 @@ class Logger(BaseLogger): #{{{1
 class SiteHandler(): #{{{1
 
     # References to be implement in subclasses. {{{2
-    def extract_key(html): raise NotImplementedError()
-    def extract_next_url(html): raise NotImplementedError()
-    def extract_img_url(html): raise NotImplementedError()
-    def extract_manga_name(html): raise NotImplementedError()
-    def load_intelligent(self, url): raise NotImplementedError()
+    # It is better to remove these and use hasattr and getattr instad of an
+    # try-except block in start_at()
+    #def extract_key(html): raise NotImplementedError()
+    #def extract_next_url(html): raise NotImplementedError()
+    #def extract_img_url(html): raise NotImplementedError()
+    #def extract_manga_name(html): raise NotImplementedError()
+    #def load_intelligent(self, url): raise NotImplementedError()
 
     def __init__(self, directory, logfile): #{{{2
         debug_enter(SiteHandler)
@@ -468,8 +502,8 @@ class SiteHandler(): #{{{1
                 os.path.splitext(cls.extract_img_url(html))[1]).lower()
 
     @classmethod
-    def extract_image_extension(cls, html): #{{{2
-        return .split('.')[-1]
+    #def extract_image_extension(cls, html): #{{{2
+    #    return .split('.')[-1]
 
     @classmethod
     def extract_linear(cls, html): #{{{2
@@ -524,7 +558,12 @@ class SiteHandler(): #{{{1
         '''
         debug_enter(SiteHandler)
         while url is not None:
-            html = BeautifulSoup(urllib.request.urlopen(url))
+            try:
+                html = urllib.request.urlopen(url)
+            except BadStatusLine:
+                print_info(url, 'gave a error code.')
+                return
+            html = BeautifulSoup(html)
             try:
                 key, nexturl, img, filename = \
                         self.__class__.extract_linear(html)
@@ -543,13 +582,19 @@ class SiteHandler(): #{{{1
     def start_at(self, url): #{{{2
         'Load all images starting at a specific url.'
         debug_enter(SiteHandler)
-        try:
-            self.load_intelligent(url)
-        except NotImplementedError:
-            try:
-                self.load_linear_fast(url)
-            except NotImplementedError:
-                self.load_linear(url)
+        loader = getattr(self, 'load_intelligent', getattr(self,
+            'load_linear_fast', getattr(self, 'load_linear', None)))
+        if loader is None:
+            raise NotImplementedError(
+                    'There is no function implemented to load anything.')
+        loader(url)
+        #try:
+        #    self.load_intelligent(url)
+        #except NotImplementedError:
+        #    try:
+        #        self.load_linear_fast(url)
+        #    except NotImplementedError:
+        #        self.load_linear(url)
 
     def start_after(self, url): #{{{2
         'Load all images starting at the url after the one specified.'
@@ -708,7 +753,7 @@ class Mangareader(SiteHandler): #{{{1
             Mangareader.helper_load_chapter_2(manga, chapter )
 
 #assigning the current function
-Mangareader.load_intelligent = Mangareader.load_intelligent_1
+#Mangareader.load_intelligent = Mangareader.load_intelligent_1
 
 
 class Unixmanga(SiteHandler): #{{{1
@@ -728,6 +773,8 @@ class Unixmanga(SiteHandler): #{{{1
 
 
 class Mangafox(SiteHandler): #{{{1
+    DOMAIN='mangafox.me'
+    PROTOCOL='http'
 
     def __init__(self, directory, logfile): #{{{2
         debug_enter(Mangafox)
