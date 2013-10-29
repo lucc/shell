@@ -7,12 +7,19 @@
 
 help () {
   local prog=`basename "$0"`
-  echo "Usage: $prog [-l|-m] querry-string"
-  echo "       $prog -h"
-  echo
-  echo "List all email addresses matching querry-string from the Mac OSX"
-  echo "AddressBook.app.  With -m format output for mutt, with -l like in"
-  echo "email headers.  The default is -l."
+  cat <<EOF
+  Usage: $prog [-l|-m] [-a|-c|-s] querry-string
+         $prog -h
+  List all email addresses matching querry-string from the Mac OSX
+  AddressBook.app.
+  Options:
+    -a    use applescript as query engine
+    -c    use /usr/local/bin/contacts as query engine
+    -h    display this help
+    -l    format output like in email headers (default)
+    -m    format output for mutt's query_command option
+    -s    use sqlite as query engine (default)
+EOF
 }
 
 sqlite_query () {
