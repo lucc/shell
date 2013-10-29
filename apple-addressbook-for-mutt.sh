@@ -5,12 +5,29 @@
 # the default format for mutt:
 # <email-address><tab><name>
 
-# mutt expects the first line to be a header line.
-echo "Email	Name"
+# FIXME what is the best format to use tabs and newline?
+#TAB="`printf '\t'`"
+#NL="`printf '\n'`"
 
-# query the AddressBook.app database for all possible email addresses
-(
-  contacts -HSsf '%he	%n' "$1"
-  contacts -HSsf '%we	%n' "$1"
-  contacts -HsSf '%oe	%n' "$1"
-) | grep @ | sort --ignore-case --unique --field-separator='	' --key=1
+querry () {
+  # give exactly two arguments: a format string and a querry string
+  contacts -HSsf "$@"
+  # -H    supress headers
+  # -S    strict formating (no extra space)
+  # -s    sort
+  # -f    format string
+}
+
+sort_function () { grep @ | sort --ignore-case --unique "$@"; }
+
+mutt_querry () {
+  # query the AddressBook.app database for all possible email addresses
+  # mutt expects the first line to be a header line.
+  echo $'Email\tName'
+  querry $'%he\t%n\n%we\t%n\n%%oe\t%n' "$1" | \
+    sort_function --field-separator=$'\t' --key=1
+}
+
+email_list () {
+  querry $'"%n" <%he>\n"%n" <%we>\n"%n" <%oe>' | sort_function
+}
