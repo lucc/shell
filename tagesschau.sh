@@ -1,11 +1,10 @@
 #!/bin/sh
 
-load_to_pipe=false
-load_to_file=false
 size=.webl
 quiet=
 background=
 view=false
+url=http://www.tagesschau.de/export/video-podcast/tagesschau/
 
 usage () {
   local prog="`basename "$0"`"
@@ -28,21 +27,20 @@ options () {
 
 load () {
   # find the right file to download online
-  local url=http://www.tagesschau.de/export/video-podcast/tagesschau/
   url=`load_to_pipe $url | \
-    sed -n '/<enclosure url/{s/<enclosure url="\([^"]*\)" length.*\/>/\1/p;q;}'`
+    sed -n '/<enclosure url/{
+              s/<enclosure url="\([^"]*\)" length.*\/>/\1/p
+	      q
+	    }'`
   url=${url%.h264.mp4}${size}.h264.mp4
   # go to final download directory
   load_to_file $quiet $url
-  if $view; then
-    wait
-    view
-  fi
 }
 
 view () {
+  # open the video after downloading it.
   case `uname` in
-    Darwin) open "`basename "$url"`";;
+    Darwin) open --background "`basename "$url"`";;
     *) echo "Not implemente yet!" >&2; exit 1;;
   esac
 }
@@ -65,7 +63,7 @@ elif which -s elinks; then
   quiet_switch=
 else
   echo "Can not find wget/curl/elinks.  Stop."
-  exit 1
+  exit 127
 fi
 
 # give help on commandline
@@ -84,9 +82,9 @@ while getopts bhlmqsvx FLAG; do
 done
 
 # load the file
-cd $HOME/Desktop || cd
-cd $HOME/tmp || cd
-eval load $background
+cd $HOME/Desktop || cd $HOME/tmp || cd
+#eval if load; then if $view; then view; fi; fi $background
+eval "( load && $view && view )" $background
 
 exit
 
@@ -97,8 +95,6 @@ exit
 #http://www.tagesschau.de/export/video-podcast/webl/tagesschau/
 #http://www.tagesschau.de/export/video-podcast/webm/tagesschau/
 #http://www.tagesschau.de/export/video-podcast/tagesschau/
-
-
 
 ##URL=`$load_to_pipe http://www.tagesschau.de/download/podcast/ | \
 ##  sed -n '/tagesschau 20:00/,${/mp4/{s/.*href="//;s/".*//p;q;};}'`
