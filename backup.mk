@@ -5,6 +5,7 @@
 DATE        := $(shell date +%F)
 TIME        := $(shell date +%T)
 DATETIME     = $(subst -,,$(DATE))$(subst :,,$(TIME))
+LOGGING      = >/dev/null 2>&1
 
 # command options {{{1
 TAROPTIONS   = -cpvz --exclude .DS_Store
@@ -33,15 +34,12 @@ BAK          = ~/bak
 # configfiles {{{2
 INCLUDE      = \
 	      .config    \
-	      apply      \
 	      art        \
 	      bank       \
 	      bib        \
 	      bin        \
 	      cook       \
-	      dsa        \
 	      etc        \
-	      files      \
 	      files.txt  \
 	      go         \
 	      leh        \
@@ -50,11 +48,9 @@ INCLUDE      = \
 	      mail       \
 	      phon       \
 	      sammersee  \
-	      schule     \
 	      src        \
-	      TODO       \
+	      todo       \
 	      uni        \
-	      zis        \
 
 #exclude {{{2
 EXCLUDE      = \
@@ -82,7 +78,8 @@ rsync:
 	  $(INCLUDE:%=--include /%) \
 	  $(EXCLUDE:%=--exclude %)  \
 	  --filter 'P bak*.tar*'    \
-	  ~/ $(BAK)/$(USER)
+	  ~/ $(BAK)/$(USER)         \
+	  $(LOGGING)
 
 # tar {{{2
 filestar:
@@ -96,7 +93,8 @@ baktar:
 	  -f $(BAK)/bak$(DATETIME).tar$(TAREXT) \
 	  --exclude .cache                      \
 	  --                                    \
-	  $(USER)
+	  $(USER)                               \
+	  $(LOGGING)
 
 lima:
 	$(MAKE) -C ~/.config lima
