@@ -22,38 +22,59 @@ find_bad_files () {
   #local BAD_CHARS='][{}()<>!?,;^#§$%&@+*"'"'"
   # filenames of mail files have : and , chars
   local BAD_CHARS='][{}()<>!?;^#§$%&@+*"'"'"
-  find -LE . \
-    -path '*.wine/dosdevices' -prune -o \
+  find -LE "$@"                                                         \
+    -path '*.wine/dosdevices' -prune -o                                 \
     \( -name ".?*" -o -name "*[$BAD_CHARS]*" -o -regex ".{$LENGTH,}" \) \
     -print $REMOVE
+}
+
+count_files () {
+  # find -H means follow symlinks on command line but nowhere else
+  find -H "$@" -not -type d 2>/dev/null | wc -l
+  # originally this was
+  #find -H . -path '*.wine/dosdevices' -prune -o -not -type d -print 2>/dev/null | wc -l
+}
+
+count_dirs () {
+  # find -H means follow symlinks on command line but nowhere else.
+  echo $(( `find -H "$@" -type d 2>/dev/null | wc -l` - 1 ))
+  # originally this was
+  #$((`find -H . -path '*.wine/dosdevices' -prune -o -type d 2>/dev/null | wc -l` - 1))
+}
+
+count_with_tree () {
+  tree -ai "$@" | tail -n 1
+}
+
+size () {
+  # du -H means follow symlinks on command line but nowhere else.
+  # the man page for cut says tab is the default delimiter
+  # darwin/OSX no '-b=1' for du
+  du -H -s "$@" 2>/dev/null | cut -f 1
+  # originally this was
+  #du -H -s -I dosdevices "$@" 2>/dev/null | cut -f 1
 }
 
 hirarchy_info_function () {
   # redirect all errors to /dev/null
   exec 2>/dev/null
   # need tree to be installed
-  which -s tree || exit -1
-  #summed up info about trees at "$@" (or ".")
-  local count=
-  local size=
-  local sizeH=
+  which -s tree || return -1
+  # summed up info about trees at "$@" (or ".")
   if [ "$1" ]; then
     for file; do
-      count=`tree -ai "$file" | tail -n 1`
-      #darwin/OSX no '-b=1' for du
-      size_=`duI dosdevices -s "$file"`
-      sizeH=`duI dosdevices -hs "$file"`
       #darwin/OSX: '512'
-      echo "$file: ${count}, ${sizeH%%$'\t'*} ($((512*${size_%%$'\t'*})))"
+      echo "$file:"                \
+	`count_with_tree "$file"`, \
+	`size -h "$file"`          \
+	"($((512*`size "$file"`)))"
     done
-    echo ""
+    echo
   fi
-  count=`tree -ai "$@" | tail -n 1`
-  #darwin/OSX no '-b=1' for du
-  size_=`du -csI dosdevices "$@" | tail -n 1`
-  sizeH=`du -chsI dosdevices "$@" | tail -n 1`
   #darwin/OSX: '512'
-  echo "${count}, ${sizeH%%$'\t'*} ($((512*${size_%%$'\t'*})))"
+  echo `count_with_tree "$@"`,  \
+    `size -ch "$@" | tail -n 1` \
+    "($((512*`size -c "$@" | tail -n 1`)))"
 }
 
 while getopts "bd:hl:p:rtw" FLAG; do
@@ -90,11 +111,11 @@ done
 cd "$DIR"
 
 if [ "$POS" ]; then
-  sed 's/(/( /g;s/)/ )/g' "$LOGFILE" | \
-    sort -n -t " " -k $POS | \
-    sed 's/( /(/g;s/ )/)/g' | \
-    grep --color=always \
-         --after-context 5 \
+  sed 's/(/( /g;s/)/ )/g' "$LOGFILE" |        \
+    sort -n -t " " -k $POS           |        \
+    sed 's/( /(/g;s/ )/)/g'          |        \
+    grep --color=always                       \
+         --after-context 5                    \
 	 --before-context `wc -l <"$LOGFILE"` \
 	 "`tail -n 1 "$LOGFILE"`"
   exit
@@ -117,21 +138,21 @@ else
   OUTPUT=$LOGFILE
 fi
 
-# the man page says tab is the default delimiter
-sizeh=`du -LhsI dosdevices 2>/dev/null | cut -f 1`
-size=`du -LksI dosdevices 2>/dev/null | cut -f 1`
-DIR=$((`find -L . -path '*.wine/dosdevices' -prune -o -type d 2>/dev/null | wc -l` - 1))
-files=`find -L . -path '*.wine/dosdevices' -prune -o -not -type d -print 2>/dev/null | wc -l`
+# first we collect all the data (this can take a long time)
+sizeh=`size -h .`
+sizek=`size -k .`
+DIR=`count_dirs .`
+files=`count_files .`
 
 # do we need the names of the bad files, or only the count?
 if $BAD_FILES; then
   # we need the names
-  BAD_FILES=`find_bad_files`
+  BAD_FILES=`find_bad_files .`
   count=`echo "$BAD_FILES" | wc -l`
   if [ -z "$BAD_FILES" ]; then count=0; fi
 else
   # only the count
-  count=`find_bad_files | wc -l`
+  count=`find_bad_files . | wc -l`
   BAD_FILES=
 fi
 
@@ -139,16 +160,12 @@ fi
 tail "$LOGFILE" 2>/dev/null
 
 # echo data to $OUTPUT
-#FIXME there are unescaped tab characters needed here.
-#echo `LANG=en date '+%F %T (%a)'`: $DIR directories, $files files, ${sizeh%	*} \(${size%	*}\), $count bad filenames. | tee -a "$OUTPUT"
-echo `LANG=en date '+%F %T (%a)'`: $DIR directories, $files files, $sizeh \($size\), $count bad filenames. | tee -a "$OUTPUT"
+echo `LANG=en date '+%F %T (%a)'`: \
+  $DIR directories,                \
+  $files files,                    \
+  $sizeh \($sizek\),               \
+  $count bad filenames. |          \
+  tee -a "$OUTPUT"
 
 # print bad filenames if asked.
-#if $REMOVE; then
-#  echo "Removing:"
-#  echo "${BAD_FILES:-...nothing!}"
-#  echo "$BAD_FILES" | while read line; do
-#    rm "$line"
-#  done
-#elif [ "$BAD_FILES" ]; then echo; echo "$BAD_FILES"; fi
 if [ "$BAD_FILES" ]; then echo; echo "$BAD_FILES"; fi
