@@ -3,10 +3,12 @@
 # a script to check for new mail and notify the user.
 
 PROG=`basename "$0"`
+sender=growl
 
-parse () {
+parse_sed () {
   sed -nEe \
     '
+     # parse the From: field
      /^From:/{
        # clean up the From: field
        s/^From:[[:space:]]*//
@@ -22,8 +24,9 @@ parse () {
        # else append the Subject: filed to the hold space (From: field)
        H
        # retrive the hold space, print everything and quit
-       x;p;q
+       g;p;q
      }
+     # parse the Subject: field
      /^Subject:/{
        # clean up the Subject: field
        s/^Subject:[[:space:]]*((AW|Aw|Re|Fwd|FWD):[[:space:]])*//
@@ -37,42 +40,10 @@ parse () {
        # print everything and quit
        p;q
      }
-    '
-}
-
-parse2 () {
-  sed -nEe \
-    '
-     /^From:/{
-       # clean up the From: field
-       s/^From:[[:space:]]*//
-       s/[[:space:]]*<.*$//
-       s/^"//
-       s/"$//
-       s/$/:/
-       # look for a saved Subject: field in the hold space
-       x
-       # without a saved Subject: field go for the next line (From: field was
-       # saved)
-       /^$/ b
-       # else append the Subject: filed to the hold space (From: field)
-       H
-       # retrive the hold space, print everything and quit
-       x;p
-       q
-     }
-     /^Subject:/{
-       # clean up the Subject: field
-       s/^Subject:[[:space:]]*((AW|Aw|Re|Fwd|FWD):[[:space:]])*//
-       # look for a saved From: field in the hold space
-       x
-       # without a saved From: field go for the next line (Subject: field was
-       # saved)
-       /^$/ b
-       # else append the Subject: filed to the pattern (From: field)
-       G
-       # print everything and quit
-       p
+     # stop at the end of the email header
+     /^$/{
+       # print the contents of the hold space befor quitting
+       g;p
        q
      }
     '
@@ -112,7 +83,7 @@ parse_awk () {
   '
 }
 
-parse_from_field () {
+parse_from_field_sed () {
   sed -n -E -e \
     '# Clean up the From: field.
     /^(From|FROM):/{
@@ -129,15 +100,10 @@ parse_from_field () {
        p
      }'
 }
-#
-# s/(("|')?)(.*)\1
-#
-#
-#
-#
-#
 
-parse_subject_field () {
+# s/(("|')?)(.*)\1
+
+parse_subject_field_sed () {
   sed -n -E -e \
     '# Clean up the Subject: filed.
     /^(Subject|SUBJECT):/{
@@ -151,8 +117,8 @@ parse_mail () {
   local to=
   local subject=
   for arg; do
-    from=`parse_from_field <"$arg"`
-    subject=`parse_subject_field <"$arg"`
+    from=`parse_from_field_sed <"$arg"`
+    subject=`parse_subject_field_sed <"$arg"`
     if [ $((${#from} + ${#subject} + 2)) -le 20 ]; then
       echo "$from: $subject"
     else
@@ -165,24 +131,50 @@ parse_mail () {
 
 parse_mail2 () {
   if [ $# -ge 1 ]; then
-    parse < "$1"
+    parse_sed < "$1"
     shift
   fi
   for arg; do
     echo
-    parse < "$arg"
+    parse_sed < "$arg"
   done
 }
 
-send_note () {
-  growlnotify \
-    --icon eml \
+terminal_notify_wrapper () {
+  terminal-notifier                                            \
+    -sender com.apple.mail                                     \
+    -group "$PROG"                                             \
+    -title "New Mail"                                          \
+    -execute "$HOME/src/shell/iterm-session.scpt Default mutt" \
+    "$@"
+}
+send_note_apple () {
+  if [ $# -eq 0 ]; then
+    terminal_notify_wrapper -message -
+  else
+    terminal_notify_wrapper -message "$*"
+  fi
+}
+
+send_note_growl () {
+  growlnotify            \
+    --icon eml           \
     --identifier "$PROG" \
-    --name "$PROG" \
-    --message "${1:--}" \
+    --name "$PROG"       \
+    --message "${1:--}"  \
     --title "New Mail"
 
   #  --sticky \
+}
+
+send_general_notification () {
+  send_note_apple "You have $1 unread messages."
+}
+
+remove_general_notification () {
+  terminal-notifier                                            \
+    -sender com.apple.mail                                     \
+    -remove "$PROG"
 }
 
 debug_stuff () {
@@ -202,18 +194,49 @@ debug_stuff () {
   /usr/local/bin/pstree >> $logfile.pstree
 }
 
-new=`find ~/mail -path '*/new/*' -o -regex '.*/cur/.*,[^,S]*' | \
-  grep -v ~/mail/spam`
-#find ~/mail -name spam -prune -path '*/new/*' -o -regex '.*/cur/.*,[^,S]*'
+find_new_mail () {
+  # old version
+  #find ~/mail -path '*/new/*' -o -regex '.*/cur/.*,[^,S]*' | \
+  #  grep -v ~/mail/spam | grep -v ~/mail/lists/zsh
+
+  # new version
+  find ~/mail                   \
+    \(                          \
+      -type d                   \
+      -name spam -o             \
+      -name draft -o            \
+      -path ~/mail/lists/zsh    \
+    \)                          \
+    -prune -o                   \
+    \(                          \
+      -path '*/new/*' -o        \
+      -regex '.*/cur/.*,[^,S]*' \
+    \)                          \
+    -print
+}
+
+while getopts aghm: FLAG; do
+  case $FLAG in
+    a) sender=apple;;
+    g) sender=growl;;
+    h) help; exit;;
+    m) MAIL_DIR="$OPTARG";;
+  esac
+done
+
+# new version
+new=`find_new_mail`
 
 
 if [ -n "$new" ]; then
-  parse_mail $new | send_note
+  parse_mail $new | send_note_$sender
+  send_general_notification `echo "$new" | wc -l`
   new=true
 else
+  remove_general_notification
   new=false
 fi
-debug_stuff
+#debug_stuff
 # # this script will now be called by a launchd job, so we already know that
 # # there are mails and do not need to test.
 # parse_mail $new | send_note
