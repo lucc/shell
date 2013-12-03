@@ -9,7 +9,7 @@ PROG=`basename "$0"`
 
 if [ $# -lt 2 ] || [ "$1" = -h ]; then
   echo "usage: $PROG (user@host|host) file [lp-options]" >&2
-  return 1
+  exit 1
 fi
 HOST="$1"
 FILE="$2"
@@ -18,5 +18,5 @@ if [ -f "$FILE" ]; then
   ssh "$HOST" "lp -o sides=two-sided-long-edge ${1+"$@"} -- -" < "$FILE"
 else
   echo "Error: $FILE is not a valid file." 1>&2
-  return 1
+  exit 1
 fi
