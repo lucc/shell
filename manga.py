@@ -39,6 +39,54 @@ class Manager():  # {{{2
 
     # classmethods/staticmethods {{{3
 
+class Controller(): #{{{2
+    '''
+    This class will control the downloading of the image files.
+    '''
+    parser = None
+    logfile = None
+    threads = None
+    queue = None
+    logger = None
+    def __init__(self, target, back=False): # {{{3
+        '''doc'''
+        self.logger = Logger()
+        if type(target) is str:
+            # target is an url
+            url = target
+            parser_class = self.find_class_from_url(url)
+            self.parser = parser_class()
+        elif type(target) is int:
+            # target is another kind of job
+            # TODO
+            pass
+    def find_class_from_url(url): # {{{3
+        '''doc'''
+        pass
+    def background_load_file(url, filename): # {{{3
+        '''Load the url to filename and report to self.'''
+        # TODO do this in another thread
+        try:
+            urllib.request.urlretrieve(url, filename)
+        except urllib.error.ContentTooShortError:
+            os.remove(filename)
+            self.logger.notify(url, level=1)
+    def load_html_page(url): # {{{3
+        '''Load the page at url and parse it into an html tree.'''
+        try:
+            page = urllib.request.urlopen(url)
+        except urllib.request.http.client.BadStatusLine:
+            self.logger.notify(url, level=1)
+        else:
+            html = BeautifulSoup(page)
+            return html # TODO (What?)
+    def queue_page(url): # {{{3
+        '''Add a page to the queue of pages to parse.'''
+        pass
+    def queue_image(url, filename): # {{{3
+        '''Add an image to the queue to be downloaded.'''
+        pass
+
 
 # constants {{{1
 MAIOR_VERSION = 1
@@ -139,34 +187,6 @@ def download_missing(directory, logfile):  # {{{1
         if not os.path.exists(filename):
             start_thread(download_image, (index, img, filename, logger))
 
-
-class Controller(): #{{{1
-    '''
-    This class will control the downloading of the image files.
-    '''
-    parser = None
-    logfile = None
-    threads = None
-    queue = None
-    def __init__(self, target, back=False):
-        '''doc'''
-        pass
-    def find_class_from_url(url):
-        '''doc'''
-        pass
-    def background_load(url, filename):
-        '''Load the url to filename and report to self.'''
-        pass
-
-
-    pass
-
-    def queue_page(url):
-        '''Add a page to the queue of pages to parse.'''
-        pass
-    def queue_image(url, filename):
-        '''Add an image to the queue to be downloaded.'''
-        pass
 
 class Page: #{{{1
 
@@ -377,6 +397,11 @@ class BaseLogger(): #{{{1
 
 class Logger(BaseLogger): #{{{1
 
+    # Some constants to indicate errors and success {{{2
+    ERROR = 1
+    FAIL = 2
+    SUCCESS = 3
+
     #def __init__(self, logfile, quiet=False): #{{{2
     #    logfile = open(logfile, 'r')
     #    self.log = [line.split(' ', 2) for line in logfile.readlines()]
@@ -560,8 +585,10 @@ class SiteHandler(): #{{{1
         while url is not None:
             try:
                 html = urllib.request.urlopen(url)
-            except BadStatusLine:
-                print_info(url, 'gave a error code.')
+            except (urllib.request.http.client.BadStatusLine,
+                    urllib.error.HTTPError,
+                    urllib.error.URLError) as e:
+                print_info(url, 'returned', e)
                 return
             html = BeautifulSoup(html)
             try:
@@ -599,7 +626,11 @@ class SiteHandler(): #{{{1
     def start_after(self, url): #{{{2
         'Load all images starting at the url after the one specified.'
         debug_enter(SiteHandler)
-        request = urllib.request.urlopen(url)
+        try:
+            request = urllib.request.urlopen(url)
+        except urllib.error.URLError as e:
+            print_info(url, 'returned', e)
+            return
         debug_info('Finished preloading.')
         html = BeautifulSoup(request)
         url = self.__class__.extract_next_url(html)
