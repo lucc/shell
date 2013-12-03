@@ -25,7 +25,7 @@ EOF
 sqlite_query () {
   # $1 needs to be a sql select format.  e has the table ZABCDEMAILADDRESS and
   # r holds the table ZABCDRECORD.
-  if echo "$2" | grep "'"; then
+  if echo "$2" | grep \'; then
     echo Single quotes are not supported in the querry. >&2
     exit 3
   fi
@@ -36,6 +36,11 @@ sqlite_query () {
 		 e.ZADDRESS like '%$2%'
 	       order by r.ZFIRSTNAME,r.ZLASTNAME,e.ZADDRESS collate nocase"
   sqlite3 "$db" "$query"
+}
+
+sqlite_fulltextsearch_query () {
+  # Maybe it is somehow possible to use fts?
+  :
 }
 
 email_list_sqlite_query () {
@@ -152,7 +157,7 @@ email_list_contacts_query () {
 engine=sqlite
 format=email_list
 
-while getopts hacslm FLAG; do
+while getopts hacslmx FLAG; do
   case $FLAG in
     h) help; exit;;
     a) engine=applescript;;
@@ -160,6 +165,7 @@ while getopts hacslm FLAG; do
     s) engine=sqlite;;
     m) format=mutt;;
     l) format=email_list;;
+    x) set -x;;
     *) echo ERROR >&2; exit 2;;
   esac
 done
