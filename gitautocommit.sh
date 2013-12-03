@@ -9,5 +9,5 @@ for arg; do
     --git-dir="$arg"/.git \
     commit                \
     --all                 \
-    --message=autocomit
+    --message=autocommit
 done
