@@ -5,7 +5,13 @@
 
 echo Stopping airport ...
 networksetup -setairportpower en1 off
-sleep 1
+
+if echo "$1" | grep '^[0-9]\+$' >/dev/null; then
+  sleep $1
+else
+  sleep 1
+fi
+
 echo Starting airport ...
 networksetup -setairportpower en1 on
 
