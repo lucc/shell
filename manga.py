@@ -809,18 +809,27 @@ class Mangafox(SiteHandler): #{{{1
 
     def __init__(self, directory, logfile): #{{{2
         debug_enter(Mangafox)
-        suber().__init__(directory, logfile)
+        super().__init__(directory, logfile)
 
     def extract_next_url(html): #{{{2
         debug_enter(Mangafox)
-        raise NotImplementedError()
-        # TODO
-        return html.find_all(class_='next_page')[0]['href']
+        tmp = html.find(id='viewer').a['href']
+        if tmp == "javascript:void(0);":
+            return html.find(id='chnav').p.a['href']
+        else:
+            url = PROTOCOL + '://' + DOMAIN + '/manga/'
+            l = str(html.body.find_all('script')[-2]).split('\n')
+            # manga name
+            url = url + l[3].split('"')[1]
+            # volume and chapter and page (in tmp)
+            url = url + l[6].split('"')[1] + tmp
+            return url
+
     def extract_key(html): raise NotImplementedError()
-    def extract_next_url(html): raise NotImplementedError()
 
     def extract_img_url(html): #{{{2
-        return html.find(id='viewer').a.img['src']
+        #return html.find(id='viewer').a.img['src']
+        return html.find(id='image')['src']
 
     def extract_filename(html): #{{{2
         keys = extract_key_helper(html)
