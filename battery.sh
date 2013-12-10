@@ -4,7 +4,7 @@
 
 # help {{{1
 # Index of `ioreg -rc AppleSmartBattery` #####################################
-#                                                                            # 
+#                                                                            #
 #   1	+-o AppleSmartBattery ...           21	BatteryInstalled             #
 #   2	{                                   22	CycleCount                   #
 #   3	ExternalConnected                   23	DesignCapacity               #
@@ -48,7 +48,7 @@ verbose_battery_info () {
   echo "Battery Information:"
   echo
   if [ ${IsCharging} = "Yes" ]; then
-    # TODO: 
+    # TODO:
     echo "  Charging: ${CurrentCapacity}/${MaxCapacity}" \
       "(`battery_percentage`% = ${AvgTimeToFull}min)"
   else
@@ -232,7 +232,7 @@ terminal_colors () {
   esac
 }
 
-bash_colors () { 
+bash_colors () {
   terminal_colors $1 $2
   color='\['"$color"'\]'
   default='\['"$default"'\]'
@@ -259,6 +259,23 @@ select_color () {
     green|GREEN) color="$green";;
     default|DEFAULT|*) color="$default";;
   esac
+}
+
+# help functions {{{1
+usage () {
+  echo "Usage: `basename $0` [ -v ]"
+  echo "       `basename $0` -b [ -nc [ -e bash|zsh ] ]"
+  echo "Options:"
+  echo "  -b  print a bar to indicate battery status"
+  echo "  -c  use color (default if stdout is a terminal)"
+  echo "  -n  do not use color"
+  echo "  -v  be verbose (overriden by -b)"
+  echo "  -e  use bash or zsh escape sequences to be able to display"
+  echo "      color output in the shell prompt"
+  echo ""
+  echo "The first form prints some info about the battery. The second"
+  echo "form prints a grafical representation of the battery fillage"
+  echo "which also can be used in shell prompts."
 }
 
 # init {{{1
@@ -288,22 +305,8 @@ while getopts abce:hnpuU:v FLAG; do
     u) UTF8=true;;
     U) UTF8=true UTF8CHOISE="$OPTARG";;
     v) verbose=true BAR=false;;
-    h)
-      echo "Usage: `basename $0` [ -v ]"
-      echo "       `basename $0` -b [ -nc [ -e bash|zsh ] ]"
-      echo "Options:"
-      echo "  -b  print a bar to indicate battery status"
-      echo "  -c  use color (default if stdout is a terminal)"
-      echo "  -n  do not use color"
-      echo "  -v  be verbose (overriden by -b)"
-      echo "  -e  use bash or zsh escape sequences to be able to display"
-      echo "      color output in the shell prompt"
-      echo ""
-      echo "The first form prints some info about the battery. The second"
-      echo "form prints a grafical representation of the battery fillage"
-      echo "which also can be used in shell prompts."
-      exit
-      ;;
+    h) usage; exit;;
+    *) echo "Try `basename "$0"` -h for help." >&2; exit 2;;
   esac
 done
 
