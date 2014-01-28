@@ -86,6 +86,54 @@ class Controller(): #{{{2
     def queue_image(url, filename): # {{{3
         '''Add an image to the queue to be downloaded.'''
         pass
+class Parser(): #{{{2
+    '''A class to parse the downloaded html page and extract the neccessary
+    information.'''
+    base_url = None
+    def __init__(): raise NotImplementedError('To be overridden by subclass.')
+    def next(html): raise NotImplementedError()
+    def img(html): raise NotImplementedError()
+    def filename(html): raise NotImplementedError()
+    def expand_rel_url(self, url): #{{{3
+        if '://' in url:
+            return url
+        elif url[0] == '/':
+            return self.base_url + url[1:]
+        else:
+            return self.base_url + url
+class Mangareader(Parser): #{{{2
+    base_url = 'http://www.mangareader.com/'
+    def extract_key_helper(html): #{{{2
+        for tmp in html.findAll('link'):
+            if tmp.has_key['rel'] and tmp['rel'] == 'canonical':
+                val = tmp['href'].split('/')
+                break
+        if re.march(r'^[0-9]+\.html$', val[-1]) != None:
+            page = int(val[-1].split('.')[0])
+        else:
+            raise BaseException('wrong string while parsing')
+        if re.match(r'^c[0-9]+$', val[-2]) != None:
+            chapter = int(val[-2][1:])
+        else:
+            raise BaseException('wrong string while parsing')
+        if re.match(r'^v[0-9]+$', val[-3]) != None:
+            volume = int(val[-3][1:])
+            i = -4
+        else:
+            volume = None
+            i = -3
+        manga = val[i]
+        return (manga, volume, chapter, page)
+    def next(self, html): #{{{3
+        return self.expand_rel_url(html.find(id='img').parent['href'])
+    def img(html): #{{{3
+        return html.find(id='image')['src']
+    def filename(html): #{{{3
+        keys = extract_key_helper(html)
+        return keys[0] + ' ' + str(keys[2]) + ' page ' + str(keys[3]) + \
+                extract_img_url(html).split('.')[-1]
+
+
 
 
 # constants {{{1
