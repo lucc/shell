@@ -127,6 +127,12 @@ email_list_applescript_query () {
   applescript_query
 }
 
+mutt_lbdb_query () {
+  # use lbdbq
+  lbdbq "$1" | sed 's/ *(null) *//g'
+  #lbdbq "$1" | perl -pe 's/\(null\)//'
+}
+
 contacts_query () {
   # give exactly two arguments: a format string and a querry string
   contacts -HSsf "$@"
@@ -157,10 +163,11 @@ email_list_contacts_query () {
 engine=sqlite
 format=email_list
 
-while getopts hacslmx FLAG; do
+while getopts habcslmx FLAG; do
   case $FLAG in
     h) help; exit;;
     a) engine=applescript;;
+    b) engine=lbdb;;
     c) engine=contacts;;
     s) engine=sqlite;;
     m) format=mutt;;
