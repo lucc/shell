@@ -13,13 +13,14 @@ office2 () {
   fi
   type="$1"
   shift
-  "$lo"                  \
-    --nologo             \
-    --nodefault          \
-    --nolockcheck        \
-    --nofirststartwizard \
-    --convert-to "$type" \
-    --outdir ./          \
+  "$lo"                                                      \
+    --nologo                                                 \
+    --nodefault                                              \
+    --nolockcheck                                            \
+    --nofirststartwizard                                     \
+    -env:UserInstallation=file:///tmp/LibO_Conversion$RANDOM \
+    --convert-to "$type"                                     \
+    --outdir ./                                              \
     "$@"
 }
 
