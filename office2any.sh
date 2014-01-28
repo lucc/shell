@@ -26,6 +26,12 @@ office2 () {
 
 office2pdf_2 () { office2 pdf:writer_pdf_Export "$@"; }
 
+if [ `uname` = Darwin ]; then
+  apple_textutil () {
+    textutil -cat txt
+  }
+fi
+
 if [ -z "$PS1" ]; then
   echo source "$0"
 else
