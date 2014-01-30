@@ -2,6 +2,8 @@
 
 # a script to convert all music files in the source directory to a uniform
 # format, saving them in destination directory
+#
+# TODO: nice and cpulimit
 
 PROG="`basename "$0"`"
 if [ -t 1 -a -t 2 ]; then
@@ -34,6 +36,7 @@ deref () {
 
 convert_file () {
   ffmpeg              \
+    -n                \
     -nostdin          \
     -loglevel warning \
     -i "$1"           \
