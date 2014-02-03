@@ -1,0 +1,5 @@
+#!/bin/sh
+# vim: ft=sh
+# a script to start my favorite terminal emulator
+
+exec urxvt "$@"
