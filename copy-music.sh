@@ -26,7 +26,7 @@ die () {
   exit $ret
 }
 
-deref () {
+resolve_symlinks () {
   file="$1"
   while [ -l "$file" ]; do
     file="`readlink "$file"`"
@@ -34,14 +34,12 @@ deref () {
   echo "$file"
 }
 
-convert_file () {
+ffmpeg_wrapper () {
   ffmpeg              \
     -n                \
     -nostdin          \
     -loglevel warning \
-    -i "$1"           \
-    -acodec libvorbis \
-    "$dest/${1%.*}.ogg"
+    "$@"
   # -loglevel quiet   \
   # -loglevel panic   \
   # -loglevel fatal   \
@@ -49,7 +47,26 @@ convert_file () {
   # -loglevel warning \
   # -loglevel info    \
   # -loglevel verbose \
-  # -loglevel debug   \
+  # -loglevel debug
+}
+
+to_ogg () {
+  # TODO quality
+  ffmpeg_wrapper       \
+    -i "$1"            \
+    -codec:a libvorbis \
+    "${2%.ogg}.ogg"
+}
+
+to_mp3 () {
+  # TODO quality
+  ffmpeg_wrapper       \
+    -i "$1"            \
+    "${2%.mp3}.mp3"
+}
+
+convert_file () {
+  to_ogg "$1" "$dest/${1%.*}.ogg"
 }
 
 if [ $# -ne 2 ]; then
