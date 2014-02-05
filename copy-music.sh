@@ -89,8 +89,13 @@ cd "$src" || die 3 Can not cd to "$src".
 #find . -type d -exec mkdir -p "$dest"/{} \;
 
 find . -type f | while read file; do
-  echo
-  echo "converting $COLOR$file$NOCOLOR ..."
-  mkdir -p "$dest"/"`dirname "$file"`"
-  convert_file "$file"
+  target="$dest/${file%.*}.ogg"
+  printf "\nconverting $COLOR$file$NOCOLOR ..."
+  if [ "$target" -nt "$file" ]; then
+    echo " $target is newer.  Skipping."
+  else
+    echo
+    mkdir -p "`dirname "$target"`"
+    to_ogg "$file" "$target"
+  fi
 done
