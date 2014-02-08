@@ -5,7 +5,9 @@
 #
 # TODO: nice and cpulimit
 
+# default values for variables
 PROG="`basename "$0"`"
+CONTINUE=true
 if [ -t 1 -a -t 2 ]; then
   COLOR="\033[1m"
   NOCOLOR="\033[m"
@@ -14,6 +16,7 @@ else
   NOCOLOR=
 fi
 
+# defineing functions
 usage () {
   echo "$PROG src target"
   echo "Convert all music files in src to ogg files into target."
@@ -24,6 +27,17 @@ die () {
   shift
   echo "$PROG: $@" >&2
   exit $ret
+}
+
+handle_signal () {
+  if $CONTINUE; then
+    TIMESTAMP=`date +%s`
+    CONTINUE=false
+    echo "Let me just finish converting $file ..." >&2
+  elif [ $(($TIMESTAMP + 10)) -lt `date +%s` ]; then
+    echo 'OK, if you force me.  Engines STOP!' >&2
+    exit 10
+  fi
 }
 
 resolve_symlinks () {
@@ -69,14 +83,15 @@ convert_file () {
   to_ogg "$1" "$dest/${1%.*}.ogg"
 }
 
+# parse command line
 if [ $# -ne 2 ]; then
   usage
   exit 2
 fi
-
 src="$1"
 dest="$2"
 
+# prepare and check directories
 mkdir -p "$dest"
 cd "$dest" || die 3 Can not cd to "$dest".
 dest="`pwd -P`"
@@ -85,10 +100,14 @@ cd - >/dev/null 2>&1
 # change to the source directory to be able to work with relative filenames
 cd "$src" || die 3 Can not cd to "$src".
 
+# set up traps
+trap handle_signal SIGINT SIGQUIT
+
 # first duplicate the directory structure of $src to $dest
 #find . -type d -exec mkdir -p "$dest"/{} \;
 
-find . -type f | while read file; do
+find . -type f | LC_ALL=C sort --ignore-case | while read file && $CONTINUE; do
+#find . -type f | while read file && $CONTINUE; do
   target="$dest/${file%.*}.ogg"
   printf "\nconverting $COLOR$file$NOCOLOR ..."
   if [ "$target" -nt "$file" ]; then
@@ -99,3 +118,6 @@ find . -type f | while read file; do
     to_ogg "$file" "$target"
   fi
 done
+
+# clear all traps again
+trap - SIGINT SIGQUIT
