@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# load the command line parser
+. "$PROJECTBIN/parser" "$@"
