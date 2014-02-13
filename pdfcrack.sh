@@ -56,7 +56,7 @@ elif [ "$1" = -h -o "$1" = --help ]; then
 fi
 
 # install a trap for signals
-#trap trap_cleanup INT TERM
+trap 'echo Caught signal, exiting ...; exit 1' INT TERM
 
 # crack all pdf in the folder
 for dir; do
