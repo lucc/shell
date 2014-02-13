@@ -70,6 +70,9 @@ for dir; do
     pdfcrack_function --password="$userpass" -f file.pdf
   else
     pdfcrack_function --owner -f file.pdf
+    if [ $? -eq 0 ]; then
+      tail -n 5 pdfcrack.log > ownerpass.txt
+    fi
   fi
   cd - 1>/dev/null 2>&1
 done
