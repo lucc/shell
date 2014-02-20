@@ -18,7 +18,7 @@ MBP =                    \
       fixperm.sh         \
       internet_search.sh \
       mailnotify.sh      \
-      mute.sh            \
+      volume.scpt        \
       secure.sh          \
       tagesschau.sh      \
       wlan.sh            \
