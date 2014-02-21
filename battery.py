@@ -1,11 +1,11 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # coding=utf-8
 # vi: foldmethod=marker
 # info {{{1
 
 # help {{{1
 # Index of `ioreg -rc AppleSmartBattery` #####################################
-#                                                                            # 
+#                                                                            #
 #   1	+-o AppleSmartBattery ...           21	BatteryInstalled             #
 #   2	{                                   22	CycleCount                   #
 #   3	ExternalConnected                   23	DesignCapacity               #
@@ -35,276 +35,186 @@
 #                                                                            #
 ##############################################################################
 
-import os
-import re
-import time
-import sys
+import argparse
 import datetime
+import io
+import plistlib
+import subprocess
 
-# get data {{{1
-data = {}
-for line in os.popen('ioreg -rc AppleSmartBattery').read().splitlines():
-    if '=' in line:
-        key = re.sub(r'^ *"([a-zA-Z]*)" =.*', r'\1', line)
-        value = re.sub(r'^ *"[a-zA-Z]*" = (.*)', r'\1', line)
-        value = re.sub(r'Yes$', '1', value)
-        value = re.sub(r'No$', '0', value)
-        try:
-            value = int(value)
-        except ValueError:
-            continue
-        data[key] = value
+def getBatteryInformation():
+    output = subprocess.check_output(['ioreg', '-arc', 'AppleSmartBattery'])
+    filelike = io.BytesIO(output)
+    return plistlib.readPlist(filelike)[0]
 
-# output functions {{{1
+class TerminalColors():
+    escape = '\033'
+    red = 1
+    yellow = 3
+    green = 2
+    fg = 3
+    bg = 4
 
-def batteryPercentage():
-    return 100 * data["CurrentCapacity"] / data["MaxCapacity"]
+class BatteryInformation():
 
-def conciceBatteryInfo():
-    return datetime.datetime.now().strftime("%F %H:%M:%S: " +
-            str(data["CurrentCapacity"]) + "/" + str(data["MaxCapacity"]) +
-            " mAh, " + str(data["CycleCount"]) + " cycles")
+    characters = {
+            'ascii':      {'left': '<',            'right': '>'},
+            'blank':      {'left': ' ',            'right': ' '},
+            'blitz':      {'left': '\xe2\x9a\xa1', 'right': '\xe2\x9a\xa1'},
+            'block':      {'left': '\xe2\x96\x88', 'right': '\xe2\x96\x88'},
+            'fat':        {'left': '\xe2\x97\x80', 'right': '\xe2\x96\xb6'},
+            'high':       {'left': '\xe2\x97\xa5', 'right': '\xe2\x97\xa4'},
+            'low':        {'left': '\xe2\x97\xa2', 'right': '\xe2\x97\xa3'},
+            'smallblock': {'left': '\xe2\x96\xae', 'right': '\xe2\x96\xae'},
+            'thin':       {'left': '\xe2\x9d\xae', 'right': '\xe2\x9d\xaf'},
+            }
 
-def verboseBatteryInfo():
-    text = "Battery Information:\n"
-    text += "\n"
-    text += "  Charging: " if data["IsCharging"] else "  Remaining: "
-    text += (str(data["CurrentCapacity"]) + "/" + str(data["MaxCapacity"]) +
-            " (" + str(batteryPercentage()) + "% = ")
-    text += str(data["AvgTimeToFull" if data["IsCharging"] else "AvgTimeToEmpty"])
-    text += "min)\n"
-    text += "  Cycles: " + str(data["CycleCount"]) + "\n"
-    text += "  Fully charged: " + ("Yes" if data["FullyCharged"] else "No") + "\n"
-    text += "  Charging: " + ("Yes" if data["IsCharging"] else "No") + "\n"
-    #FIXME: display the right amparage
-    text += "  Amperage (mA): " + str(data["InstantAmperage"]) + "\n"
-    text += "  Voltage (mV): " + str(data["Voltage"]) + "\n"
-    return text
+    term_fg = '\033[3'
+    term_bg = '\033[4'
+    term_stop = 'm'
+    term_plain = '\033[m'
+    bash_fg = '\[\033[3'
+    bash_bg = '\[\033[4'
+    bash_stop = 'm\]'
+    bash_plain = '\[\033[m\]'
+    zsh_fg = '%F{'
+    zsh_bg = '%K{'
+    zsh_stop = '}'
+    zsh_plain = '%f%k'
+    tmux_fg = '#[fg='
+    tmux_bg = '#[bg='
+    tmux_stop = ']'
+    tmux_plain = '#[fg=default,bg=default]'
 
-def batteryBar():
-    left, right = select_utf8_char(UTF8CHOISE)
-    if data["IsCharging"] == "Yes":
-        char = right
+    ascii_left = '<'
+    ascii_right = '>'
+    utf8_left = '◀'
+    utf8_right = '▶'
+    #utf8_left = '\xe2\x97\x80'
+    #utf8_right = '\xe2\x96\xb6'
+
+    def __init__(self, color=False, escape=None, utf8=True):
+        plist = getBatteryInformation()
+        self.current = plist['CurrentCapacity']
+        self.cycles = plist['CycleCount']
+        self.plugged = plist['ExternalConnected']
+        self.charged = plist['FullyCharged']
+        self.ampere = plist['InstantAmperage']
+        self.charging = plist['IsCharging']
+        self.max = plist['MaxCapacity']
+        self.timeempty = plist['AvgTimeToEmpty']
+        self.timefull = plist['AvgTimeToFull']
+        self.volt = plist['Voltage']
+        if utf8:
+            self.left = self.utf8_left
+            self.right = self.utf8_right
+        else:
+            self.left = self.ascii_left
+            self.right = self.ascii_right
+        if color:
+            if escape == None:
+                self.red = self.term_fg + '1' + self.term_stop
+                self.yellow = self.term_fg + '3' + self.term_stop
+                self.green = self.term_fg + '2' + self.term_stop
+                self.plain = self.term_plain
+            elif escape == 'bash':
+                self.red = self.bash_fg + '1' + self.bash_stop
+                self.yellow = self.bash_fg + '3' + self.bash_stop
+                self.green = self.bash_fg + '2' + self.bash_stop
+                self.plain = self.bash_plain
+            elif escape == 'zsh':
+                self.red = self.zsh_fg + 'red' + self.zsh_stop
+                self.yellow = self.zsh_fg + 'yellow' + self.zsh_stop
+                self.green = self.zsh_fg + 'green' + self.zsh_stop
+                self.plain = self.zsh_plain
+            elif escape == 'tmux':
+                self.red = self.tmux_fg + 'red' + self.tmux_stop
+                self.yellow = self.tmux_fg + 'yellow' + self.tmux_stop
+                self.green = self.tmux_fg + 'green' + self.tmux_stop
+                self.plain = self.tmux_plain
+            else:
+                raise ArgumentError()
+        else:
+            self.red = ''
+            self.yellow = ''
+            self.green = ''
+            self.plain = ''
+
+    def conciceBatteryInfo(self):
+        return '%s: %d/%d mAh, %d cycles' % (datetime.datetime.now().strftime(
+                '%F %H:%M:%S'), self.current, self.max, self.cycles)
+
+    def verboseBatteryInfo(self):
+        text = ['Battery Information',
+                '',
+                '  ' + ('Charging' if self.charging else 'Remaining') +
+                    ': %d/%d (%.1f%% = %dmin)',
+                '  Cycles: %d',
+                '  Fully charged: ' + ('Yes' if self.charged else 'No'),
+                '  Charging: ' + ('Yes' if self.charging else 'No'),
+                '  Amperage (mA): %d',
+                '  Voltage (mV): %d',
+                '']
+        return '\n'.join(text) % (self.current, self.max, (100 * self.current
+            / self.max), (self.timefull if self.charging else self.timeempty),
+            self.cycles, self.ampere, self.volt)
+
+    def batteryBar(self):
+        tenth = int(10 * self.current / self.max)
+        if tenth <= 2:
+            color = self.red
+        elif tenth <= 4:
+            color = self.yellow
+        else:
+            color = self.green
+        if self.timeempty <= 5:
+            text = ' ' * 4 + self.red + str(self.timeempty) + ' min '
+        else:
+            text = ' ' * (10 - tenth)
+            text += color
+            text += (self.right if self.charging else self.left) * tenth
+        text += self.plain
+        text = ('=[' if self.plugged else '[') + text + ']'
+        return text
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    # different output formats
+    parser.add_argument('-b', '--bar',
+            action='store_const', const='bar', dest='output',
+            help='output a graphical bar')
+    parser.add_argument('-v', '--verbose',
+            action='store_const', const='verbose', dest='output',
+            help='output verbose information')
+    parser.add_argument('--non-verbose',
+            action='store_const', const='nonverbose', dest='output',
+            help='output minimal information')
+    parser.add_argument('-o', '--output',
+            choices=['bar', 'verbose', 'nonverbose'], default='nonverbose',
+            dest='output',
+            help='like --bar, --verbose, --non-verbose')
+    # output characters for the bar
+    parser.add_argument('-a', '--ascii',
+            dest='utf8', action='store_false',
+            help='output the bar in ascii characters')
+    parser.add_argument('-u', '--utf8',
+            action='store_true',
+            help='output the bar in utf8 characters')
+    #parser.add_argument('-U', '--uft8-char',
+    #        nargs=1,
+    #        help='')
+    # colors for the bar
+    parser.add_argument('-c', '--color', action='store_true',
+            help='use color for the bar')
+    parser.add_argument('-e', '--escape', choices=['bash', 'zsh', 'tmux'],
+            help='escape colors to be used in shell prompts')
+    parser.add_argument('-n', '--no-color', action='store_false',
+            dest='color', help='do not use color')
+    args = parser.parse_args()
+    info = BatteryInformation(color=args.color, escape=args.escape,
+            utf8=args.utf8)
+    if args.output == 'bar':
+        print(info.batteryBar())
+    elif args.output == 'verbose':
+        print(info.verboseBatteryInfo())
     else:
-        char = left
-#    local fill=$((`battery_percentage` / 10))
-#    unset OUT
-#    i=$fill
-#    while [ $i -gt 0 ]; do OUT="$OUT$CHAR"; i=$((i - 1)); done
-#    i=$((10 - fill))
-#    while [ $i -gt 0 ]; do OUT=" $OUT"; i=$((i - 1)); done
-#    if [ data["AvgTimeToEmpty"] -le 5 ]; then OUT="    data["AvgTimeToEmpty"] min "; fi
-#    if $color; then
-#    if [ $fill -le 2 ]; then color=red
-#    elif [ $fill -le 4 ]; then color=yellow
-#    else color=green
-#    fi
-#    if [ "$escape" = bash ]; then
-#      bash_colors $fg_bg $color
-#    elif [ "$escape" = tmux ]; then
-#      if [ $fg_bg = fg ]; then fg_bg=bg; else fg_bg=fg; fi
-#      tmux_colors $fg_bg $color
-#    elif [ "$escape" = zsh ]; then
-#      zsh_colors $fg_bg $color
-#    else
-#      terminal_colors $fg_bg $color
-#    fi
-#    else
-#    unset color
-#    fi
-#    OUT="[$color$OUT$default]"
-#    if [ data["ExternalConnected"] = "Yes" ]; then OUT="=$OUT"; fi
-#    echo "$OUT"
-#
-#
-## utf8 functions {{{1
-#
-#def select_utf8_char():
-#    if $UTF8; then
-#    case "$UTF8CHOISE" in
-#      # other
-#      # 〈 \xe3\x80\x88
-#      # 〉 \xe3\x80\x89
-#      # ⎟ \xe2\x8e\x9f
-#      # ⎸ \xe2\x8e\xb8
-#      # ⎟ \xe2\x8e\x9f
-#      # ⎹ \xe2\x8e\xb9
-#      smallblock)
-#        # ▮ \xe2\x96\xae
-#        RIGHT='\xe2\x96\xae'
-#        LEFT='\xe2\x96\xae'
-#        fg_bg=fg
-#        ;;
-#      low)
-#        # ◣ \xe2\x97\xa3
-#        RIGHT='\xe2\x97\xa3'
-#        # ◢ \xe2\x97\xa2
-#        LEFT='\xe2\x97\xa2'
-#        fg_bg=fg
-#        ;;
-#      high)
-#        # ◤ \xe2\x97\xa4
-#        RIGHT='\xe2\x97\xa4'
-#        # ◥ \xe2\x97\xa5
-#        LEFT='\xe2\x97\xa5'
-#        fg_bg=fg
-#        ;;
-#      blank)
-#        RIGHT=' '
-#        LEFT=' '
-#        fg_bg=bg
-#        ;;
-#      block)
-#        # █ \xe2\x96\x88
-#        RIGHT='\xe2\x96\x88'
-#        LEFT="$RIGHT"
-#        fg_bg=fg
-#        ;;
-#      blitz)
-#        # ⚡ \xe2\x9a\xa1
-#        RIGHT='\xe2\x9a\xa1'
-#        LEFT="$RIGHT"
-#        fg_bg=fg
-#        ;;
-#      thin)
-#        # ❯ \xe2\x9d\xaf
-#        RIGHT='\xe2\x9d\xaf'
-#        # ❮ \xe2\x9d\xae
-#        LEFT='\xe2\x9d\xae'
-#        fg_bg=fg
-#        ;;
-#      fat|*)
-#        # ▶ \xe2\x96\xb6
-#        RIGHT='\xe2\x96\xb6'
-#        # ◀ \xe2\x97\x80
-#        LEFT='\xe2\x97\x80'
-#        fg_bg=fg
-#        ;;
-#    esac
-#    else
-#    RIGHT='>'
-#    LEFT='<'
-#    fi
-#
-
-if len(sys.argv) > 1:
-    if sys.argv[1] == "-v":
-        print(verboseBatteryInfo())
-else:
-    print(conciceBatteryInfo())
-
-## color selection functions {{{1
-#def terminal_colors():
-#    local start='\x1b['
-#    local end=m
-#    local fg_bg=
-#    default="${start}0${end}"
-#    if [ $1 = fg ]; then
-#    fg_bg=3
-#    else
-#    fg_bg=4
-#    fi
-#    case $2 in
-#    red)
-#      color="${start}${fg_bg}1${end}"
-#      ;;
-#    yellow)
-#      color="${start}${fg_bg}3${end}"
-#      ;;
-#    green)
-#      color="${start}${fg_bg}2${end}"
-#      ;;
-#    esac
-#
-#def bash_colors():
-#    terminal_colors $1 $2
-#    color='\['"$color"'\]'
-#    default='\['"$default"'\]'
-#
-#def tmux_colors():
-#    color="#[$1=$2]"
-#    default='#[bg=default,fg=default]'
-#
-#def zsh_colors() :
-#    if [ $1 = fg ]; then
-#    color="%F{$2}"
-#    else
-#    color="%K{$2}"
-#    fi
-#    default="%f%k"
-#
-#def select_color():
-#    case "$1" in
-#    red|RED) color="$red";;
-#    yellow|YELLOW) color="$yellow";;
-#    green|GREEN) color="$green";;
-#    default|DEFAULT|*) color="$default";;
-#    esac
-#
-## init {{{1
-#BAR=false
-#escape=
-#verbose=false
-#fg_bg=fg
-#if [ -t 0 ] && [ -t 1 ]; then color=true; else color=false; fi
-#
-## possible utf8 chars for battery graphic
-#if echo $LANG | grep -qi 'utf.\?8'; then
-#  UTF8=true
-#else
-#  UTF8=false
-#fi
-#
-## getopts {{{1
-#while getopts abce:hnpuU:v FLAG; do
-#  case $FLAG in
-#    a) UTF8=false;;
-#    b) BAR=true verbose=false;;
-#    c) color=true;;
-#    e) escape=$OPTARG color=true;;
-#    n) color=false escape=;;
-#    p) echo Not yet implemented. >&2 && exit 2;;
-#    u) UTF8=true;;
-#    U) UTF8=true UTF8CHOISE="$OPTARG";;
-#    v) verbose=true BAR=false;;
-#    h)
-#      echo "Usage: `basename $0` [ -v ]"
-#      echo "       `basename $0` -b [ -nc [ -e bash|zsh ] ]"
-#      echo "Options:"
-#      echo "  -b  print a bar to indicate battery status"
-#      echo "  -c  use color (default if stdout is a terminal)"
-#      echo "  -n  do not use color"
-#      echo "  -v  be verbose (overriden by -b)"
-#      echo "  -e  use bash or zsh escape sequences to be able to display"
-#      echo "      color output in the shell prompt"
-#      echo ""
-#      echo "The first form prints some info about the battery. The second"
-#      echo "form prints a grafical representation of the battery fillage"
-#      echo "which also can be used in shell prompts."
-#      exit
-#      ;;
-#  esac
-#done
-#
-## get data {{{1
-#DATA=`ioreg -rc AppleSmartBattery | sed -En -e 's/[" ]*//g'            \
-#                                            -e '/^ExternalConnected/p' \
-#                                            -e '/^AvgTimeToEmpty/p'    \
-#                                            -e '/^MaxCapacity/p'       \
-#                                            -e '/^Voltage/p'           \
-#                                            -e '/^CurrentCapacity/p'   \
-#                                            -e '/^CycleCount/p'        \
-#                                            -e '/^FullyCharged/p'      \
-#                                            -e '/^InstantAmperage/p'   \
-#                                            -e '/^IsCharging/p'        \
-#                                            -e '/^AvgTimeToFull/p'`
-#eval $DATA
-#
-## process data {{{1
-#if $BAR; then
-#  battery_bar
-#elif $verbose; then
-#  verbose_battery_info
-#else
-#  concice_battery_info
-#fi
+        print(info.conciceBatteryInfo())
