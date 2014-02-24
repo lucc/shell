@@ -1,20 +1,27 @@
 #!/bin/sh
 
+sig_exit=10
+start=`date +%F.%H%M%S`
+
 # define a cleanup function
 trap_cleanup () {
-  echo Moving savedstate.sav ... >&2
-  mv savedstate.sav "$pdf".`date_function`.sav
-  exit
+  # setting up a trap to ignore all signals during cleanup.
+  trap 'echo Cleaning up, please wait ...' INT HUP QUIT
+  local filename=savedstate-${start}.sav
+  # do the actual file copying inside a loop just in case it will be
+  # interrupted by another signal
+  while [ ! -r "$filename" ] || ! diff savedstate.sav "$filename" >/dev/null; do
+    cp -f savedstate.sav "$filename"
+  done
+  exit $sig_exit
 }
-
-date_function () { date +%F.%H%M%S; }
 
 mail_function () {
   :
   log=`ls $pdf.*.log | tail -1`
   mail -s'pdfcrack: password found' $USER <<EOF
 file: $pdf
-date: `date_function`
+start: $start
 password: `tail -2 $log`
 EOF
 }
@@ -56,7 +63,7 @@ elif [ "$1" = -h -o "$1" = --help ]; then
 fi
 
 # install a trap for signals
-trap 'echo Caught signal, exiting ...; exit 1' INT TERM
+trap trap_cleanup INT TERM
 
 # crack all pdf in the folder
 for dir; do
