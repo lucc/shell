@@ -233,7 +233,7 @@ if [ -n "$new" ]; then
   send_general_notification `echo "$new" | wc -l`
   new=true
 else
-  remove_general_notification
+  #remove_general_notification
   new=false
 fi
 #debug_stuff
