@@ -30,7 +30,9 @@ on run argv
     "You have to give 'get', 'on', 'off' or an integer as argument."
   if length of argv = 1
     set arg1 to item 1 of argv
-    if arg1 is in {"get", "see"}
+    if arg1 is in {"help", "--help", "-h"}
+      return usageString
+    else if arg1 is in {"get", "see"}
       set xxx to get volume settings
       return ¬
         "Volume:   " & output volume of xxx & "\n" & ¬
