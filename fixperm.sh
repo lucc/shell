@@ -7,7 +7,7 @@
 if [ $# -eq 0 ]; then set .; fi
 
 # remove acl entries  TODO how to delete all of them?
-chmod -R -a# 0 "$@"
+chmod -RN "$@"
 
 # set unix file permissions
 find "$@"                                \
@@ -21,3 +21,6 @@ for attribute in com.apple.quarantine                           \
 		 com.apple.metadata:_kTimeMachineOldestSnapshot; do
   xattr -rd $attribute "$@"
 done
+# alternatively
+#xattr -rc "$@"
+#chmod -R u+rwX,go-rwx "$@"
