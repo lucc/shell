@@ -1,17 +1,82 @@
-#! /bin/bash
-# FIXME: /bin/bash needed for [[ $x = *\ * ]] and ${!x}
-
-# CREDIT #####################################################################
-# This script is based on an idea of johnraff @ crunchbanglinux.org/forums see
-# http://crunchbanglinux.org/forums/post/87022/#p87022
-# this version by luc
+#! /bin/sh
 #
-# DEPENDENCIES ###############################################################
+# A little script to search with different online search engines from the
+# commandline.
+#
+# Author: luc
+# Thanks:
+# * This script is based on an idea of johnraff @ crunchbanglinux.org/forums
+#   see http://crunchbanglinux.org/forums/post/87022/#p87022
+#
+# dependencies:
 # xsel, firefox, lynx, elinks
 #
-# TODO #######################################################################
+# TODO list
 # add options to urls
-#
+
+# helper functions {{{1
+urlencode () {
+  # ideas from
+  # http://stackoverflow.com/questions/296536/urlencode-from-a-bash-script
+  # encode the argument to be used in search urls.
+  #perl -MURI::Escape -e 'print uri_escape($ARGV[0]);' "$@"
+  perl -MURI::Escape -e 'print join("+", map{uri_escape $_}(@ARGV));' "$@"
+}
+insert_quotes () {
+  local string=
+  for arg; do
+    if echo "$arg" | grep ' ' >/dev/null; then
+      string="$string+\"$arg\""
+    else
+      string="$string+$arg"
+    fi
+  done
+  echo "${string#+}"
+}
+
+# functions to create the correct url which can be handed to a browser {{{1
+create_commandlinefu_url () {
+  local base='http://www.commandlinefu.com/commands/matching/'
+  #SEARCH+="/`echo -n "$SEARCH" | openssl base64`"
+  #TEXT="wget --quiet -O -"
+  #if [ $TYPE = TEXT ]; then OPTIONS=/plaintext
+  #else OPTIONS=/sort-by-votes
+  #fi
+}
+create_duckduckgo_url () {
+  local base='https://duckduckgo.com/?q='
+  echo "$base`insert_quotes "$@"`"
+}
+create_google_url () {
+  local base='http://www.google.de/search?q='
+  echo "$base`insert_quotes "$@"`"
+}
+create_leo_dict_url () {
+  local base='http://dict.leo.org/ende?search='
+  echo "$base`insert_quotes "$@"`"
+}
+create_mvv_url () {
+  # $1 -> start
+  # $2 -> destination
+  # $3 -> time (optional)
+  local base='http://www.mvv-muenchen.de/de/fahrplanauskunft/index.html'
+  if [ $# -lt 2 ]; then
+    echo error >&2
+    exit 2
+  fi
+  name_origin=`urlencode "$1"`
+  name_destination=`urlencode "$2"`
+  echo "$base?name_origin=$name_origin&name_destination=$name_destination"
+}
+create_wikipedia_url () {
+  local base='http://de.wikipedia.org/w/index.php?fulltext=Search&search='
+# 'http://en.wikipedia.org/w/index.php?fulltext=Search&search='
+  echo "$base`insert_quotes "$@"`"
+}
+create_youtube_url () {
+  local base='http://www.youtube.com/results?search_query='
+  echo "$base`insert_quotes "$@"`"
+}
 
 # urls
 CMDFU='http://www.commandlinefu.com/commands/matching/'
@@ -180,11 +245,4 @@ dict() {
   #curl dict://dict.org/d:$1
   curl -s dict://dict.org/d:$1 | \
     perl -ne 's/\r//; last if /^\.$/; print if /^151/../^250/'
-}
-urlencode () {
-  # ideas from
-  # http://stackoverflow.com/questions/296536/urlencode-from-a-bash-script
-  # encode the argument to be used in search urls.
-  #perl -MURI::Escape -e 'print uri_escape($ARGV[0]);' "$@"
-  perl -MURI::Escape -e 'print join("+", map{uri_escape $_}(@ARGV));' "$@"
 }
