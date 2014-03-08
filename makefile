@@ -44,7 +44,11 @@ rpi: $(RPI)
 
 # version 4
 $(FILES):
-	@-ln -sv $(ROOT)$@ $(BIN)/$@ 2>/dev/null
+	@-if test -L $(BIN)/$@; then     \
+	    ln -fsv $(ROOT)$@ $(BIN)/$@; \
+	  else                           \
+	    ln -sv $(ROOT)$@ $(BIN)/$@;  \
+	  fi
 .PHONY: $(FILES)
 
 # rules to build file list {{{1
