@@ -3,6 +3,7 @@
 # a script to check for new mail and notify the user.
 
 PROG=`basename "$0"`
+PID=$$
 sender=growl
 
 parse_sed () {
@@ -84,6 +85,8 @@ parse_awk () {
 }
 
 parse_from_field_sed () {
+  # FIXME this is buggy:  it gives the empty string for people who do not send
+  # a name and it matches From lines outside the header.
   sed -n -E -e \
     '# Clean up the From: field.
     /^(From|FROM):/{
@@ -213,6 +216,47 @@ find_new_mail () {
       -regex '.*/cur/.*,[^,S]*' \
     \)                          \
     -print
+}
+
+daemon () {
+  local new=
+  while true; do
+    new=`find ~/mail -path '*/new/*' -o -regex '.*/cur/.*,[^,S]*' | \
+      grep -v ~/mail/spam`
+    #find ~/mail -name spam -prune -path '*/new/*' -o -regex '.*/cur/.*,[^,S]*'
+    if [ -n "$new" ]; then
+      parse_mail $new | send_note
+    fi
+    sleep 60
+  done
+}
+
+old_command_line_parser_for_daemon_script () {
+case "$1" in
+  start)
+    if psgrep -no pid,ppid,args "$PROG" 2>&1 | grep -qv $PID; then
+      echo Already running. >&2
+      exit
+    else
+      echo Starting daemon with PID $$. >&2
+      daemon &
+    fi
+    ;;
+  stop)
+    process=`psgrep -no pid,ppid,args "$PROG" | grep -v '^\([0-9]\+ \)\?'$PID`
+    if [ -z "$process" ]; then
+      echo Daemon not running. >&2
+      exit 1
+    else
+      kill ${process%% *}
+      exit
+    fi
+    ;;
+  *)
+    echo You must say \'start\' or \'stop\'. >&2
+    exit 2
+    ;;
+esac
 }
 
 while getopts aghm: FLAG; do
