@@ -4,6 +4,17 @@
 # This is a multi purpose backup script.
 
 # functions {{{1
+# ideas {{{2
+backup_with_git () {
+  local srcdir=$1
+  local backupdir=$2
+  export GIT_WORK_TREE=$srcdir
+  # or git-config core.worktree
+  export GIT_DIR=$backupdir
+  git --git-dir=$backupdir --work-tree=$srcdir commit --all
+  # --allow-empty --no-edit ...
+  # git add --all
+}
 # main functions {{{2
 incremental_main () {
   :
