@@ -3,6 +3,12 @@
 # bk.sh by luc
 # This is a multi purpose backup script.
 
+# global variables {{{1
+now=`date +%F\ %T`
+date="${now% *}"
+time="${now#* }"
+timestamp="${isodate//-/}${time//:/}"
+
 # functions {{{1
 # ideas {{{2
 backup_with_git () {
