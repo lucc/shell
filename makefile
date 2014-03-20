@@ -16,11 +16,12 @@ MBP =                    \
       battery.sh         \
       emails.sh          \
       fixperm.sh         \
-      internet_search.sh \
+      internet-search.sh \
+      lock-screen.scpt   \
       mailnotify.sh      \
-      volume.scpt        \
       secure.sh          \
       tagesschau.sh      \
+      volume.scpt        \
       wlan.sh            \
 # raspberry pi running arch linux
 RPI = \
