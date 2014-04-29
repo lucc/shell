@@ -13,7 +13,6 @@ end click_menu_extra
 
 click_menu_extra at {"Keychain menu extra", "Lock Screen"}
 
-
 -- old version
 (*
 tell application "System Events" to tell process "SystemUIServer"
@@ -34,3 +33,37 @@ tell application "System Events" to tell process "SystemUIServer"
 end tell
 *)
 -- code from http://stackoverflow.com/questions/11081532/accesing-third-party-menu-extras-menulets-via-applescript
+
+(*
+
+related stuff:
+
+The command
+
+/System/Library/CoreServices/Menu\ Extras/User.menu/Contents/Resources/CGSession -suspend
+
+can bring up a login window but it has a restart and shutdown button and is
+therefore not really suitable.
+
+The command
+
+pmset sleepnow
+
+doesn't force a password entry for reacivation.  The command
+
+pmset lock
+
+is not clearly documented.
+
+New idea:
+
+#!/bin/sh
+ask=`defaults read com.apple.screensaver askForPassword`
+delay=`defaults read com.apple.screensaver askForPasswordDelay`
+set_ask_password 1 0
+pmset sleepnow
+sleep 10
+set_ask_password $ask $delay
+exit
+
+*)
