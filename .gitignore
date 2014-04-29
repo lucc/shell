@@ -7,3 +7,4 @@ texcount.pl
 colorize.sh
 .filelist
 sig2dot.pl
+__pycache__
