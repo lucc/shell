@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/zsh
 # vim: foldmethod=marker
 # description {{{1
 #
@@ -166,7 +166,7 @@ done
 # check for correctly set variables {{{2
 if [ -z "$OUT" ] && [ ${#SRC} -ge 2 ]; then
   OUT="${SRC[-1]}"
-  SRC="${SRC[0:-2]}"
+  SRC="${SRC[0,-2]}"
 else
   die 2 You need to specify at least one input and output path.
 fi
