@@ -2,29 +2,30 @@
 
 on run argv
 
-  -- TODO: add some command line parsing
-
+  -- set the default values
+  set theSession to "Default"
+  set theCommand to ""
   set theLength to length of argv
-  if theLength = 0
-    return "Please give two arguments at minimum."
-    quit 1
+
+  -- parse the command line
+  -- The first argument is the Profile name in iTerm.  The rest is a command
+  -- line to execute.
+  if theLength >= 1
+    set theSession to item 1 of argv
+    if theLength >=2
+      repeat with i from 2 to theLength
+	set theCommand to theCommand & " " & quoted form of item i of argv
+      end repeat
+    end if
   end if
 
-  set theSession to item 1 of argv
-  set theCommand to item 2 of argv
-
-  -- TODO: very ugly
-  repeat with i from 3 to theLength
-    set theCommand to theCommand & " " & item i of argv
-  end repeat
-
-  tell application "iTerm"
-    tell current terminal
-      launch session theSession
-      tell the last session
-	write text "exec " & theCommand
-      end tell
-    end tell
+  -- open iTerm and run the command
+  tell application "iTerm" to tell current terminal
+    launch session theSession
+    if theCommand is not ""
+      tell the last session to write text "exec " & theCommand
+    end if
     activate
   end tell
+
 end run
