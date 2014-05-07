@@ -6,6 +6,7 @@
 # 3. better logging mechanism
 # 4. understanding threading
 # 5. handle more pages
+# 6. try to use generators
 
 # imports {{{1
 import argparse
