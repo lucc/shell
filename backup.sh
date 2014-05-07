@@ -1,13 +1,13 @@
-#! /bin/bash
+#!/bin/bash
 
-# bk.sh by luc
+# backup.sh by luc
 # This is a multi purpose backup script.
 
 # global variables {{{1
 now=`date +%F\ %T`
 date="${now% *}"
 time="${now#* }"
-timestamp="${isodate//-/}${time//:/}"
+timestamp="${date//-/}${time//:/}"
 
 # functions {{{1
 # ideas {{{2
@@ -22,9 +22,24 @@ backup_with_git () {
   # git add --all
 }
 # main functions {{{2
+
 incremental_main () {
-  :
+  # copy files to a backup location incrementally, relying on gnu cp and rsync
+
+  mkdir -p "$1"
+  cd "$1" || die 'Can not access destination directory.'
+
+  local lastbackup=`ls -d ?????????????? | tail -n 1`
+  local dest=$timestamp.inProgress
+  # if there was a last backup hard-link the new backup folder to the last one
+  if [[ "$lastbackup" != '' ]]; then
+    cp_wrapper "$lastbackup" $dest
+  fi
+  rsync_wrapper $HOME/ $dest
+  update_time_and_date_variables
+  mv $dest $timestamp
 }
+
 background_scp_main () {
   # copy files to a remote destination via scp and notify the user about
   # completion.
@@ -41,9 +56,42 @@ background_scp_main () {
     rm -f $log
   ) & >/dev/null 2>&1
 }
+
+# helper functions {{{2
+update_time_and_date_variables () {
+  now=`date +%F\ %T`
+  date="${now% *}"
+  time="${now#* }"
+  timestamp="${date//-/}${time//:/}"
+}
+
+test_gnu_cp () {
+  local cp=
+  for cp in cp gcp; do
+    if $cp --version 2>/dev/null | head -n 1 | grep 'GNU coreutils' >/dev/null; then
+      echo $cp
+      return
+    fi
+  done
+}
+
+die () {
+  echo "$@" >&2
+  exit 1
+}
+
 # wrapper functions {{{2
 rsync_wrapper () {
-  :
+  rsync \
+    --archive         \
+    --delete-during   \
+    --delete-excluded \
+    --one-file-system \
+    --update          \
+    --verbose         \
+    "$@"
+  # --archive means --recursive --links --times --devices --specials --group
+  # --owner --perms
 }
 tar_wrapper () {
   :
@@ -52,7 +100,11 @@ scp_wrapper () {
   :
 }
 cp_wrapper () {
-  :
+  local cp=`test_gnu_cp`
+  if [[ "$cp" == '' ]]; then
+    die 'You need GNU cp(1) to use this script.'
+  fi
+  $cp --archive --link --recursive "$@"
 }
 bzip2_wrapper () {
   :
@@ -717,14 +769,14 @@ case "$1" in
     if [[ -z $@ && -z $INDEX ]]; then
       echo "No files listed for backup."
     else
-      readlink -f "$@" | sort -u - <(echo "$INDEX") | sed 's,^'$HOME'/,,' | \
-        cat <(echo "$SCRIPT") - > "$0"
+      readlink -f "$@" | sort -u - <<<"$INDEX" | sed 's,^'$HOME'/,,' | \
+        cat <<<"$SCRIPT" > "$0"
     fi
     exit ;;
   -u|--unmark)
     shift
     grep -xvF "$(readlink -f "$@")" <<<"${INDEX}" | sed 's,^'$HOME'/,,' | \
-      cat <(echo "$SCRIPT") - > "$0"
+      cat <<<"$SCRIPT" > "$0"
     exit ;;
   -g|--gzip)
     echo "Compressing data with gzip ..."
@@ -894,6 +946,6 @@ lima:
 # parsing the commandline {{{1
 
 # main script {{{1
-
+incremental_main "$1"
 
 # vim: foldmethod=marker
