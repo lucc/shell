@@ -1,7 +1,7 @@
 #!/bin/sh
 
-CONTAINER=~/etc/tcc
-MOUNTPOINT=~/.config/secure
+CONTAINER=${CONTAINER:-~/etc/tcc}
+MOUNTPOINT=${MOUNTPOINT:-~/.config/secure}
 METHOD=--text
 ACTION=
 
