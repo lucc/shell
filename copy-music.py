@@ -8,7 +8,7 @@ import subprocess
 import sys
 
 def ffmpeg (infile, outfile, fmt):
-    cmd = ['ffmpeg', '-n', '-nostdin', '-loglevel', 'warning', '-i', outfile]
+    cmd = ['ffmpeg', '-n', '-nostdin', '-loglevel', 'warning', '-i', infile]
     if fmt == 'ogg':
         cmd += ['-codec:a', 'libvorbis']
     cmd += ['-f', fmt, outfile]
@@ -26,7 +26,7 @@ def convert_tree(src, dest):
 
     for path, dirs, files in os.walk(src):
         # prepare the current output directory
-        destdir = os.join(dest, os.path.relpath(path, start=src))
+        destdir = os.path.join(dest, os.path.relpath(path, start=src))
         if not os.path.exists(destdir):
             os.mkdir(curdestdir)
         elif not os.path.isdir(destdir):
@@ -35,7 +35,7 @@ def convert_tree(src, dest):
         # convert every file
         for srcfile in files:
             base, ext = os.path.splitext(srcfile)
-            infile = os.path.jion(path, srcfile)
+            infile = os.path.join(path, srcfile)
             outfile = os.path.join(destdir, base+'.'+args.format)
             if os.path.exists(outfile):
                 if args.overwrite == 'never':
@@ -49,7 +49,7 @@ def convert_tree(src, dest):
                     # overwrite='always' or (outfile and overwrite is 'older')
                     print('Overwriting file', outfile)
                     os.remove(outfile)
-            if not args.force_conversion and ext == '.'+args.format:
+            if not args.force_convert and ext == '.'+args.format:
                 shutil.copyfile(infile, outfile)
             else:
                 convert(os.path.join(path, srcfile), os.path.join(destdir,
@@ -58,7 +58,7 @@ def convert_tree(src, dest):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     # options
-    parser.add_argument('-f', '--format', nargs=1, choices=['ogg', 'mp3'],
+    parser.add_argument('-f', '--format', choices=['ogg', 'mp3'],
             help='the format (file suffix) to convert to')
     parser.add_argument('-q', '--quality', nargs=1,
             choices=['bad', 'middle', 'good'],
@@ -80,7 +80,6 @@ if __name__ == '__main__':
 
     # parse command line
     args = parser.parse_args()
-    #print(args)
 
     # set up the converter function
     convert = lambda infile, outfile: ffmpeg(infile, outfile, args.format)
