@@ -8,11 +8,12 @@ FILELIST        = .filelist
 override FILES := $(shell \
   find . -type f -perm -1 -print -o \( -type d -name .git -prune \) | \
   cut -c3- )
-.DEFAULT_GOAL := $(FILELIST)
+.DEFAULT_GOAL  := $(FILELIST)
 
 # variables for some targets {{{1
-# macbook pro running os x
+# macbook pro running os x {{{2
 MBP =                    \
+      airport            \
       battery.sh         \
       emails.sh          \
       fixperm.sh         \
@@ -20,37 +21,26 @@ MBP =                    \
       lock-screen.scpt   \
       mailnotify.sh      \
       secure.sh          \
+      ssid.sh            \
       tagesschau.sh      \
       volume.scpt        \
       wlan.sh            \
-# raspberry pi running arch linux
+# raspberry pi running arch linux {{{2
 RPI = \
 
 # rules for certain machines {{{1
 mbp: $(MBP)
 rpi: $(RPI)
-# rules to link files {{{1
-
-# version 1
-#$(BIN)/%: ; @ln -sv $(ROOT)$* $@
-
-# version 2
-#$(FILES): %: $(BIN)/%
-#	@-ln -nsv $(ROOT)$< $@
-
-# version 3
-#$(FILES): %:
-#	@-echo ln -nsv $(ROOT)$< $(BIN)/$@
-#.PHONY: $(FILES)
-
-# version 4
-$(FILES):
-	@-if test -L $(BIN)/$@; then     \
-	    ln -fsv $(ROOT)$@ $(BIN)/$@; \
-	  else                           \
-	    ln -sv $(ROOT)$@ $(BIN)/$@;  \
-	  fi
+# rules to link local files {{{1
+$(FILES): %: $(BIN)/%
+$(BIN)/%:
+	@-ln -fhsv $(ROOT)$(notdir $@) $@
 .PHONY: $(FILES)
+
+# rules to link external binaries to ~/bin {{{1
+airport: $(BIN)/airport
+$(BIN)/airport: /System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport
+	ln -s $< $@
 
 # rules to build file list {{{1
 $(FILELIST):
