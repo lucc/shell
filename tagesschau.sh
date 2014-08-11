@@ -86,7 +86,7 @@ cd $HOME/Desktop || cd $HOME/tmp || cd
 #eval if load; then if $view; then view; fi; fi $background
 eval "( load && $view && view )" $background
 
-exit
+exit 0
 
 ##############################################################################
 # old stuff and notes
