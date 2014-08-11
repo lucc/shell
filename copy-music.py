@@ -20,7 +20,7 @@ def ffmpeg (infile, outfile, fmt):
         os.remove(outfile)
         raise
 
-def convert_tree(src, dest):
+def convert_tree(src, dest, format, force_convert=False, overwrite='never'):
     '''Walk the given src directory and try convert all the files found
     therein into dest.'''
 
@@ -28,7 +28,7 @@ def convert_tree(src, dest):
         # prepare the current output directory
         destdir = os.path.join(dest, os.path.relpath(path, start=src))
         if not os.path.exists(destdir):
-            os.mkdir(curdestdir)
+            os.mkdir(destdir)
         elif not os.path.isdir(destdir):
             raise Error()
 
@@ -36,24 +36,25 @@ def convert_tree(src, dest):
         for srcfile in files:
             base, ext = os.path.splitext(srcfile)
             infile = os.path.join(path, srcfile)
-            outfile = os.path.join(destdir, base+'.'+args.format)
+            outfile = os.path.join(destdir, base+'.'+format)
             if os.path.exists(outfile):
-                if args.overwrite == 'never':
+                if overwrite == 'never':
                     print('Skipping existing file', outfile)
                     continue
                 elif (os.path.getctime(outfile) >= os.path.getctime(infile)
-                        and args.overwrite == 'older'):
+                        and overwrite == 'older'):
                     print('Skipping newer existing file', outfile)
                     continue
                 else:
                     # overwrite='always' or (outfile and overwrite is 'older')
                     print('Overwriting file', outfile)
                     os.remove(outfile)
-            if not args.force_convert and ext == '.'+args.format:
+            if not force_convert and ext == '.'+format:
                 shutil.copyfile(infile, outfile)
             else:
                 convert(os.path.join(path, srcfile), os.path.join(destdir,
-                    base + '.' + args.format))
+                    base + '.' + format))
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -97,4 +98,5 @@ if __name__ == '__main__':
             os.mkdir(destbase)
         elif not os.path.isdir(destbase):
             raise Error()
-        convert_tree(srcbase, destbase)
+        convert_tree(srcbase, destbase, args.format, args.force_convert,
+                args.overwrite)
