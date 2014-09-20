@@ -1,5 +1,5 @@
-#! /bin/sh
-#
+#!/usr/bin/env python3
+
 # A little script to search with different online search engines from the
 # commandline.
 #
@@ -14,79 +14,83 @@
 # TODO list
 # add options to urls
 
+import webbrowser
+import urllib.parse
+import base64
+
+
+class Searcher():
+
+    """Class to search a specific site."""
+
+    def __init__(self, interface=None):
+        """TODO: to be defined1.
+
+        :interface:
+        """
+        pass
+
+    def _query(self, *query):
+        """TODO: Docstring for _query.
+
+        :*query: TODO
+        :returns: TODO
+
+        """
+        return '+'.join(['"{}"'.format(q) if ' ' in q else q for q in query])
+
+    def search(self, *query):
+        """Make a search with the given query strings."""
+        webbrowser.open(self.base+self._query(*query))
+
+
+class Duckduckgo(Searcher): base='https://duckduckgo.com/?q='
+class Google(Searcher): _base = 'http://www.google.{}/search?q='
+class Googlecom(Searcher): base = _base.format('com')
+class Googlede(Searcher): base = _base.format('de')
+class Leoorg(Searcher): base = 'http://dict.leo.org/ende?search='
+class Wikipedia(Searcher): _base = 'http://{}.wikipedia.org/w/index.php?fulltext=Search&search='
+class Wikipediade(Searcher): base = _base.format('de')
+class Wikipediaen(Searcher): base = _base.format('en')
+class Youtube(Searcher): base='http://www.youtube.com/results?search_query='
+
+class Commandlinefu(Searcher):
+    base = 'http://www.commandlinefu.com/commands/matching/'
+    def _query(self, *query):
+        """TODO: Docstring for _query.
+
+        :*query: TODO
+        :returns: TODO
+
+        """
+        q = super()._query(*query)
+        q += '/' + base64.b64encode(q) + '/'
+        q += 'plaintext' if self.interface == 'text' else 'sort-by-votes'
+        return q
+
+
+class MVV(Searcher):
+
+    """Docstring for MVV. """
+
+    base='http://www.mvv-muenchen.de/de/fahrplanauskunft/index.html'
+
+    def _query(self, start, destination, time=None):
+        """TODO: Docstring for _query.
+
+        :returns: TODO
+
+        """
+        name_origin=`urlencode "$1"`
+        name_destination=`urlencode "$2"`
+        echo "$base?name_origin=$name_origin&name_destination=$name_destination"
+
+
+
 # helper functions {{{1
 urlencode () {
-  # ideas from
-  # http://stackoverflow.com/questions/296536/urlencode-from-a-bash-script
-  # encode the argument to be used in search urls.
-  #perl -MURI::Escape -e 'print uri_escape($ARGV[0]);' "$@"
   perl -MURI::Escape -e 'print join("+", map{uri_escape $_}(@ARGV));' "$@"
 }
-insert_quotes () {
-  local string=
-  for arg; do
-    if echo "$arg" | grep ' ' >/dev/null; then
-      string="$string+\"$arg\""
-    else
-      string="$string+$arg"
-    fi
-  done
-  echo "${string#+}"
-}
-
-# functions to create the correct url which can be handed to a browser {{{1
-create_commandlinefu_url () {
-  local base='http://www.commandlinefu.com/commands/matching/'
-  #SEARCH+="/`echo -n "$SEARCH" | openssl base64`"
-  #TEXT="wget --quiet -O -"
-  #if [ $TYPE = TEXT ]; then OPTIONS=/plaintext
-  #else OPTIONS=/sort-by-votes
-  #fi
-}
-create_duckduckgo_url () {
-  local base='https://duckduckgo.com/?q='
-  echo "$base`insert_quotes "$@"`"
-}
-create_google_url () {
-  local base='http://www.google.de/search?q='
-  echo "$base`insert_quotes "$@"`"
-}
-create_leo_dict_url () {
-  local base='http://dict.leo.org/ende?search='
-  echo "$base`insert_quotes "$@"`"
-}
-create_mvv_url () {
-  # $1 -> start
-  # $2 -> destination
-  # $3 -> time (optional)
-  local base='http://www.mvv-muenchen.de/de/fahrplanauskunft/index.html'
-  if [ $# -lt 2 ]; then
-    echo error >&2
-    exit 2
-  fi
-  name_origin=`urlencode "$1"`
-  name_destination=`urlencode "$2"`
-  echo "$base?name_origin=$name_origin&name_destination=$name_destination"
-}
-create_wikipedia_url () {
-  local base='http://de.wikipedia.org/w/index.php?fulltext=Search&search='
-# 'http://en.wikipedia.org/w/index.php?fulltext=Search&search='
-  echo "$base`insert_quotes "$@"`"
-}
-create_youtube_url () {
-  local base='http://www.youtube.com/results?search_query='
-  echo "$base`insert_quotes "$@"`"
-}
-
-# urls
-CMDFU='http://www.commandlinefu.com/commands/matching/'
-DUCKDUCKGO='https://duckduckgo.com/?q='
-GOOGLE='http://www.google.de/search?q='
-LEO='http://dict.leo.org/ende?search='
-WIKI='http://de.wikipedia.org/w/index.php?fulltext=Search&search='
-WIKIEN='http://en.wikipedia.org/w/index.php?fulltext=Search&search='
-YOUTUBE='http://www.youtube.com/results?search_query='
-
 
 # Preparing the different commands depending on the system. TYPE may be one of
 # XORG CLI TEXT
@@ -127,54 +131,14 @@ help () {
   echo '  -x    use a graphical browser'
 }
 
-while getopts cdfghltwxy FLAG; do
-  case $FLAG in
-    # general options
-    h) help; exit;;
-    # type options
-    c) TYPE=CLI;;
-    t) TYPE=TEXT;;
-    x) TYPE=XORG;;
-    # search engine options
-    d) BASE="$DUCKDUCKGO";;
-    f) BASE="$CMDFU";;
-    g) BASE="$GOOGLE";;
-    l) BASE="$LEO";;
-    w) BASE="$WIKI";;
-    y) BASE="$YOUTUBE";;
-  esac
-  #OPTIONS=??
-done
-shift $((OPTIND-1))
 if [ -z "$BASE" ]; then
   echo "Which search engine should be used?" >&2
   exit 1
 fi
 
 # Preparing the searchterms and puting them together for the URL.
-if [[ "$1" = *\ * ]]; then SEARCH="\"$1\""; else SEARCH="$1"; fi
-shift
-for TERM in "$@"; do
-  if [[ "$TERM" = *\ * ]]; then
-    SEARCH="$SEARCH+\"$TERM\""
-  else
-    SEARCH="$SEARCH+$TERM"
-  fi
-done
 if [ -z "$SEARCH" ]; then SEARCH=`eval $CLIPBOARD`; fi
 if [ -z "$SEARCH" ]; then echo "No search terms."; exit 2; fi
-if [[ "$BASE" = *commandlinefu* ]]; then
-  SEARCH+="/`echo -n "$SEARCH" | openssl base64`"
-  TEXT="wget --quiet -O -"
-  if [ $TYPE = TEXT ]; then OPTIONS=/plaintext
-  else OPTIONS=/sort-by-votes
-  fi
-fi
-
-# Execute the search. Pick the specified method for it.
-COMMAND=${!TYPE}
-${COMMAND} "${BASE}${SEARCH}${OPTIONS}"
-exit
 
 
 
