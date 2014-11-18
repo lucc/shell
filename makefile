@@ -15,16 +15,16 @@ map             = $(foreach a,$(2),$(call $(1),$(a)))
 tail            = $(lastword $(subst $(SEP), ,$(pair)))
 tail_f          = $(lastword $(subst $(SEP), ,$(1)))
 head            = $(firstword $(subst $(SEP), ,$(pair)))
-LN              = ln -fhsv
+LN              = ln -fnsv
 
 # variables for some targets {{{2
 # color {{{3
-COLOR =               \
+COLOR = \
 	color.sh      \
 	colordemo.vim \
 	colorize.sh   \
 # old mac stuff {{{3
-OLD_MAC =                         \
+OLD_MAC = \
 	  brew-up.sh              \
 	  compile-macvim.sh       \
 	  contacts.sh             \
@@ -41,7 +41,7 @@ OLD_MAC =                         \
 	  iterm-session.scpt      \
 	  mpd-killer.sh           \
 # legacy code {{{3
-LEGACY =                     \
+LEGACY = \
 	 2utf8.sh            \
 	 can.sh              \
 	 cb.sh               \
@@ -51,7 +51,7 @@ LEGACY =                     \
 	 uptime.sed          \
 	 vide.sh             \
 # other {{{3
-OTHER =                        \
+OTHER = \
 	backup.sh              \
 	batch-ocr.sh           \
 	battery.py             \
@@ -93,12 +93,12 @@ OTHER =                        \
 	wlan.sh                \
 	www-text-browser.sh    \
 # git {{{3
-GIT =                    \
+GIT = \
       git-foreach-ref.sh \
       gitautocommit.sh   \
       homegit.sh         \
 # music {{{3
-MUSIC =                 \
+MUSIC = \
 	get-metadata.py \
 	add-dance.sh    \
 	mpdclient2.py   \
@@ -106,12 +106,12 @@ MUSIC =                 \
 	copy-music.py   \
 	copy-music.sh   \
 # mail {{{3
-MAIL =               \
+MAIL = \
        emails.sh     \
        mailnotify.sh \
        mailtomutt.sh \
 # macbook pro running os x {{{3
-MBP =                    \
+MBP = \
       airport            \
       battery.sh         \
       emails.sh          \
@@ -125,18 +125,21 @@ MBP =                    \
       volume.scpt        \
       wlan.sh            \
 # other apple stuff {{{3
-APPLE =                                                                                                      \
+APPLE = \
       /System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport$(SEP)airport \
       /System/Library/CoreServices/backupd.bundle/Contents/Resources/backupd-helper$(SEP)timemachine         \
       /Applications/TrueCrypt.app/Contents/MacOS/TrueCrypt$(SEP)truecrypt                                    \
 # raspberry pi running arch linux {{{3
 RPI = \
-
+# mbp running arch {{{3
+MBPARCH = \
+        $(NOTHING)
 # default target {{{1
 .DEFAULT_GOAL := $(if $(findstring Darwin,$(shell uname)),mbp,rpi)
 
 # front end rules {{{1
 mbp: $(MBP)
+mbp-arch: $(MBPARCH)
 rpi: $(RPI)
 # generic rules {{{2
 clean: ; $(RM) $(FILELIST)
