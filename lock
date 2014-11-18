@@ -1,76 +1,82 @@
 #!/bin/sh
 
-version1 () {
-  # code from
-  # http://stackoverflow.com/questions/11081532
-  osascript <<EOF
-    tell application "System Events" to tell process "SystemUIServer"
-      set menulets to menu bar items of menu bar 1
-      repeat with aMenu in menulets
-	if (description of aMenu) is "Keychain menu extra" then
-	  click aMenu -- we have to open it to access the menu items inside it
-	  --delay 0.2
-	  set clockMenuItems to menu items of menu 1 of aMenu
-	  repeat with aMenuItem in clockMenuItems
-	    if (title of aMenuItem) is "Lock Screen" then
-	      click aMenuItem
-	      exit repeat
+# lock the screen
+
+case `uname` in
+  Drawin)
+    main () {
+      version7
+    }
+    version1 () {
+      # code from
+      # http://stackoverflow.com/questions/11081532
+      osascript <<EOF
+	tell application "System Events" to tell process "SystemUIServer"
+	  set menulets to menu bar items of menu bar 1
+	  repeat with aMenu in menulets
+	    if (description of aMenu) is "Keychain menu extra" then
+	      click aMenu -- we have to open it to access the menu items inside it
+	      --delay 0.2
+	      set clockMenuItems to menu items of menu 1 of aMenu
+	      repeat with aMenuItem in clockMenuItems
+		if (title of aMenuItem) is "Lock Screen" then
+		  click aMenuItem
+		  exit repeat
+		end if
+	      end repeat
 	    end if
 	  end repeat
-	end if
-      end repeat
-    end tell
+	end tell
 EOF
-}
+    }
+    version2 () {
+      # http://lists.apple.com/archives/applescript-users/2007/Feb/msg00233.html
+      osascript <<EOF
+	to click_menu_extra at menu_list
+	  tell application "System Events" ¬
+	      to tell process "SystemUIServer"'s menu bar 1
+	    click (first menu bar item ¬
+		whose value of attributes contains menu_list's beginning)
+	    repeat with item_name in rest of menu_list
+	      click (first menu item of result's menu 1 whose name is item_name)
+	    end repeat
+	  end tell
+	end click_menu_extra
 
-version2 () {
-  # http://lists.apple.com/archives/applescript-users/2007/Feb/msg00233.html
-  osascript <<EOF
-    to click_menu_extra at menu_list
-      tell application "System Events" ¬
-          to tell process "SystemUIServer"'s menu bar 1
-	click (first menu bar item ¬
-	    whose value of attributes contains menu_list's beginning)
-	repeat with item_name in rest of menu_list
-	  click (first menu item of result's menu 1 whose name is item_name)
-	end repeat
-      end tell
-    end click_menu_extra
-
-    click_menu_extra at {"Keychain menu extra", "Lock Screen"}
+	click_menu_extra at {"Keychain menu extra", "Lock Screen"}
 EOF
-}
-
-version3 () {
-  # can bring up a login window but it has a restart and shutdown button and
-  # is therefore not really suitable.
-  local menu=/System/Library/CoreServices/Menu\ Extras/User.menu
-  "$menu"/Contents/Resources/CGSession -suspend
-}
-
-version4 () {
-  # doesn't force a password entry for reacivation
-  pmset sleepnow
-}
-
-version5 () {
-  # is not clearly documented.
-  pmset lock
-}
-
-version6 () {
-  # idea
-  ask=`defaults read com.apple.screensaver askForPassword`
-  delay=`defaults read com.apple.screensaver askForPasswordDelay`
-  set_ask_password 1 0
-  pmset sleepnow
-  sleep 10
-  set_ask_password $ask $delay
-}
-
-version7 () {
-  # seems to work and is fast
-  pmset displaysleepnow
-}
-
-version7
+    }
+    version3 () {
+      # can bring up a login window but it has a restart and shutdown button and
+      # is therefore not really suitable.
+      local menu=/System/Library/CoreServices/Menu\ Extras/User.menu
+      "$menu"/Contents/Resources/CGSession -suspend
+    }
+    version4 () {
+      # doesn't force a password entry for reacivation
+      pmset sleepnow
+    }
+    version5 () {
+      # is not clearly documented.
+      pmset lock
+    }
+    version6 () {
+      # idea
+      ask=`defaults read com.apple.screensaver askForPassword`
+      delay=`defaults read com.apple.screensaver askForPasswordDelay`
+      set_ask_password 1 0
+      pmset sleepnow
+      sleep 10
+      set_ask_password $ask $delay
+    }
+    version7 () {
+      # seems to work and is fast
+      pmset displaysleepnow
+    }
+    ;;
+  Linux)
+    main () {
+      slock
+    }
+esac
+main
