@@ -1,5 +1,88 @@
-#!/bin/sh
+#!/bin/bash
 # vim: ft=sh
 # a script to start my favorite terminal emulator
 
-exec urxvt "$@"
+version=1.0
+args=( )
+execute=''
+
+join_args () {
+  # quote and join args into a string that can be evaled by the shell
+  local new=''
+  for arg in "${args[@]}"; do
+    new="$new $(printf %q "$arg")"
+  done
+  args="$new"
+}
+iterm_wrapper () {
+  # iTerm2.app on Mac OS X
+  exec osascript -- Default "${args[@]}" <<-EOF
+  on run argv
+
+    -- set the default values
+    set theSession to "Default"
+    set theCommand to ""
+    set theLength to length of argv
+
+    -- Parse the command line.  The first argument is the Profile name in
+    -- iTerm.  The rest is a command line to execute.
+    if theLength >= 1
+      set theSession to item 1 of argv
+      if theLength >=2
+	repeat with i from 2 to theLength
+	  set theCommand to theCommand & " " & quoted form of item i of argv
+	end repeat
+      end if
+    end if
+
+    -- open iTerm and run the command
+    tell application "iTerm" to tell current terminal
+      launch session theSession
+      if theCommand is not ""
+	tell the last session to write text "exec " & theCommand
+      end if
+      activate
+    end tell
+
+  end run
+	EOF
+}
+urxvt_wrapper () {
+  exec urxvt ${1:+-e} "${args[@]}"
+}
+gnome_terminal_wrapper () {
+  # TODO gnome-terminal forks!!
+  join_args
+  exec gnome-terminal ${1:+-e} "$args"
+}
+
+case $(uname) in
+  Darwin) main () { iterm_wrapper $execute; } ;;
+  Linux)  main () { gnome_terminal_wrapper $execute; } ;;
+esac
+
+while getopts hve: opt; do
+  case $opt in
+    h)
+      echo "term [-e args ...]"
+      exit 0
+      ;;
+    v)
+      echo term -- Version 1.0
+      exit 0
+      ;;
+    e)
+      execute=1
+      args=("${args[@]}" "$OPTARG")
+      shift $((OPTIND-1))
+      for arg; do
+	args=("${args[@]}" "$arg")
+      done
+      shift $#
+      ;;
+    *)
+      ;;
+  esac
+done
+
+main
