@@ -140,12 +140,13 @@ else
   ACTION=mount
 fi
 
-while getopts ghmu FLAG; do
+while getopts ghmM:u FLAG; do
   case $FLAG in
     c) ACTION=create;;
     g) INTERFACE=GUI;;
     h) ACTION=help;;
     m) ACTION=mount;;
+    M) MOUNTPOINT="$OPTARG";;
     u) ACTION=unmount;;
     \?) exit 2;;
   esac
