@@ -4,19 +4,60 @@
 
 tag=mailwrapper
 
-fetchmail_v1 () {
-  fetchmail -d0 --nodetach #|logger -t $tag
+mktemp_wrapper () {
+  mktemp -t $$XXXXXXXXXXXX
+}
+
+logger_wrapper () {
+  logger -t $tag "$@"
+}
+
+conditional_logger_wrapper () {
+  local file=`mktemp_wrapper`
+  local ret=0
+  "$@" > "$file"
+  ret=$?
+  if [ $ret -ne 0 ]; then
+    logger_wrapper -p user.error < "$file"
+  fi
+  rm -f "$file"
+  return $ret
+}
+
+fetchmail_wrapper () {
+  fetchmail --nodetach --daemon 0 "$@"
   ret=$?
   case $ret in
-    0|1)
-      #logger -t $tag fetchmail returned with status $ret.
-      return 0
-      ;;
+    0)  return 0;; # successfully retrieved some massages
+    1)  return 0;; # no new messages
+    #11) return 0;; # DNS error at startup (could not resolve host)
     *)
-      logger -t $tag -p user.error fetchmail returned with status $ret.
+      logger_wrapper -p user.error fetchmail returned with status $ret.
       return $ret
       ;;
   esac
+}
+
+fetchmail_cert () {
+  fetchmail_wrapper                              \
+    --sslcertck                                  \
+    --sslcertfile                                \
+    /usr/local/Cellar/mutt/1.5.23_2/share/doc/mutt/samples/ca-bundle.crt \
+    --sslcertpath ~/.homesick/repos/secure/certs \
+    "$@"
+
+}
+
+fetchmail_log_1 () {
+  fetchmail_cert "$@" | logger_wrapper
+}
+
+fetchmail_log_2 () {
+  fetchmail_wrapper "$@" | logger_wrapper
+}
+
+fetchmail_log_3 () {
+  conditional_logger_wrapper fetchmail_cert -v
 }
 
 getmail_v1 () {
@@ -37,4 +78,11 @@ getmail_v1 () {
 
 }
 
-fetchmail_v1
+getmail_conditional_logger_wrapper () {
+  local account="$1"
+  shift
+  conditional_logger_wrapper getmail --rcfile="$account" "$@"
+}
+
+#logger_wrapper Looking for new mail ...
+fetchmail_log_3
