@@ -1,5 +1,5 @@
 #!/bin/sh
-#should be compatible with bash zsh sh(->bash) and dash. is not woth ksh
+#should be compatible with bash zsh sh(->bash) and dash. is not with ksh
 
 ### Author: Luc
 ### Ideas and code partly copied from 'vimscript':
@@ -69,7 +69,7 @@ grayscale_24 () {
 }
 
 colorscale_6 () {
-# idea from grayscale_24 of 
+# idea from grayscale_24 of
   if [ $1 = r ]; then local factor=36
   elif [ $1 = g ]; then local factor=6
   elif [ $1 = b ]; then local factor=1
@@ -120,7 +120,7 @@ system_color_table2 () {
     done
     echo
     echo "$head"
-    echo "$head" | sed 's/[^|]/-/g;s/\|/+/'
+    echo "$head" | sed 's/[^|]/-/g;s/|/+/'
   fi
   for fg in "" 1 30 "1;30" 31 "1;31" 32 "1;32" 33 "1;33" 34 "1;34" 35 "1;35" 36 "1;36" 37 "1;37"; do
     if $title; then printf "$side%4sm  |$delim" "$fg"; fi
