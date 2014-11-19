@@ -2,6 +2,30 @@
 # vi: foldmethod=marker
 # info {{{1
 
+# help apple {{{1
+# Index of `ioreg -rc AppleSmartBattery` #####################################
+#                                                                            #
+#   1	+-o AppleSmartBattery ...           21	BatteryInstalled             #
+#   2	{                                   22	CycleCount                   #
+#   3	ExternalConnected                   23	DesignCapacity               #
+#   4	TimeRemaining                       24	AvgTimeToFull                #
+#   5	InstantTimeToEmpty                  25	ManufactureDate              #
+#   6	ExternalChargeCapable               26	BatterySerialNumber          #
+#   7	CellVoltage                         27	PostDischargeWaitSeconds     #
+#   8	PermanentFailureStatus              28	Temperature                  #
+#   9	BatteryInvalidWakeSeconds           29	MaxErr                       #
+#  10	AdapterInfo                         30	ManufacturerData             #
+#  11	MaxCapacity                         31	FullyCharged                 #
+#  12	Voltage                             32	InstantAmperage              #
+#  13	DesignCycleCount70                  33	DeviceName                   #
+#  14	Quick Poll                          34	IOGeneralInterest            #
+#  15	Manufacturer                        35	Amperage                     #
+#  16	Location                            36	IsCharging                   #
+#  17	CurrentCapacity                     37	DesignCycleCount9C           #
+#  18	LegacyBatteryInfo                   38	PostChargeWaitSeconds        #
+#  19   LatestErrorType                     39	AvgTimeToEmpty               #
+#  20	FirmwareSerialNumber                40	}                            #
+#                                                                            #
 # DATA #######################################################################
 #                                                                            #
 #  CurrentCapacity             FullyCharged              MaxCapacity         #
@@ -275,7 +299,7 @@ PROMPT=false
 escape=
 verbose=false
 fg_bg=fg
-if [ -t 0 -a -t 1 ]; then color=true; else color=false; fi
+if [ -t 0 ] && [ -t 1 ]; then color=true; else color=false; fi
 
 # possible utf8 chars for battery graphic
 if echo $LANG | grep -qi 'utf.\?8'; then
@@ -302,27 +326,18 @@ while getopts abce:hnpuU:v FLAG; do
 done
 
 # get data {{{1
-# TODO use acpi
-sys_adp=/sys/class/power_supply/ADP1
-sys_bat=/sys/class/power_supply/BAT0
-if [ `cat $sys_adp/online` -eq 1 ]; then
-  ExternalConnected=Yes
-else
-  ExternalConnected=No
-fi
-AvgTimeToEmpty=1000000 # TODO
-MaxCapacity=`cat $sys_bat/energy_full`
-Voltage=`cat $sys_bat/voltage_now`
-CurrentCapacity=`cat $sys_bat/energy_now`
-CycleCount=`cat $sys_bat/cycle_count`
-#FullyCharged=`cat $sys_bat/`
-#InstantAmperage=`cat $sys_bat/`
-if [ `cat $sys_bat/status` = Charging ]; then
-  IsCharging=Yes
-else
-  IsCharging=No
-fi
-#AvgTimeToFull=`cat $sys_bat/`
+DATA=`ioreg -rc AppleSmartBattery | sed -En -e 's/[" ]*//g'            \
+                                            -e '/^ExternalConnected/p' \
+                                            -e '/^AvgTimeToEmpty/p'    \
+                                            -e '/^MaxCapacity/p'       \
+                                            -e '/^Voltage/p'           \
+                                            -e '/^CurrentCapacity/p'   \
+                                            -e '/^CycleCount/p'        \
+                                            -e '/^FullyCharged/p'      \
+                                            -e '/^InstantAmperage/p'   \
+                                            -e '/^IsCharging/p'        \
+                                            -e '/^AvgTimeToFull/p'`
+eval $DATA
 
 # process data {{{1
 if $PROMPT; then
