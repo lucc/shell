@@ -15,6 +15,7 @@ help () {
   Options:
     -a    use applescript as query engine
     -c    use /usr/local/bin/contacts as query engine
+    -e    format output to only display the email address
     -h    display this help
     -l    format output like in email headers (default)
     -m    format output for mutt's query_command option
@@ -46,6 +47,10 @@ sqlite_fulltextsearch_query () {
 email_list_sqlite_query () {
   local format="'\"'||r.ZFIRSTNAME||' '||r.ZLASTNAME||'\" <'||e.ZADDRESS||'>'"
   sqlite_query "$format" "$1"
+}
+
+email_plain_sqlite_query () {
+  sqlite_query e.ZADDRESS "$1"
 }
 
 mutt_sqlite_query () {
@@ -163,15 +168,16 @@ email_list_contacts_query () {
 engine=sqlite
 format=email_list
 
-while getopts habcslmx FLAG; do
+while getopts habcselmx FLAG; do
   case $FLAG in
     h) help; exit;;
     a) engine=applescript;;
     b) engine=lbdb;;
     c) engine=contacts;;
     s) engine=sqlite;;
-    m) format=mutt;;
+    e) format=email_plain;;
     l) format=email_list;;
+    m) format=mutt;;
     x) set -x;;
     *) echo ERROR >&2; exit 2;;
   esac
