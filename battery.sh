@@ -2,7 +2,7 @@
 # vi: foldmethod=marker
 # info {{{1
 
-# help {{{1
+# help apple {{{1
 # Index of `ioreg -rc AppleSmartBattery` #####################################
 #                                                                            #
 #   1	+-o AppleSmartBattery ...           21	BatteryInstalled             #
@@ -141,6 +141,7 @@ battery_bar_for_prompt () {
 # utf8 functions {{{1
 
 select_utf8_char () {
+  local length=0
   if $UTF8; then
     case "$UTF8CHOISE" in
       # other
@@ -155,6 +156,7 @@ select_utf8_char () {
         RIGHT='\xe2\x96\xae'
         LEFT='\xe2\x96\xae'
 	fg_bg=fg
+	length=3
         ;;
       low)
         # ◣ \xe2\x97\xa3
@@ -162,6 +164,7 @@ select_utf8_char () {
         # ◢ \xe2\x97\xa2
         LEFT='\xe2\x97\xa2'
 	fg_bg=fg
+	length=3
         ;;
       high)
         # ◤ \xe2\x97\xa4
@@ -169,23 +172,27 @@ select_utf8_char () {
         # ◥ \xe2\x97\xa5
         LEFT='\xe2\x97\xa5'
 	fg_bg=fg
+	length=3
         ;;
       blank)
 	RIGHT=' '
 	LEFT=' '
 	fg_bg=bg
+	length=1
 	;;
       block)
 	# █ \xe2\x96\x88
         RIGHT='\xe2\x96\x88'
 	LEFT="$RIGHT"
 	fg_bg=fg
+	length=3
 	;;
       blitz)
 	# ⚡ \xe2\x9a\xa1
 	RIGHT='\xe2\x9a\xa1'
 	LEFT="$RIGHT"
 	fg_bg=fg
+	length=3
 	;;
       thin)
 	# ❯ \xe2\x9d\xaf
@@ -193,6 +200,7 @@ select_utf8_char () {
 	# ❮ \xe2\x9d\xae
 	LEFT='\xe2\x9d\xae'
 	fg_bg=fg
+	length=3
 	;;
       fat|*)
 	# ▶ \xe2\x96\xb6
@@ -200,17 +208,24 @@ select_utf8_char () {
 	# ◀ \xe2\x97\x80
 	LEFT='\xe2\x97\x80'
 	fg_bg=fg
+	length=3
 	;;
     esac
   else
     RIGHT='>'
     LEFT='<'
+    length=1
+  fi
+  if [ `printf "$RIGHT" | wc -c` -eq $length ] && \
+     [ `printf "$LEFT"  | wc -c` -eq $length ]; then
+    RIGHT="`printf "$RIGHT"`"
+    LEFT="`printf "$LEFT"`"
   fi
 }
 
 # color selection functions {{{1
 terminal_colors () {
-  local start='\x1b['
+  local start=`printf '\x1b['`
   local end=m
   local fg_bg=
   default="${start}0${end}"
