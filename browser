@@ -1,0 +1,76 @@
+#!/bin/sh
+
+# general script to start a browser
+
+type=graphical
+pipe=false
+URL=http://luc42.lima-city.de
+text_browser='elinks w3m links lynx'
+
+firefox_half_quiet () {
+  # pipe stderr of firefox into this, it's an open bug:
+  # https://bugzil.la/833117
+  sed -e "1{/^ *$/d;}" \
+    -e "2{/(process:[0-9]*): GLib-CRITICAL \*\*: g_slice_set_config: assertion 'sys_page_size == 0' failed/d;}"
+}
+firefox_ () {
+  exec command firefox -remote "URLOpen('$1')"
+}
+firefox_profiles () {
+  # TODO
+  local firefox_unix_ini="$HOME/.mozilla/firefox/profiles.ini"
+  grep '^Name=' "$ini" | cut -f 2 -d =
+}
+firefox_open_profile () {
+  local porfile
+  for profile in `profiles`; do
+    if [ "$profile" = "$1" ]; then
+      # TODO
+      exec open -na Firefox --args -P "$profile" -no-remote
+    fi
+  done
+  echo $1 is not a valid profile. Try one of `profiles`.
+  exit 2
+}
+
+text () {
+  if [ -t 1 -o -t 2 ]; then
+    exec elinks "$@"
+  else
+    exec term -e elinks "$@"
+  fi
+}
+
+graphical () {
+  exec firefox "$@"
+}
+
+while getopts hgtp opt; do
+  case $opt in
+    h) help;;
+    g) type=graphical;;
+    t) type=text;;
+    p) pipe=true;;
+  esac
+done
+shift $((OPTIND-1))
+
+if [ $# -eq 1 -a "$1" = - ]; then
+  shift
+  pipe=true
+fi
+
+if $pipe; then
+  # save stdin to a file
+  file=`mktemp -t tmp-$$-XXXXXX` || exit 1
+  cat > "$file"                  || exit 1
+  case `file --brief --mime-type "$file"` in
+    text/html)
+      mv "$file" "$file.html"
+      file="$file.html"
+      ;;
+  esac
+  $type "$file"
+else
+  $type "$@"
+fi

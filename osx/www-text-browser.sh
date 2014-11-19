@@ -1,5 +1,18 @@
 #!/bin/sh
 
+if [ `uname` = Linux ]; then
+  firefox () {
+    command firefox -remote "URLOpen('$1')"
+  }
+elif [ `uname` = Darwin ]; then
+  firefox () {
+    open -a Firefox "$1"
+  }
+else
+  echo Unknown System: `uname -a`
+  exit 3
+fi
+
 if [ $# -gt 0 ]; then
   URL="$1"
 else

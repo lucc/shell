@@ -1,0 +1,5 @@
+#!/bin/sh
+
+# A shell script to start firefox on Mac OS X.
+exec /Applications/Firefox.app/Contents/MacOS/firefox "$@"
+open -a Firefox --args "$@"
