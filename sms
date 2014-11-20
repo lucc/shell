@@ -1,0 +1,28 @@
+#!/bin/sh
+
+# expand $1 as a mutt alias
+to="`mutt -A "$1"`"
+shift
+
+# collect arguments into subject
+if [ $# -gt 0 ]; then
+  subject="$*"
+fi
+
+# capture stdin if not a terminal
+if [ ! -t 0 ]; then
+  text=`cat`
+  if [ ${#text} -ne 0 -a `echo "$text"|wc -l` -eq 1 -a -z "$subject" ]; then
+    subject="$text"
+  else
+    body="$text"
+  fi
+fi
+
+mutt \
+  -e "source ~/.mutt/profiles/webde"    \
+  -e "unhook *"                         \
+  -e "set editor = touch"               \
+  -e "unset crypt_autosign"             \
+  -e "macro compose q <exit>n<exit>"    \
+  "mailto:$to?subject=$subject&body=$body"
