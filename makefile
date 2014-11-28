@@ -3,19 +3,30 @@
 
 # variables {{{1
 # general variables {{{2
-override ROOT  := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
-BIN             = ~/bin
-FILELIST        = .filelist
-override FILES := $(shell \
-  find . -type f -perm -1 -print -o \( -type d -name .git -prune \) | \
-  cut -c3- )
-.DEFAULT_GOAL  := $(FILELIST)
-SEP             = :
-map             = $(foreach a,$(2),$(call $(1),$(a)))
-tail            = $(lastword $(subst $(SEP), ,$(pair)))
-tail_f          = $(lastword $(subst $(SEP), ,$(1)))
-head            = $(firstword $(subst $(SEP), ,$(pair)))
-LN              = ln -fnsv
+UNAME := $(strip $(shell uname))
+ifeq ($(UNAME),Darwin)
+  SYSTEM = osx
+else ifeq ($(UNAME),Linux)
+  SYSTEM = linux
+else
+  SYSTEM = unknown
+endif
+
+override ROOT := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
+BIN            = ~/bin
+FILELIST       = .filelist
+FILES         := $(foreach file,                                             \
+                           $(shell find . -type f -perm -1 -print -o         \
+                                          \( -type d -name .git -prune \)),  \
+			   $(if $(filter $(dir $(file)),./ ./$(SYSTEM)/),    \
+				$(file:./%=%)))
+.DEFAULT_GOAL := $(FILELIST)
+SEP            = :
+map            = $(foreach a,$(2),$(call $(1),$(a)))
+tail           = $(lastword $(subst $(SEP), ,$(pair)))
+tail_f         = $(lastword $(subst $(SEP), ,$(1)))
+head           = $(firstword $(subst $(SEP), ,$(pair)))
+LN             = ln -fnsv
 
 # variables for some targets {{{2
 # color {{{3
