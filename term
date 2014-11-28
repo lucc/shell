@@ -5,6 +5,10 @@
 version=1.0
 args=( )
 execute=''
+case $(uname) in
+  Darwin) term=iterm;;
+  Linux)  term=urxvtc;;
+esac
 
 join_args () {
   # quote and join args into a string that can be evaled by the shell
@@ -50,16 +54,26 @@ iterm_wrapper () {
 urxvt_wrapper () {
   exec urxvt ${1:+-e} "${args[@]}"
 }
+urxvtc_wrapper () {
+  # forks!
+  urxvtc ${1:+-e} "${args[@]}"
+  if [ $? -eq 2 ]; then
+    urxvtd -q -o -f
+    urxvtc ${1:+-e} "${args[@]}"
+  fi
+}
+xterm_wrapper () {
+  if [ $# -eq 0 ]; then
+    exec xterm
+  else
+    exec xterm -e "${args[@]}"
+  fi
+}
 gnome_terminal_wrapper () {
   # TODO gnome-terminal forks!!
   join_args
   exec gnome-terminal ${1:+-e} "$args"
 }
-
-case $(uname) in
-  Darwin) main () { iterm_wrapper $execute; } ;;
-  Linux)  main () { gnome_terminal_wrapper $execute; } ;;
-esac
 
 while getopts hve: opt; do
   case $opt in
@@ -68,7 +82,7 @@ while getopts hve: opt; do
       exit 0
       ;;
     v)
-      echo term -- Version 1.0
+      echo "term -- Version $version (wrapping $term)"
       exit 0
       ;;
     e)
@@ -85,4 +99,4 @@ while getopts hve: opt; do
   esac
 done
 
-main
+${term}_wrapper $execute
