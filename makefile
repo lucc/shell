@@ -43,98 +43,6 @@ $(BIN)/$(call get,2,$1): $(call get,1,$1)
 endef
 
 # variables for some targets {{{2
-# color {{{3
-COLOR = \
-	color.sh      \
-	colordemo.vim \
-	colorize.sh   \
-# old mac stuff {{{3
-OLD_MAC = \
-	  brew-up.sh              \
-	  compile-macvim.sh       \
-	  contacts.sh             \
-	  create-encrypted-dmg.sh \
-	  display.scpt            \
-	  ff                      \
-	  firefox                 \
-	  fetchmail-wrapper.sh    \
-	  fixperm.sh              \
-	  growl.scpt              \
-	  mailtomutt.scpt         \
-	  test.scpt               \
-	  volume.scpt             \
-	  iterm-session.scpt      \
-	  mpd-killer.sh           \
-# legacy code {{{3
-LEGACY = \
-	 2utf8.sh            \
-	 can.sh              \
-	 cb.sh               \
-	 cinclude.sh         \
-	 imagebackground.php \
-	 lpq.sh              \
-	 uptime.sed          \
-	 vide.sh             \
-# other {{{3
-OTHER = \
-	backup.sh              \
-	batch-ocr.sh           \
-	battery.py             \
-	battery.sh             \
-	bibkeys.py             \
-	bibkeys.sh             \
-	cleanlatex.sh          \
-	convert-pdf.sh         \
-	docx2txt.pl            \
-	exif2ctime.sh          \
-	funny-self-cat-file    \
-	img.sh                 \
-	internet-search.sh     \
-	latexmk.py             \
-	libreoffice            \
-	mb2md-3.20.pl          \
-	minlog-luc.scm         \
-	mv-dialog.sh           \
-	nicenummber.sh         \
-	office2any.sh          \
-	passtoggle.sh          \
-	pdfcrack.sh            \
-	post-install.sh        \
-	print_ssh.sh           \
-	renumber-file.sh       \
-	sanename.sh            \
-	secure.sh              \
-	shrinkpdf.sh           \
-	sig2dot.pl             \
-	skype.sh               \
-	ssid.sh                \
-	statistics.sh          \
-	system-password.sh     \
-	tagesschau.sh          \
-	term                   \
-	tmux-daemon-session.sh \
-	translate.sh           \
-	vpn.sh                 \
-	wlan.sh                \
-	www-text-browser.sh    \
-# git {{{3
-GIT = \
-      git-foreach-ref.sh \
-      gitautocommit.sh   \
-      homegit.sh         \
-# music {{{3
-MUSIC = \
-	get-metadata.py \
-	add-dance.sh    \
-	mpdclient2.py   \
-	copy-music.mk   \
-	copy-music.py   \
-	copy-music.sh   \
-# mail {{{3
-MAIL = \
-       emails.sh     \
-       mailnotify.sh \
-       mailtomutt.sh \
 # macbook pro running os x {{{3
 MBP = \
       airport            \
@@ -148,7 +56,7 @@ MBP = \
       ssid.sh            \
       tagesschau.sh      \
       volume.scpt        \
-      wlan.sh            \
+      wlan               \
 # other apple stuff {{{3
 APPLE = \
       /System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport$(SEP)airport \
