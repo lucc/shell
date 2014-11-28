@@ -6,27 +6,41 @@
 UNAME := $(strip $(shell uname))
 ifeq ($(UNAME),Darwin)
   SYSTEM = osx
+  LN     = ln -fnsv
 else ifeq ($(UNAME),Linux)
   SYSTEM = linux
+  LN     = ln --force --symbolic --no-dereference --verbose
 else
-  SYSTEM = unknown
+  $(error Unknown system $(UNAME).  Plesae edit the makefile.)
 endif
 
 override ROOT := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 BIN            = ~/bin
 FILELIST       = .filelist
-FILES         := $(foreach file,                                             \
-                           $(shell find . -type f -perm -1 -print -o         \
-                                          \( -type d -name .git -prune \)),  \
-			   $(if $(filter $(dir $(file)),./ ./$(SYSTEM)/),    \
+FILES         := $(foreach file,                                            \
+			   $(shell find . -type f -perm -1 -print -o        \
+					  \( -type d -name .git -prune \)), \
+			   $(if $(filter $(dir $(file)),./ ./$(SYSTEM)/),   \
 				$(file:./%=%)))
 .DEFAULT_GOAL := $(FILELIST)
 SEP            = :
-map            = $(foreach a,$(2),$(call $(1),$(a)))
-tail           = $(lastword $(subst $(SEP), ,$(pair)))
-tail_f         = $(lastword $(subst $(SEP), ,$(1)))
-head           = $(firstword $(subst $(SEP), ,$(pair)))
-LN             = ln -fnsv
+get            = $(word $1,$(subst $(SEP), ,$2))
+
+define internal-linker
+# the name (frontend) depends on the link in ~/bin
+$1: $(BIN)/$(notdir $1)
+# the link is created from the file in this directory
+$(BIN)/$(notdir $1): $(ROOT)$1
+	@$(LN) $$< $$@
+endef
+define external-linker
+# the name (frontend) depends on the link in ~/bin
+$(call get,2,$1): $(BIN)/$(call get,2,$1)
+# the link is created from the file specified in the variable
+$(BIN)/$(call get,2,$1): $(call get,1,$1)
+	@$(LN) $$< $$@
+.PHONY: $(call get,2,$1)
+endef
 
 # variables for some targets {{{2
 # color {{{3
@@ -155,51 +169,22 @@ rpi: $(RPI)
 # generic rules {{{2
 clean: ; $(RM) $(FILELIST)
 clean-links:
-	@flist= ;                                                \
-	for file in $(FILES); do                                 \
-	  if [ -L ~/bin/$$file ] &&                              \
-	     [ "`readlink ~/bin/$$file`" = $(ROOT)$$file ]; then \
-	    flist="$$flist $(HOME)/bin/$$file";                  \
-	  fi;                                                    \
-	done ;                                                   \
-	echo $(RM) $$flist;                                      \
-	$(RM) $$flist
-
+	$(RM) $(addprefix $(BIN)/, \
+	      $(notdir $(filter $(ROOT)%,$(realpath $(wildcard $(BIN)/*)))))
 
 # back end rules {{{1
 # rules to link local files {{{2
-$(FILES): %: $(BIN)/%
-$(BIN)/%:
-	@-$(LN) $(ROOT)$(notdir $@) $@
+$(foreach file,$(FILES),$(eval $(call internal-linker,$(file))))
+$(foreach pair,$(APPLE),$(eval $(call external-linker,$(pair))))
 .PHONY: $(FILES)
-
-# rules to link external binaries to ~/bin {{{2
-$(call map,tail_f,$(APPLE)): %: $(BIN)/%
-$(foreach pair,$(APPLE),$(eval $(BIN)/$(tail): $(head); \
-	@$(LN) $(head) $(BIN)/$(tail)))
 
 # rules to build file list {{{2
 $(FILELIST):
 	@echo '# Dynamically created makefile for zsh completion' >$(FILELIST)
 	@echo $(FILES): >>$(FILELIST)
 
-#$(FILELIST):
-#	echo $(FILES):\; @ln -sv $(ROOT)\$$@ $(BIN)/\$$@ > .filelist
-
-#$(FILELIST):
-#	@test -r .filelist || echo recreating file list ...
-#	@find . -type f -perm -1 -print -o \( -type d -name .git -prune \) | \
-#	  sed 's@\./\(.*\)@\1: $(BIN)/\1@' > $(FILELIST)
-
 # include generated makefile for zsh completion {{{1
 # this should be $(FILELIST) but the zsh completion will not see it
 include .filelist
 
 # tests and debugging {{{1
-echo-files:
-	@echo $(FILES)
-echo-test:
-	@echo $(APPLE)
-	@echo $(call map,tail,$(APPLE))
-	@echo $(foreach pair,$(APPLE), $(BIN)/$(tail): $(head) .. \
-	@$(LN) $(head) $(BIN)/$(tail))
