@@ -1,0 +1,4 @@
+#!/bin/sh
+# try to connect to the wrong wlan in order to force netctl-auto to reconnect
+#sudo netctl-auto list | grep -v '^\* ' | sort --random-sort | head -n 1 | xargs sudo netctl-auto switch-to
+sudo netctl-auto list | grep -v '^\* ' | head -n 1 | xargs sudo netctl-auto switch-to
