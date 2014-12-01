@@ -16,13 +16,11 @@ endif
 
 override ROOT := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 BIN            = ~/bin
-FILELIST       = .filelist
 FILES         := $(foreach file,                                            \
 			   $(shell find . -type f -perm -1 -print -o        \
 					  \( -type d -name .git -prune \)), \
 			   $(if $(filter $(dir $(file)),./ ./$(SYSTEM)/),   \
 				$(file:./%=%)))
-.DEFAULT_GOAL := $(FILELIST)
 SEP            = :
 get            = $(word $1,$(subst $(SEP), ,$2))
 
@@ -67,10 +65,9 @@ RPI = \
 # mbp running arch {{{3
 MBPARCH = \
         $(NOTHING)
-# default target {{{1
-.DEFAULT_GOAL := $(if $(findstring Darwin,$(shell uname)),mbp,rpi)
 
 # front end rules {{{1
+all:
 mbp: $(MBP)
 mbp-arch: $(MBPARCH)
 rpi: $(RPI)
@@ -81,18 +78,13 @@ clean-links:
 	      $(notdir $(filter $(ROOT)%,$(realpath $(wildcard $(BIN)/*)))))
 
 # back end rules {{{1
-# rules to link local files {{{2
 $(foreach file,$(FILES),$(eval $(call internal-linker,$(file))))
 $(foreach pair,$(APPLE),$(eval $(call external-linker,$(pair))))
 .PHONY: $(FILES)
 
-# rules to build file list {{{2
+# hack to enable zsh completion for some dynamically generated targets {{{1
+FILELIST = .filelist
+include .filelist
 $(FILELIST):
 	@echo '# Dynamically created makefile for zsh completion' >$(FILELIST)
 	@echo $(FILES): >>$(FILELIST)
-
-# include generated makefile for zsh completion {{{1
-# this should be $(FILELIST) but the zsh completion will not see it
-include .filelist
-
-# tests and debugging {{{1
