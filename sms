@@ -12,7 +12,7 @@ fi
 # capture stdin if not a terminal
 if [ ! -t 0 ]; then
   text=`cat`
-  if [ ${#text} -ne 0 -a `echo "$text"|wc -l` -eq 1 -a -z "$subject" ]; then
+  if [ ${#text} -ne 0 -a -z "$subject" -a `echo "$text"|wc -l` -eq 1 ]; then
     subject="$text"
   else
     body="$text"
