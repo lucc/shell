@@ -1,4 +1,11 @@
 #!/bin/sh
 # try to connect to the wrong wlan in order to force netctl-auto to reconnect
-#sudo netctl-auto list | grep -v '^\* ' | sort --random-sort | head -n 1 | xargs sudo netctl-auto switch-to
-sudo netctl-auto list | grep -v '^\* ' | head -n 1 | xargs sudo netctl-auto switch-to
+# TODO: ping google.com
+export SUDO_ASKPASS=/usr/lib/ssh/ssh-askpass
+if ping -c 1 -W 1 -q localhost >/dev/null; then
+  sudo netctl-auto list | \
+    grep -v '^\* '      | \
+    head -n 1           | \
+    xargs sudo netctl-auto switch-to
+    #sort --random-sort | \
+fi
