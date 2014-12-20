@@ -5,16 +5,17 @@
 type=graphical
 pipe=false
 URL=http://luc42.lima-city.de
-text_browser='elinks w3m links lynx'
+# elinks w3m links lynx
+text_browser=elinks
+# firefox dwb luakit jumanji surf uzbl
+graphical_browser=firefox
+quick_browser=luakit
 
 firefox_half_quiet () {
   # pipe stderr of firefox into this, it's an open bug:
   # https://bugzil.la/833117
   sed -e "1{/^ *$/d;}" \
     -e "2{/(process:[0-9]*): GLib-CRITICAL \*\*: g_slice_set_config: assertion 'sys_page_size == 0' failed/d;}"
-}
-firefox_ () {
-  exec command firefox -remote "URLOpen('$1')"
 }
 firefox_profiles () {
   # TODO
@@ -35,14 +36,18 @@ firefox_open_profile () {
 
 text () {
   if [ -t 1 -o -t 2 ]; then
-    exec elinks "$@"
+    exec "$text_browser" "$@"
   else
-    exec term -e elinks "$@"
+    exec term -e "$text_browser" "$@"
   fi
 }
 
 graphical () {
-  exec firefox "$@"
+  if pgrep "$graphical_browser" >/dev/null; then
+    exec "$graphical_browser" "$@"
+  else
+    exec "$quick_browser" "$@"
+  fi
 }
 
 while getopts hgtp opt; do
