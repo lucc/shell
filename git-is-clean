@@ -1,0 +1,3 @@
+#!/bin/sh -e
+#git diff --quiet # TODO
+test `git status --short | wc -l` -eq 0
