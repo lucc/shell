@@ -3,6 +3,17 @@
 # http://ask.libreoffice.org/en/question/2641/convert-to-command-line-parameter/
 # http://ask.libreoffice.org/en/question/1686/how-to-not-connect-to-a-running-instance/
 
+prog=`basename "$0"`
+help () {
+  echo "Usage: $prog OPTION FILE [ FILE ... ]"
+  echo "Valid options are:"
+  sed -n '/^case "$1" in$/,/^esac$/ {
+            s/^ *\(-.*\)) *cmd=office2\(.*\);;/\1\t\2/
+	    s/|/, /g;s/pdf_2/pdf (pdf export converter)/
+	    /^-/p
+	  }' <"$0" | \
+    awk -F '\t' '{ printf("%-20s convert files to %s\n", $1, $2) }'
+}
 office2 () {
   # find path to LO
   local lo=
@@ -32,13 +43,22 @@ if [ `uname` = Darwin ]; then
   }
 fi
 
-if [ -z "$PS1" ]; then
-  echo source "$0"
-else
-  office2csv () { office2 csv      "$@"; }; echo office2csv
-  office2ods () { office2 ods      "$@"; }; echo office2ods
-  office2odt () { office2 odt      "$@"; }; echo office2odt
-  office2pdf () { office2 pdf      "$@"; }; echo office2pdf
-  office2tex () { office2 tex      "$@"; }; echo office2tex
-  office2txt () { office2 txt:Text "$@"; }; echo office2txt
-fi
+office2csv () { office2 csv      "$@"; }
+office2ods () { office2 ods      "$@"; }
+office2odt () { office2 odt      "$@"; }
+office2pdf () { office2 pdf      "$@"; }
+office2tex () { office2 tex      "$@"; }
+office2txt () { office2 txt:Text "$@"; }
+
+case "$1" in
+  -t|--txt|--text) cmd=office2txt;;
+  --tex)           cmd=office2tex;;
+  -c|--csv)        cmd=office2csv;;
+  --ods)           cmd=office2ods;;
+  --odt)           cmd=office2odt;;
+  -p|--pdf)        cmd=office2pdf;;
+  --pdf2)          cmd=office2pdf_2;;
+  -h|--help)       help; exit 0;;
+esac
+shift
+$cmd "$@"
