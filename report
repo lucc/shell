@@ -1,0 +1,31 @@
+#!/usr/bin/make -f
+
+ifeq ($(shell test -t 1 && echo term),term)
+  header = echo '\033[32m$1\033[m'
+else
+  header = echo '$1'
+endif
+
+all: software mail git
+software:
+	@cecho green Updates:
+	@echo There are `pacman -Quq | wc -l` updates available.
+git:
+	@cecho green Dirty git repositories:
+	@find $(HOME)                                         \
+	  -regex '^$(HOME)/\(\.local\|build\|vcs\)' -prune -o \
+	  \(                                                  \
+	    -type d                                           \
+	    -name .git                                        \
+	    -execdir git is-dirty \;                          \
+	    -exec dirname {} \;                               \
+	  \) 2>/dev/null
+mail:
+	@cecho green New mail:
+	@~/src/mailtools/check.py -e lists/zsh -e draft ~/mail || \
+	  echo No new mail.
+test:
+	@echo $$TERM
+
+.PHONY: software git mail all test
+# vim: ft=make
