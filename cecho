@@ -1,0 +1,22 @@
+#!/bin/sh
+
+# color echo program
+
+color="$1"
+shift
+
+if [ -t 1 ]; then
+  case "$color" in
+    black)   echo -e "\033[30m$@\033[m";;
+    red)     echo -e "\033[31m$@\033[m";;
+    green)   echo -e "\033[32m$@\033[m";;
+    yellow)  echo -e "\033[33m$@\033[m";;
+    blue)    echo -e "\033[34m$@\033[m";;
+    magenta) echo -e "\033[35m$@\033[m";;
+    cyan)    echo -e "\033[36m$@\033[m";;
+    white)   echo -e "\033[37m$@\033[m";;
+    *)       echo "Unknown color: $color" >&2; exit 2;;
+  esac
+else
+  echo "$@"
+fi
