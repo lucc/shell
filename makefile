@@ -88,3 +88,4 @@ include .filelist
 $(FILELIST):
 	@echo '# Dynamically created makefile for zsh completion' >$(FILELIST)
 	@echo $(FILES): >>$(FILELIST)
+.PHONY: $(FILELIST)
