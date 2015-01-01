@@ -7,25 +7,12 @@ filter='tail -n 1'
 
 while getopts c:d:f:F:h FLAG; do
   case $FLAG in
-    c)
-      command="$OPTARG"
-      ;;
-    d)
-      directory="$OPTARG"
-      ;;
-    f)
-      files="$files $OPTARG"
-      ;;
-    F)
-      filter="$OPTARG"
-      ;;
-    h)
-      echo HELP
-      exit
-      ;;
-    *)
-      exit 2
-      ;;
+    c) command="$OPTARG";;
+    d) directory="$OPTARG";;
+    f) files="$files $OPTARG";;
+    F) filter="$OPTARG";;
+    h) echo HELP; exit;;
+    *) exit 2;;
   esac
 done
 
