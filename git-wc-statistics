@@ -1,0 +1,9 @@
+#!/bin/sh
+if [ "$1" = -h -o "$1" = --help ]; then
+  echo 'Usage: git wc-statistics [file ...]'
+  echo 'Print the word count of the given or all files for each commit.'
+  exit
+fi
+git log --oneline | while read ref msg; do
+  printf '%s %-70s %s\n' $ref "$msg" "$(git archive $ref -- "$@" 2>/dev/null| tar -xO 2>/dev/null | wc)"
+done
