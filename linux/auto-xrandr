@@ -1,0 +1,36 @@
+#!/bin/bash
+
+
+a=
+b=
+c=
+x="`xrandr | grep -o  ".* connected" | cut -d' ' -f1 `"													|| exit 1
+
+for f in LVDS DP VGA DVI-D HDMI
+do
+	if [[ "$x" =~ $f-. ]]
+	then
+		c=$b
+		b=$a
+		a=${BASH_REMATCH[0]}
+	fi
+done
+printf "a: %s\nb: %s\nc: %s\n" $a $b $c
+
+if [[ -n $c ]]
+then
+	xrandr --output $c --off																			|| exit 2
+fi
+
+[[ -n $a ]]																								|| exit 3
+
+
+xrandr --output $a --preferred --primary																|| exit 4
+
+
+if [[ -n $b ]]
+then
+	xrandr --output $b --preferred --primary --${1:-below} $a										|| exit 5
+fi
+
+echo 'awesome.restart()' | awesome-client
