@@ -1,36 +1,52 @@
 #!/bin/bash
 
+# preferred order of monitors (highest to lowest priority)
+order=(LVDS DP)
+# preferred position of monitors (relative to previsous monitor in $order)
+position=${1:-above}
+# maximum number of monitors to use (only names from $order will be used)
+max=10
 
-a=
-b=
-c=
-x="`xrandr | grep -o  ".* connected" | cut -d' ' -f1 `"													|| exit 1
+if [[ "$1" = -h || "$1" = --help ]]; then
+  echo "Usage: $(basename "$0") [position]" >&2
+  exit
+fi
 
-for f in LVDS DP VGA DVI-D HDMI
-do
-	if [[ "$x" =~ $f-. ]]
-	then
-		c=$b
-		b=$a
-		a=${BASH_REMATCH[0]}
-	fi
+connected=($(xrandr | grep ' connected ' | cut -f 1 -d ' '))
+options=()
+
+for choice in ${order[@]}; do
+  # iterate over the indices of the connected monitors
+  for monitor in ${!connected[@]}; do
+    if [[ ${connected[$monitor]} =~ $choice ]]; then
+      if [[ ${#options[@]} -eq 0 ]]; then
+	# set first match from $order as primary monitor
+	options=(--output ${connected[$monitor]} --auto --primary)
+      else
+	# put monitor in $position of the $last one
+	options=(${options[@]} --output ${connected[$monitor]} --auto --$position $last)
+      fi
+      # remember this monitor to position the next one
+      last=${connected[$monitor]}
+      # delete this monitor from the list of connected monitors
+      unset connected[$monitor]
+      connected=(${connected[@]})
+      # count down the number of monitors that is desired at most
+      ((max--))
+      if [[ $max -eq 0 ]]; then
+	break 2
+      else
+	break
+      fi
+    fi
+  done
 done
-printf "a: %s\nb: %s\nc: %s\n" $a $b $c
 
-if [[ -n $c ]]
-then
-	xrandr --output $c --off																			|| exit 2
-fi
+# let xrandr turn all disconnected monitors off (just in case) and also all
+# connected monitors that where above the maximum number of desired monitors
+for disconnected in $(xrandr | grep disconnected | cut -f 1 -d ' ') ${connected[@]}; do
+  options=(${options[@]} --output $disconnected --off)
+done
 
-[[ -n $a ]]																								|| exit 3
-
-
-xrandr --output $a --preferred --primary																|| exit 4
-
-
-if [[ -n $b ]]
-then
-	xrandr --output $b --preferred --primary --${1:-below} $a										|| exit 5
-fi
-
+xrandr --verbose ${options[@]}
 echo 'awesome.restart()' | awesome-client
