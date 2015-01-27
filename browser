@@ -11,6 +11,20 @@ text_browser=elinks
 graphical_browser=firefox
 quick_browser=luakit
 
+usage () {
+  echo "Usage: `basename "$0"` [-gt] url"
+  echo "       `basename "$0"` -n [profile] [url]"
+  echo "       cat file.html | `basename "$0"` -p [-gt]"
+}
+help () {
+  usage
+  echo
+  echo '  -g	open a graphical browser'
+  echo '  -t	open a text browser'
+  echo '  -p	expect document on stdin (no url allowed)'
+  echo '  -n    open a new instance with the given profile (implies -g)'
+}
+
 firefox_half_quiet () {
   # pipe stderr of firefox into this, it's an open bug:
   # https://bugzil.la/833117
@@ -19,7 +33,7 @@ firefox_half_quiet () {
 }
 firefox_profiles () {
   # TODO
-  local firefox_unix_ini="$HOME/.mozilla/firefox/profiles.ini"
+  local ini="$HOME/.mozilla/firefox/profiles.ini"
   grep '^Name=' "$ini" | cut -f 2 -d =
 }
 firefox_open_profile () {
@@ -50,12 +64,20 @@ graphical () {
   fi
 }
 
-while getopts hgtp opt; do
+new_graphical () {
+  local user=${1:-$USER}
+  exec $graphical_browser -new-instance -P $user
+}
+
+while getopts hgntpx opt; do
   case $opt in
-    h) help;;
+    h) help; exit;;
     g) type=graphical;;
+    n) type=new_graphical;;
     t) type=text;;
     p) pipe=true;;
+    x) set -x;;
+    *) usage >&2; exit 2;
   esac
 done
 shift $((OPTIND-1))
