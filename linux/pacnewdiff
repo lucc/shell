@@ -1,0 +1,16 @@
+#!/bin/sh
+
+# merge a pacnew file with vimdiff
+
+if [ -r "$1" -a -r "$1.pacnew" ]; then
+  exec vimdiff "$1" "$1.pacnew"
+elif [ -e "$1" -a -e "$1.pacnew" ]; then
+  echo Not sufficient read rights on the files. >&2
+  exit 1
+elif [ ! -e "$1.pacnew" ]; then
+  echo No pacnew file present for "$1". >&2
+  exit 1
+else
+  echo Unknown error. >&2
+  exit 1
+fi
