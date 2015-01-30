@@ -41,12 +41,10 @@ if [ "$test_only" ]; then
 fi
 
 if ! connection; then
-  cmd="netctl-auto list|grep -v '^\* '|head -n 1|xargs netctl-auto switch-to"
   info Reconecting to the network ...
   if [ `id -u` -ne 0 ]; then
     export SUDO_ASKPASS=/usr/lib/ssh/ssh-askpass
-    sudo sh -c "$cmd"
-  else
-    $cmd
+    sudo=sudo
   fi
+  $sudo systemctl restart netctl-auto@wlan0.service
 fi
