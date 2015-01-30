@@ -43,12 +43,13 @@ if [ `uname` = Darwin ]; then
   }
 fi
 
-office2csv () { office2 csv      "$@"; }
-office2ods () { office2 ods      "$@"; }
-office2odt () { office2 odt      "$@"; }
-office2pdf () { office2 pdf      "$@"; }
-office2tex () { office2 tex      "$@"; }
-office2txt () { office2 txt:Text "$@"; }
+office2csv  () { office2 csv      "$@"; }
+office2docx () { office2 docx     "$@"; }
+office2ods  () { office2 ods      "$@"; }
+office2odt  () { office2 odt      "$@"; }
+office2pdf  () { office2 pdf      "$@"; }
+office2tex  () { office2 tex      "$@"; }
+office2txt  () { office2 txt:Text "$@"; }
 
 case "$1" in
   -t|--txt|--text) cmd=office2txt;;
@@ -58,7 +59,9 @@ case "$1" in
   --odt)           cmd=office2odt;;
   -p|--pdf)        cmd=office2pdf;;
   --pdf2)          cmd=office2pdf_2;;
+  --docx)          cmd=office2docx;;
   -h|--help)       help; exit 0;;
+  *)               help >&2; exit 2;;
 esac
 shift
 $cmd "$@"
