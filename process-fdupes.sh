@@ -1,8 +1,9 @@
 #!/bin/sh
 
-delete='rm -f "$next"'
-link='ln -vf "$last" "$next"'
+delete='rm -f $verbose_opt "$next"'
+link='ln -f $verbose_opt "$last" "$next"'
 message=false
+verbose_opt=-v
 cmd="$link"
 die () { echo "$@" >&2; exit 2; }
 ask () {
@@ -11,9 +12,6 @@ ask () {
   [ "$reply" = y -o "$reply" = Y ]
 }
 
-if [ -t 0 ]; then
-  die You have to pipe the ouput of fdupes into this script.
-fi
 while getopts ahnvqldc: FLAG; do
   case $FLAG in
     a) ask=true;;
@@ -26,14 +24,17 @@ while getopts ahnvqldc: FLAG; do
 	-a to ask before running the command and
 	-n for test runs (noop).';;
     n) noop=true;;
-    v) message=echo;;
-    q) message=false;;
+    v) message=echo verbose_opt=-v;;
+    q) message=false verbose_opt=;;
     l) cmd="$link";;
     d) cmd="$delete";;
     c) cmd="$OPTARG";;
     *) die Try $0 -h;;
   esac
 done
+if [ -t 0 ]; then
+  die You have to pipe the ouput of fdupes into this script.
+fi
 if [ "$noop" ]; then cmd="echo $cmd"
 #elif [ "$ask" ]; then cmd="ask 'Run $cmd ?' && $cmd"
 fi
