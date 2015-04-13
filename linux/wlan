@@ -7,6 +7,9 @@ die_v () { echo Error: "$@" >&2; exit 1; }
 info () { info_v "$@"; }
 die () { die_v "$@"; }
 
+test_only=false
+force=false
+
 connection () {
   if timeout 1s ping -c 1 -W 1 -q localhost >/dev/null; then
     # test if we can ping google
@@ -22,16 +25,17 @@ connection () {
   fi
 }
 
-while getopts tqvx FLAG; do
+while getopts tfqvx FLAG; do
   case $FLAG in
-    t) test_only=1;;
+    t) test_only=true;;
+    f) force=true;;
     q) info () { true; }; die () { exit 1; };;
     v) info () { info_v "$@"; }; die () { die_v "$@"; };;
     x) set -x;;
   esac
 done
 
-if [ "$test_only" ]; then
+if $test_only; then
   if ! connection; then
     info "You don't have internet connection."
     exit 1
@@ -40,7 +44,7 @@ if [ "$test_only" ]; then
   fi
 fi
 
-if ! connection; then
+if $force || ! connection; then
   info Reconecting to the network ...
   if [ `id -u` -ne 0 ]; then
     export SUDO_ASKPASS=/usr/lib/ssh/ssh-askpass
