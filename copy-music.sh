@@ -103,117 +103,126 @@ to_mp3 () { # {{{3
     "${2%.mp3}.mp3"
 }
 
-# parse command line {{{1
-# parse options {{{2
-while [ $# -ne 0 ]; do
-  case "$1" in
-    -h|--help)
-      usage
-      exit
-      ;;
-    -i|--input|--src)
-      if [ $# -ge 2 ]; then
-	SRC=("${SRC[@]}" "$2")
-	shift 2
-      else
-	die_optarg $1
-      fi
-      ;;
-    -o|--output)
-      if [ $# -ge 2 ]; then
-	OUT="$2"
-	shift 2
-      else
-	die_optarg $1
-      fi
-      ;;
-    -q|--quality)
-      if [ $# -ge 2 ]; then
-	QUALITY="$2"
-	shift 2
-      else
-	die_optarg $1
-      fi
-      ;;
-    -f|--format)
-      if [ $# -ge 2 ]; then
-	FORMAT="$2"
-	shift 2
-      else
-	die_optarg $1
-      fi
-      ;;
-    -m|--merge)
-      MERGE=true
-      ;;
-    -*)
-      die 2 "Unknown option '$1'.  If you want the filename use './$1'."
-      ;;
-    *)
-      # from here on out no more options are accepted.
-      while [ $# -ne 0 ]; do
-	if [ "$1" = '/*' ]; then
-	  SRC=("${SRC[@]}" "$1")
+parse_options () { # {{{2
+  while [ $# -ne 0 ]; do
+    case "$1" in
+      -h|--help)
+	usage
+	exit
+	;;
+      -i|--input|--src)
+	if [ $# -ge 2 ]; then
+	  SRC=("${SRC[@]}" "$2")
+	  shift 2
 	else
-	  SRC=("${SRC[@]}" "./$1")
+	  die_optarg $1
 	fi
-	shift
-      done
-      ;;
-  esac
-done
+	;;
+      -o|--output)
+	if [ $# -ge 2 ]; then
+	  OUT="$2"
+	  shift 2
+	else
+	  die_optarg $1
+	fi
+	;;
+      -q|--quality)
+	if [ $# -ge 2 ]; then
+	  QUALITY="$2"
+	  shift 2
+	else
+	  die_optarg $1
+	fi
+	;;
+      -f|--format)
+	if [ $# -ge 2 ]; then
+	  FORMAT="$2"
+	  shift 2
+	else
+	  die_optarg $1
+	fi
+	;;
+      -m|--merge)
+	MERGE=true
+	;;
+      -*)
+	die 2 "Unknown option '$1'.  If you want the filename use './$1'."
+	;;
+      *)
+	# from here on out no more options are accepted.
+	while [ $# -ne 0 ]; do
+	  if [[ "$1" = /* ]]; then
+	    SRC=("${SRC[@]}" "$1")
+	  else
+	    SRC=("${SRC[@]}" "./$1")
+	  fi
+	  shift
+	done
+	;;
+    esac
+  done
+}
 
 # check for correctly set variables {{{2
-if [ -z "$OUT" ] && [ ${#SRC} -ge 2 ]; then
-  OUT="${SRC[-1]}"
-  SRC="${SRC[0,-2]}"
-else
-  die 2 You need to specify at least one input and output path.
-fi
+check_vars () {
+  if [ -z "$OUT" ] && [ ${#SRC} -ge 2 ]; then
+    OUT="${SRC[-1]}"
+    SRC="${SRC[0,-2]}"
+  else
+    die 2 You need to specify at least one input and output path.
+  fi
+}
 
 # check input and output directories for permissions {{{2
-# TODO: Does this workcorrectly?
-if mkdir -p "$OUT"; then
-  ( cd "$OUT" || die 3 Can not cd to "$OUT". )
-  dest="`cd "$OUT" && pwd -P`"
-else
-  die 3 Can not use "$OUT" as output directory.
-fi
-for dir in "${SRC[@]}"; do
-  if [ -d "$dir" ] && [ -r "$dir" ]; then
-    continue
-    # TODO This does not work with multible input dirs.
-    # change to the source directory to be able to work with relative filenames
-    #cd "$src" || die 3 Can not cd to "$src".
+check_dirs () {
+  # TODO: Does this work correctly?
+  if mkdir -p "$OUT"; then
+    ( cd "$OUT" || die 3 Can not cd to "$OUT". )
+    dest="`cd "$OUT" && pwd -P`"
   else
-    die 2 "$dir" is not a readable directory.
+    die 3 Can not use "$OUT" as output directory.
   fi
-done
-
-# set up traps {{{1
-trap handle_signal SIGINT SIGQUIT
-
-# main loop {{{1
-for srcdir in "${SRC[@]}"; do
-  if ! $MERGE; then
-    currdest="$dest/`basename "$srcdir"`"
-  else
-    currdest="$dest"
-  fi
-  find "$srcdir" -type f | LC_ALL=C sort --ignore-case | \
-      while read -r file && $CONTINUE; do
-    ##  TODO TODO
-    target="$dest/${file%.*}.$FORMAT"
-    printf "\nconverting $COLOR$file$NOCOLOR ..."
-    if [ "$target" -nt "$file" ]; then
-      echo " $target is newer.  Skipping."
+  for dir in "${SRC[@]}"; do
+    if [ -d "$dir" ] && [ -r "$dir" ]; then
+      continue
+      # TODO This does not work with multible input dirs.
+      # change to the source directory to be able to work with relative filenames
+      #cd "$src" || die 3 Can not cd to "$src".
     else
-      echo
-      mkdir -p "`dirname "$target"`"
-      to_ogg "$file" "$target"
+      die 2 "$dir" is not a readable directory.
     fi
   done
-done
+}
 
-# clear all traps again {{{1
+# main function {{{2
+main () {
+  for srcdir in "${SRC[@]}"; do
+    if ! $MERGE; then
+      currdest="$dest/`basename "$srcdir"`"
+    else
+      currdest="$dest"
+    fi
+    find "$srcdir" -type f | LC_ALL=C sort --ignore-case | \
+	while read -r file && $CONTINUE; do
+      ##  TODO TODO
+      target="$dest/${file%.*}.$FORMAT"
+      printf "\nconverting $COLOR$file$NOCOLOR ..."
+      if [ "$target" -nt "$file" ]; then
+	echo " $target is newer.  Skipping."
+      else
+	echo
+	mkdir -p "`dirname "$target"`"
+	to_ogg "$file" "$target"
+      fi
+    done
+  done
+}
+
+# run {{{1
+parse_options $@
+check_vars
+check_dirs
+
+trap handle_signal SIGINT SIGQUIT
+main
 trap - SIGINT SIGQUIT
