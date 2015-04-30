@@ -45,10 +45,6 @@ die () { # {{{3
   exit $ret
 }
 
-die_optarg () { # {{{3
-  die 2 The option $1 needs an argument.
-}
-
 handle_signal () { # {{{3
   if $CONTINUE; then
     TIMESTAMP=$(date +%s)
@@ -57,6 +53,8 @@ handle_signal () { # {{{3
   elif [[ $(($TIMESTAMP + 10)) -lt $(date +%s) ]]; then
     echo 'OK, if you force me.  Engines STOP!' >&2
     exit 10
+  else
+    echo Let me just finish converting $file ... >&2
   fi
 }
 
@@ -104,77 +102,33 @@ to_mp3 () { # {{{3
 }
 
 parse_options () { # {{{2
+  # parse command line: getopt
+  opts=$(getopt \
+    --options hs:o:q:f:m \
+    --longoptions help,src:,source:,out:,output:,quality:,format:,merge \
+    --name $PROG \
+    -- $@)
+  local err=$?
+  eval set -- $opts
+  # parse command line: read the options
   while [[ $# -ne 0 ]]; do
     case $1 in
-      -h|--help)
-	usage
-	exit
-	;;
-      -i|--input|--src)
-	if [[ $# -ge 2 ]]; then
-	  SRC+=$2
-	  shift 2
-	else
-	  die_optarg $1
-	fi
-	;;
-      -o|--output)
-	if [[ $# -ge 2 ]]; then
-	  OUT=$2
-	  shift 2
-	else
-	  die_optarg $1
-	fi
-	;;
-      -q|--quality)
-	if [[ $# -ge 2 ]]; then
-	  QUALITY=$2
-	  shift 2
-	else
-	  die_optarg $1
-	fi
-	;;
-      -f|--format)
-	if [[ $# -ge 2 ]]; then
-	  FORMAT=$2
-	  shift 2
-	else
-	  die_optarg $1
-	fi
-	;;
-      -m|--merge)
-	MERGE=true
-	;;
-      -*)
-	die 2 "Unknown option '$1'.  If you want the filename use './$1'."
-	;;
-      *)
-	# from here on out no more options are accepted.
-	while [[ $# -ne 0 ]]; do
-	  if [[ $1 = /* ]]; then
-	    SRC+=$1
-	  else
-	    SRC+=./$1
-	  fi
-	  shift
-	done
-	;;
+      -h|--help) usage; exit;;
+      -s|--src|--source) SRC+=$2; shift 2;;
+      -o|--out|--output) OUT=$2; shift 2;;
+      -q|--quality) QUALITY=$2; shift 2;;
+      -f|--format) FORMAT=$2; shift 2;;
+      -m|--merge) MERGE=true;;
+      --) shift; break;;
     esac
   done
-}
-
-# check for correctly set variables {{{2
-check_vars () {
-  if [[ -z $OUT ]] && [[ $#SRC -ge 2 ]]; then
-    OUT=$SRC[-1]
-    SRC=$SRC[0,-2]
-  else
+  if [[ $#SRC -eq 0 || -z $OUT ]]; then
     die 2 You need to specify at least one input and output path.
   fi
 }
 
-# check input and output directories for permissions {{{2
-check_dirs () {
+check_dirs () { # {{{2
+  # check input and output directories for permissions
   # TODO: Does this work correctly?
   if mkdir -p $OUT; then
     ( cd $OUT || die 3 Can not cd to $OUT. )
@@ -194,8 +148,7 @@ check_dirs () {
   done
 }
 
-# main function {{{2
-main () {
+main () { # {{{2
   for srcdir in $SRC; do
     if ! $MERGE; then
       currdest=$dest/$(basename $srcdir)
@@ -220,7 +173,6 @@ main () {
 
 # run {{{1
 parse_options $@
-check_vars
 check_dirs
 
 trap handle_signal SIGINT SIGQUIT
