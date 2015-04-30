@@ -6,6 +6,12 @@
 # format, saving them in destination directory
 #
 # TODO: nice and cpulimit
+# TODO: quality specification
+# TODO: format/filetype filter to ignore cover.jpg ...
+# TODO: format/filetype filter to inhibit mp3 -> flac conversion ...
+# TODO: time reporting with the times builtin
+# TODO: other converters? lame, oggencode, ...
+# TODO: use cp for no conversion (which checks are to made?)
 
 # variables {{{1
 # the name of this program
