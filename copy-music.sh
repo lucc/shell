@@ -19,7 +19,7 @@ PROG=$(basename $0)
 # variable used by traps to stop the script (can be true or false)
 CONTINUE=true
 # array of directories with music to be converted
-typeset -a SRC
+typeset -a SRC ignored_extensions exclude
 # directory to convert music to
 OUT=
 # format (file ending) to convert music to
@@ -110,8 +110,12 @@ to_mp3 () { # {{{3
 parse_options () { # {{{2
   # parse command line: getopt
   opts=$(getopt \
-    --options hs:o:q:f:m \
-    --longoptions help,src:,source:,out:,output:,quality:,format:,merge \
+    --options e:f:hmo:q:s:Vvx \
+    --longoptions help,version \
+    --longoptions verbose,quiet \
+    --longoptions src:,source:,out:,output: \
+    --longoptions quality:,format:,merge \
+    --longoptions ignore-extension:,exclude: \
     --name $PROG \
     -- $@)
   local err=$?
@@ -119,14 +123,21 @@ parse_options () { # {{{2
   # parse command line: read the options
   while [[ $# -ne 0 ]]; do
     case $1 in
+      --ignore-extension) ignored_extensions+=$2; shift;;
+      -e|--exclude) exclude+=$2; shift;;
+      -f|--format) FORMAT=$2; shift;;
       -h|--help) usage; exit;;
-      -s|--src|--source) SRC+=$2; shift 2;;
-      -o|--out|--output) OUT=$2; shift 2;;
-      -q|--quality) QUALITY=$2; shift 2;;
-      -f|--format) FORMAT=$2; shift 2;;
       -m|--merge) MERGE=true;;
+      -o|--out|--output) OUT=$2; shift;;
+      -q|--quality) QUALITY=$2; shift;;
+      -s|--src|--source) SRC+=$2; shift;;
+      -V|--version) version; exit;;
+      -v|--verbose) verbose+=1;;
+      --quiet) verbose=0;;
+      -x) set -x;;
       --) shift; break;;
     esac
+    shift
   done
   if [[ $#SRC -eq 0 || -z $OUT ]]; then
     die 2 You need to specify at least one input and output path.
