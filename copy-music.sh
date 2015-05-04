@@ -29,7 +29,7 @@ QUALITY=middle
 # subdirectories
 MERGE=false
 # if possible use color output
-if [[ -t 1 -a -t 2 ]]; then
+if [[ -t 1 && -t 2 ]]; then
   COLOR="\033[1m"
   NOCOLOR="\033[m"
 else
@@ -56,7 +56,7 @@ handle_signal () { # {{{3
     TIMESTAMP=$(date +%s)
     CONTINUE=false
     echo Let me just finish converting $file ... >&2
-  elif [[ $(($TIMESTAMP + 10)) -lt $(date +%s) ]]; then
+  elif [[ $(($TIMESTAMP + 10)) -lt $(date +%s) ]]; then
     echo 'OK, if you force me.  Engines STOP!' >&2
     exit 10
   else
