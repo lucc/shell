@@ -1,9 +1,0 @@
-#!/bin/sh
-# vim: set ft=sh
-
-if [ `uname` = Darwin ]; then
-  #open -a LibreOffice "$@"
-  exec /Applications/LibreOffice.app/Contents/MacOS/soffice "$@"
-else
-  echo Error: `uname` >&2
-fi
