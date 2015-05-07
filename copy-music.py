@@ -3,22 +3,24 @@
 import argparse
 import os.path
 import shutil
-import signal
+# import signal
 import subprocess
-import sys
+# import sys
 
-def ffmpeg (infile, outfile, fmt):
+
+def ffmpeg(infile, outfile, fmt):
     cmd = ['ffmpeg', '-n', '-nostdin', '-loglevel', 'warning', '-i', infile]
     if fmt == 'ogg':
         cmd += ['-codec:a', 'libvorbis']
     cmd += ['-f', fmt, outfile]
     try:
         subprocess.call(cmd)
-        #os.system(' '.join(cmd))
+        # os.system(' '.join(cmd))
     except KeyboardInterrupt:
         print('Cleaning up ...')
         os.remove(outfile)
         raise
+
 
 def convert_tree(src, dest, format, force_convert=False, overwrite='never'):
     '''Walk the given src directory and try convert all the files found
@@ -30,7 +32,7 @@ def convert_tree(src, dest, format, force_convert=False, overwrite='never'):
         if not os.path.exists(destdir):
             os.mkdir(destdir)
         elif not os.path.isdir(destdir):
-            raise Error()
+            raise OSError()
 
         # convert every file
         for srcfile in files:
@@ -52,51 +54,69 @@ def convert_tree(src, dest, format, force_convert=False, overwrite='never'):
             if not force_convert and ext == '.'+format:
                 shutil.copyfile(infile, outfile)
             else:
-                convert(os.path.join(path, srcfile), os.path.join(destdir,
-                    base + '.' + format))
+                convert(os.path.join(path, srcfile),
+                        os.path.join(destdir, base + '.' + format))
 
 
-if __name__ == '__main__':
+def parse_options():
+    """Parse the comand line options.
+    :returns: the argparse namespace
+
+    """
     parser = argparse.ArgumentParser()
     # options
-    parser.add_argument('-f', '--format', choices=['ogg', 'mp3'],
-            help='the format (file suffix) to convert to')
-    parser.add_argument('-q', '--quality', nargs=1,
-            choices=['bad', 'middle', 'good'],
-            help='the predefined quality settings to use')
-    parser.add_argument('-m', '--merge', action='store_true',
-            help='''merge all src directories into dest directly, without
-            adding subdirectories for every source directory''')
-    parser.add_argument('--force-convert', action='store_true',
-            help='''force the conversion of any src files that already have
-            the correct target format (opposed to copying them)''')
-    parser.add_argument('--overwrite', choices=['never', 'older', 'always'],
-            default='older', help='overwrite destination files')
+    parser.add_argument(
+        '-f', '--format', choices=['ogg', 'mp3'],
+        help='the format (file suffix) to convert to')
+    parser.add_argument(
+        '-q', '--quality', nargs=1, choices=['bad', 'middle', 'good'],
+        help='the predefined quality settings to use')
+    parser.add_argument(
+        '-m', '--merge', action='store_true',
+        help='''merge all src directories into dest directly, without adding
+        subdirectories for every source directory''')
+    parser.add_argument(
+        '--force-convert', action='store_true', help='''force the conversion of
+        any src files that already have the correct target format (opposed to
+        copying them)''')
+    parser.add_argument(
+        '--overwrite', choices=['never', 'older', 'always'], default='older',
+        help='overwrite destination files')
     # arguments
     # TODO type=dir for these two
-    parser.add_argument('src', nargs='+',
-            help='directories to search for music files')
-    parser.add_argument('dest', type=os.path.abspath,
-            help='directory to store converted music')
+    parser.add_argument(
+        'src', nargs='+', help='directories to search for music files')
+    parser.add_argument(
+        'dest', type=os.path.abspath,
+        help='directory to store converted music')
 
     # parse command line
     args = parser.parse_args()
+    return args
 
+
+def main():
+    args = parse_options()
     # set up the converter function
-    convert = lambda infile, outfile: ffmpeg(infile, outfile, args.format)
+
+    def convert(infile, outfile):
+        ffmpeg(infile, outfile, args.format)
 
     # set up list of destination directories depending on --merge
     if args.merge:
         args.dest = [args.dest for x in args.src]
     else:
         args.dest = [os.path.join(args.dest, os.path.basename(x)) for x in
-                args.src]
+                     args.src]
 
     # loop over src directories
     for srcbase, destbase in zip(args.src, args.dest):
         if not os.path.exists(destbase):
             os.mkdir(destbase)
         elif not os.path.isdir(destbase):
-            raise Error()
+            raise OSError()
         convert_tree(srcbase, destbase, args.format, args.force_convert,
-                args.overwrite)
+                     args.overwrite)
+
+if __name__ == '__main__':
+    main()
