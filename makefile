@@ -15,27 +15,27 @@ else
 endif
 
 override ROOT := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
-BIN            = ~/bin
-FILES         := $(foreach file,                                            \
-			   $(shell find . -type f -perm -1 -print -o        \
-					  \( -type d -name .git -prune \)), \
-			   $(if $(filter $(dir $(file)),./ ./$(SYSTEM)/),   \
-				$(file:./%=%)))
-SEP            = :
-get            = $(word $1,$(subst $(SEP), ,$2))
+DESTDIR = ~/.local
+FILES := $(foreach file,                          \
+  $(shell find . -type f -perm -1 -print -o       \
+		\( -type d -name .git -prune \)), \
+  $(if $(filter $(dir $(file)),./ ./$(SYSTEM)/),  \
+  $(file:./%=%)))
+SEP    = :
+get    = $(word $1,$(subst $(SEP), ,$2))
 
 define internal-linker
-# the name (frontend) depends on the link in ~/bin
-$1: $(BIN)/$(notdir $1)
+# the name (frontend) depends on the link in $(DESTDIR)/bin
+$1: $(DESTDIR)/bin/$(notdir $1)
 # the link is created from the file in this directory
-$(BIN)/$(notdir $1): $(ROOT)$1
+$(DESTDIR)/bin/$(notdir $1): $(ROOT)$1
 	@$(LN) $$< $$@
 endef
 define external-linker
-# the name (frontend) depends on the link in ~/bin
-$(call get,2,$1): $(BIN)/$(call get,2,$1)
+# the name (frontend) depends on the link in $(DESTDIR)/bin
+$(call get,2,$1): $(DESTDIR)/bin/$(call get,2,$1)
 # the link is created from the file specified in the variable
-$(BIN)/$(call get,2,$1): $(call get,1,$1)
+$(DESTDIR)/bin/$(call get,2,$1): $(call get,1,$1)
 	@$(LN) $$< $$@
 .PHONY: $(call get,2,$1)
 endef
@@ -74,8 +74,8 @@ rpi: $(RPI)
 # generic rules {{{2
 clean: ; $(RM) $(FILELIST)
 clean-links:
-	$(RM) $(addprefix $(BIN)/, \
-	      $(notdir $(filter $(ROOT)%,$(realpath $(wildcard $(BIN)/*)))))
+	$(RM) $(addprefix $(DESTDIR)/bin/, \
+	      $(notdir $(filter $(ROOT)%,$(realpath $(wildcard $(DESTDIR)/bin/*)))))
 
 # back end rules {{{1
 $(foreach file,$(FILES),$(eval $(call internal-linker,$(file))))
