@@ -19,7 +19,7 @@ PROG=$(basename $0)
 # variable used by traps to stop the script (can be true or false)
 CONTINUE=true
 # array of directories with music to be converted
-typeset -a SRC ignored_extensions exclude
+typeset -a SRC passthrough_extensions exclude
 # directory to convert music to
 OUT=
 # format (file ending) to convert music to
@@ -66,7 +66,7 @@ handle_signal () { # {{{3
 
 # filesystem interaction {{{2
 resolve_symlinks () { # {{{3
-  file=$1
+  local file=$1
   while [[ -l $file ]]; do
     file=$(readlink $file)
   done
@@ -107,6 +107,15 @@ to_mp3 () { # {{{3
     ${2%.mp3}.mp3
 }
 
+copy () { # {{{3
+  cp -a $1 $2
+}
+
+convert () { # {{{3
+  # the main conversion function
+  local file=$1
+}
+
 parse_options () { # {{{2
   # parse command line: getopt
   opts=$(getopt \
@@ -115,7 +124,7 @@ parse_options () { # {{{2
     --longoptions verbose,quiet \
     --longoptions src:,source:,out:,output: \
     --longoptions quality:,format:,merge \
-    --longoptions ignore-extension:,exclude: \
+    --longoptions passthrough-extension:,exclude: \
     --name $PROG \
     -- $@)
   local err=$?
@@ -123,7 +132,7 @@ parse_options () { # {{{2
   # parse command line: read the options
   while [[ $# -ne 0 ]]; do
     case $1 in
-      --ignore-extension) ignored_extensions+=$2; shift;;
+      --passthrough-extension) passthrough_extensions+=$2; shift;;
       -e|--exclude) exclude+=$2; shift;;
       -f|--format) FORMAT=$2; shift;;
       -h|--help) usage; exit;;
@@ -141,6 +150,15 @@ parse_options () { # {{{2
   done
   if [[ $#SRC -eq 0 || -z $OUT ]]; then
     die 2 You need to specify at least one input and output path.
+  fi
+  typeset -a find_args
+  find_args=(-type f)
+  if [[ $#exclude -gt 0 ]]; then
+    find_args+=\(
+    for pattern in $exclude; do
+      find_args+=(-path $pattern -or)
+    done
+    find_args[-1]=( \) -prune -or -print)
   fi
 }
 
@@ -166,15 +184,22 @@ check_dirs () { # {{{2
 }
 
 main () { # {{{2
+  local srcdir currdest
   for srcdir in $SRC; do
     if ! $MERGE; then
       currdest=$dest/$(basename $srcdir)
     else
       currdest=$dest
     fi
-    find $srcdir -type f | LC_ALL=C sort --ignore-case | \
+    find $srcdir $find_args | LC_ALL=C sort --ignore-case | \
 	while read -r file && $CONTINUE; do
-      ##  TODO TODO
+      command=to_ogg
+      for extension in passthrough_extensions; do
+	if [[ ${file##*.} == $extension ]]; then
+	  command=(cp -a)
+	  break
+	fi
+      done
       target=$dest/${file%.*}.$FORMAT
       printf "\nconverting $COLOR$file$NOCOLOR ..."
       if [[ $target -nt $file ]]; then
@@ -182,7 +207,7 @@ main () { # {{{2
       else
 	echo
 	mkdir -p $(dirname $target)
-	to_ogg $file $target
+	$command $file $target
       fi
     done
   done
