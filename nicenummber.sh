@@ -1,76 +1,82 @@
 #!/bin/sh
 
-DRYRUNOPTION=-n
+# i counld try to write a perl program to do this
 
-help () {
-  local PROGRAM=`basename "$0"`
-  echo "$PROGRAM <pattern>"
-  echo "$PROGRAM <pattern> -f"
-  echo
-  echo "the pattern must contain one # where the numbers are. If -f is given files are renamed otherwise only a simulation is run."
-  exit 1
+options=-n
+pattern=
+# name of the rename executable (sometimes it is perl-rename)
+rename=
+
+usage () {
+  local prog="`basename "$0"`"
+  echo "$prog [-n|-f|-q|-v] pattern [file ...]"
+  echo "$prog [-n|-f|-q|-v] -p pattern [file ...]"
+  echo "$prog -h"
+  echo "The pattern must contain one #, where the numbers are."
+  echo "Unless -f is given no renaming is done"
+  echo TODO: explain more ...
+}
+die () {
+  local ret="$1"
+  shift
+  echo "$@" >&2
+  exit "$ret"
+}
+find_rename () {
+  for rename in perl-rename rename; do
+    if $rename --version >/dev/null && \
+	$rename --version | grep -qv 'from util-linux'; then
+      return
+    fi
+  done
+  rename=
+  return 1
 }
 
-while getopts fnp: FLAG; do
+if ! find_rename; then
+  die 1 Can not find the correct rename executable.
+fi
+
+# parse the command line
+while getopts fhnp:qvx FLAG; do
   case $FLAG in
-    f)
-      DRYRUNOPTION=
-      ;;
-    n)
-      DRYRUNOPTION=-n
-      ;;
-    p)
-      PATTERN="$OPTARG"
-      ;;
-    *)
-      help
-      ;;
+    f) options=;;
+    h) usage; exit;;
+    n) options=-n;;
+    p) pattern="$OPTARG";;
+    q) quiet=true;;
+    v) quiet=false;;
+    x) set -x;;
+    *) usage; exit 2;;
   esac
 done
-
+# remove options from command line
 shift $(($OPTIND-1))
-
-while [ $# -ne 0 ]; do
-  PATTERN="$1"
+# check that a pattern can be used
+if [ -z "$pattern" ]; then
+  pattern="$1"
   shift
-done
-
-if [ -z "$PATTERN" ]; then
-  echo "No pattern given."
-  help
 fi
-
-#if [ $# -ne 1 -a $# -ne 2 ]; then help; fi;
-
-if echo "$PATTERN" | grep --color=auto -qv "#"; then
-  exit 1
+if [ -z "$pattern" ]; then
+  die 2 No pattern given.
 fi
-#if [ "$2" = -f ]; then DRYRUNOPTION= ; fi
+if echo "$pattern" | grep -qv \#; then
+  die 2 Pattern does not contain a \# character.
+fi
+# ...
+pre_plain="${pattern%%#*}"
+pre_escaped="${pre_plain//./\\.}"
+post_plain="${pattern##*#}"
+post_escaped="${post_plain//./\\.}"
 
-pre2="${PATTERN%%#*}"
-#pre2=`echo "$PATTERN" | sed 's/#.*$//'`
-pre1="${pre2//./\.}"
-#pre1=`echo "$pre2" | sed 's/\./\\./g'`
-post2="${PATTERN##*#}"
-#post2=`echo "$PATTERN" | sed 's/^.*#//'`
-post1="${post2//./\.}"
-#post1=`echo "$post2" | sed 's/\./\\\\./g'`
+i=`ls *$pre_plain*$post_plain* 2>/dev/null | \
+  sed -n "s/.*${pre_escaped}\([0-9]\{1,\}\)${post_escaped}.*/\\1/p" | \
+  awk 'length > x { x = length } END { print int(x) }'`
 
-i=`ls | \
-  sed -n s/".*${pre1}\([0-9]\{1,\}\)${post1}.*"/'\1'/p | \
-  awk '{ if (length > x) { x = length } } END { print x }'`
-
-while [ $i -gt 1 ]; do
+while [ "$i" -gt 1 ]; do
   num="$num\d"
   i=$((i-1))
-  rename ${DRYRUNOPTION} "s/${pre1}(${num})${post1}/${pre2}0\$1${post2}/" *
+  $rename $options "s/${pre_escaped}(${num})${post_escaped}/${pre_plain}0\$1${post_plain}/" *
 done
 
-echo "rename 's/${pre1}(${num})${post1}/${pre2}0\$1${post2}/' *"
-
-exit 
-
-
-
-
-# i counld try to write a perl program to do this
+echo "$rename 's/${pre_escaped}(${num})${post_escaped}/${pre_plain}0\$1${post_plain}/' *"
