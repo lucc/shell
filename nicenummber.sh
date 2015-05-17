@@ -9,21 +9,26 @@ rename=
 regex=false
 
 usage () {
+  # print usage information for the user
   local prog="`basename "$0"`"
-  echo "$prog [-n|-f|-q|-v] pattern [file ...]"
-  echo "$prog [-n|-f|-q|-v] -p pattern [file ...]"
+  echo "$prog [-fnqrsvx] pattern [file ...]"
+  echo "$prog [-fnqrsvx] -p pattern [file ...]"
   echo "$prog -h"
   echo "The pattern must contain one #, where the numbers are."
   echo "Unless -f is given no renaming is done"
+  echo "There must be a string before and after the hash symbol for this"
+  echo "program to work reliably."
   echo TODO: explain more ...
 }
 die () {
+  # exit with an error message and an error code
   local ret="$1"
   shift
   echo "$@" >&2
   exit "$ret"
 }
 find_rename () {
+  # find the correct rename executable
   for rename in perl-rename rename; do
     if $rename --version >/dev/null && \
 	$rename --version | grep -qv 'from util-linux'; then
