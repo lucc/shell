@@ -43,16 +43,23 @@ prepare_perl_expresion () {
   # the pattern given by the user, on stdin is the list of files.
   perl -ne '
     BEGIN{
+      use Getopt::Std;
       my $maximum = 0;
-      our $re1 = shift;
-      our $re2 = shift;
+      getopts("r:", \%args) or die("Command line error.");
+      #print "Got $args{r} for -r.";
+      #if ($args{r} == "") {
+      #  die("Need a regex with -r");
+      #}
+      our ($re1, $re2) = split("#", $args{r});
+      #print "$re1\n";
+      #print "$re2\n";
     }
     chomp; # remove newline
     s/.*?$re1(\d+)$re2.*/$1/; # TODO "@" or "$"?
     $maximum = length if length > $maximum;
     END{
       for (my $i = 1; $i < $maximum; $i++) {
-	print "s/$re1(\d{$i})$re2/${re1}0\$1$re2/;";
+	print "s/$re1(\\d{$i})$re2/${re1}0\$1$re2/;";
       }
     }' -- "$@"
 }
@@ -108,7 +115,7 @@ else
 fi
 
 #n=`ls -d "$@" 2>/dev/null | prepare_perl_expresion "$pre_re" "$post_re"`
-perl_expr=`ls -d "$@" 2>/dev/null | prepare_perl_expresion "$pre" "$post"`
+perl_expr=`ls -d "$@" 2>/dev/null | prepare_perl_expresion -r "$pattern"`
 #  perl -ne 'BEGIN{ my $maximum = 0 };
 #	    chomp; # remove newline
 #	    s/.*?'"$pre_re"'(\d+)'"$post_re"'.*/$1/;
