@@ -25,10 +25,11 @@ connection () {
   fi
 }
 
-while getopts tfqvx FLAG; do
+while getopts itfqvx FLAG; do
   case $FLAG in
     t) test_only=true;;
     f) force=true;;
+    i) systemctl status netctl-auto@wlan0.service; exit;;
     q) info () { true; }; die () { exit 1; };;
     v) info () { info_v "$@"; }; die () { die_v "$@"; };;
     x) set -x;;
