@@ -6,6 +6,7 @@ options=-n
 pattern=
 # name of the rename executable (sometimes it is perl-rename)
 rename=
+regex=false
 
 usage () {
   local prog="`basename "$0"`"
@@ -32,19 +33,39 @@ find_rename () {
   rename=
   return 1
 }
+prepare_perl_expresion () {
+  # Print the perl expresion used for renameing.  $1 and $2 are the parts of
+  # the pattern given by the user, on stdin is the list of files.
+  perl -ne '
+    BEGIN{
+      my $maximum = 0;
+      our $re1 = shift;
+      our $re2 = shift;
+    }
+    chomp; # remove newline
+    s/.*?$re1(\d+)$re2.*/$1/; # TODO "@" or "$"?
+    $maximum = length if length > $maximum;
+    END{
+      for (my $i = 1; $i < $maximum; $i++) {
+	print "s/$re1(\d{$i})$re2/${re1}0\$1$re2/;";
+      }
+    }' -- "$@"
+}
 
 if ! find_rename; then
   die 1 Can not find the correct rename executable.
 fi
 
 # parse the command line
-while getopts fhnp:qvx FLAG; do
+while getopts fhnp:qrsvx FLAG; do
   case $FLAG in
     f) options=;;
     h) usage; exit;;
     n) options=-n;;
     p) pattern="$OPTARG";;
     q) quiet=true;;
+    r) regex=true;;
+    s) regex=false;;
     v) quiet=false;;
     x) set -x;;
     *) usage; exit 2;;
@@ -63,20 +84,33 @@ fi
 if echo "$pattern" | grep -qv \#; then
   die 2 Pattern does not contain a \# character.
 fi
-# ...
-pre_plain="${pattern%%#*}"
-pre_escaped="${pre_plain//./\\.}"
-post_plain="${pattern##*#}"
-post_escaped="${post_plain//./\\.}"
+# split the pattern at the # character
+pre="${pattern%%#*}"
+post="${pattern##*#}"
+# escape pattern for use as a regex and find files to work on
+if $regex; then
+  pre_re="$pre"
+  post_re="$post"
+  if [ $# -eq 0 ]; then
+    set -- *
+  fi
+else
+  pre_re="\\Q$pre\\E"
+  post_re="\\Q$post\\E"
+  if [ $# -eq 0 ]; then
+    set -- *$pre*$post*
+  fi
+fi
 
-i=`ls *$pre_plain*$post_plain* 2>/dev/null | \
-  sed -n "s/.*${pre_escaped}\([0-9]\{1,\}\)${post_escaped}.*/\\1/p" | \
-  awk 'length > x { x = length } END { print int(x) }'`
+#n=`ls -d "$@" 2>/dev/null | prepare_perl_expresion "$pre_re" "$post_re"`
+perl_expr=`ls -d "$@" 2>/dev/null | prepare_perl_expresion "$pre" "$post"`
+#  perl -ne 'BEGIN{ my $maximum = 0 };
+#	    chomp; # remove newline
+#	    s/.*?'"$pre_re"'(\d+)'"$post_re"'.*/$1/;
+#	    $maximum = length if length > $maximum;
+#	    END{ print $maximum }'`
 
-while [ "$i" -gt 1 ]; do
-  num="$num\d"
-  i=$((i-1))
-  $rename $options "s/${pre_escaped}(${num})${post_escaped}/${pre_plain}0\$1${post_plain}/" *
-done
-
-echo "$rename 's/${pre_escaped}(${num})${post_escaped}/${pre_plain}0\$1${post_plain}/' *"
+#for ((i = 1; i < n; i++)); do
+#  perl_expr="${perl_expr}s/$pre_re(\\d{$i})$post_re/${pre_re}0\$1$post_re/;"
+#done
+$rename $options "$perl_expr" "$@"
