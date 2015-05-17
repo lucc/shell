@@ -41,26 +41,12 @@ find_rename () {
 prepare_perl_expresion () {
   # Print the perl expresion used for renameing.  $1 and $2 are the parts of
   # the pattern given by the user, on stdin is the list of files.
-  perl -ne '
-    BEGIN{
-      use Getopt::Std;
-      my $maximum = 0;
-      getopts("r:", \%args) or die("Command line error.");
-      #print "Got $args{r} for -r.";
-      #if ($args{r} == "") {
-      #  die("Need a regex with -r");
-      #}
-      our ($re1, $re2) = split("#", $args{r});
-      #print "$re1\n";
-      #print "$re2\n";
-    }
-    chomp; # remove newline
-    s/.*?$re1(\d+)$re2.*/$1/; # TODO "@" or "$"?
-    $maximum = length if length > $maximum;
-    END{
-      for (my $i = 1; $i < $maximum; $i++) {
-	print "s/$re1(\\d{$i})$re2/${re1}0\$1$re2/;";
-      }
+  perl -we '
+    use List::Util qw(max);
+    my ($re1, $re2) = split("#", shift); # split the pattern at the "#" char
+    my $max = max(map { /.*?$re1(\d+)$re2.*/; length $1 } <>);
+    for (my $i = 1; $i < $max; $i++) {
+      print "s/$re1(\\d{$i})$re2/${re1}0\$1$re2/;";
     }' -- "$@"
 }
 
@@ -96,33 +82,6 @@ fi
 if echo "$pattern" | grep -qv \#; then
   die 2 Pattern does not contain a \# character.
 fi
-# split the pattern at the # character
-pre="${pattern%%#*}"
-post="${pattern##*#}"
-# escape pattern for use as a regex and find files to work on
-if $regex; then
-  pre_re="$pre"
-  post_re="$post"
-  if [ $# -eq 0 ]; then
-    set -- *
-  fi
-else
-  pre_re="\\Q$pre\\E"
-  post_re="\\Q$post\\E"
-  if [ $# -eq 0 ]; then
-    set -- *$pre*$post*
-  fi
-fi
 
-#n=`ls -d "$@" 2>/dev/null | prepare_perl_expresion "$pre_re" "$post_re"`
-perl_expr=`ls -d "$@" 2>/dev/null | prepare_perl_expresion -r "$pattern"`
-#  perl -ne 'BEGIN{ my $maximum = 0 };
-#	    chomp; # remove newline
-#	    s/.*?'"$pre_re"'(\d+)'"$post_re"'.*/$1/;
-#	    $maximum = length if length > $maximum;
-#	    END{ print $maximum }'`
-
-#for ((i = 1; i < n; i++)); do
-#  perl_expr="${perl_expr}s/$pre_re(\\d{$i})$post_re/${pre_re}0\$1$post_re/;"
-#done
+perl_expr=`ls | prepare_perl_expresion "$pattern"`
 $rename $options "$perl_expr" "$@"
