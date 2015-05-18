@@ -1,25 +1,5 @@
 #!/bin/sh
 
-# i counld try to write a perl program to do this
-
-# name of the rename executable (sometimes it is perl-rename)
-rename=
-find_rename () {
-  # find the correct rename executable
-  for rename in perl-rename rename; do
-    if $rename --version >/dev/null && \
-	$rename --version | grep -qv 'from util-linux'; then
-      return
-    fi
-  done
-  rename=
-  return 1
-}
-if ! find_rename; then
-  echo Can not find the correct rename executable.
-  exit 1
-fi
-
 perl -we '
   use strict;
   use List::Util qw(max);
@@ -39,6 +19,22 @@ EOF
     print $msg;
     # TODO: explain more ...
   }
+  sub find_rename {
+    for my $rename ("rename", "rename") {
+      # TODO: broken
+      # test the executable more ...
+      if ($rename) {
+	continue if (system("$rename --version > /dev/null"));
+	if (open($_, "-|", "$rename --version") =~ /from util-linux/) {
+	  print "found wrong rename: $rename\n";
+	  continue;
+	}
+	return $rename;
+      }
+    }
+    die("Can not find the correct rename executable.");
+  }
+  # find_rename;
   my %args;
   my $options = "-n";
   # -x is still mising
