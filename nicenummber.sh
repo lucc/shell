@@ -35,7 +35,17 @@ prepare_perl_expresion () {
   perl -we '
     use strict;
     use List::Util qw(max);
-    my $pattern = shift;
+    use File::Which;
+    use Getopt::Std;
+    my %args;
+    my $options = "-n";
+    getopts("fnp:", \%args);
+    if ($args{f} && ! $args{n}) {
+      $options = "";
+    }
+    my $rename = which("perl-rename", "rename");
+    # TODO test rename program ...
+    my $pattern = $args{p};
     die("No pattern given.") if (! $pattern);
     die("Pattern does not contain a # character.") if ! ($pattern =~ /#/);
     my ($re1, $re2) = split("#", $pattern); # split the pattern at the "#" char
@@ -44,7 +54,9 @@ prepare_perl_expresion () {
     for (my $i = 1; $i < $max; $i++) {
       $expr .= "s/$re1(\\d{$i})$re2/${re1}0\$1$re2/;";
     }
-    print $expr' -- "$@"
+    my @files = @ARGV || glob("*"); # TODO
+    system($rename, "-n", $expr, @files);
+    ' -- "$@"
 }
 
 if ! find_rename; then
@@ -53,25 +65,13 @@ if ! find_rename; then
 fi
 
 # parse the command line
-while getopts fhnp:x FLAG; do
-  case $FLAG in
-    f) options=;;
-    h) usage; exit;;
-    n) options=-n;;
-    p) pattern="$OPTARG";;
-    x) set -x;;
-    *) usage; exit 2;;
-  esac
-done
-# remove options from command line
-shift $(($OPTIND-1))
-# check that a pattern can be used
-if [ -z "$pattern" ]; then
-  pattern="$1"
-  shift
-fi
-if [ $# -eq 0 ]; then
-  set -- *
-fi
-perl_expr=`prepare_perl_expresion "$pattern"` || exit 1
-$rename $options "$perl_expr" "$@"
+#while getopts hx FLAG; do
+#  case $FLAG in
+#    h) usage; exit;;
+#    x) set -x;;
+#    *) usage; exit 2;;
+#  esac
+#done
+## remove options from command line
+#shift $(($OPTIND-1))
+prepare_perl_expresion "$@"
