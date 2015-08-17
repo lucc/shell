@@ -11,7 +11,7 @@ else ifeq ($(UNAME),Linux)
   SYSTEM = linux
   LN     = ln --force --symbolic --no-dereference --verbose
 else
-  $(error Unknown system $(UNAME).  Plesae edit the makefile.)
+  $(error Unknown system $(UNAME).  Please edit the makefile.)
 endif
 
 override ROOT := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
@@ -19,7 +19,7 @@ DESTDIR = ~/.local
 FILES := $(foreach file,                          \
   $(shell find . -type f -perm -1 -print -o       \
 		\( -type d -name .git -prune \)), \
-  $(if $(filter $(dir $(file)),./ ./$(SYSTEM)/),  \
+  $(if $(filter $(dir $(file)),./ ./$(SYSTEM)/ ./git/),  \
   $(file:./%=%)))
 SEP    = :
 get    = $(word $1,$(subst $(SEP), ,$2))
