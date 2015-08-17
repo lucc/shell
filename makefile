@@ -21,6 +21,8 @@ FILES := $(foreach file,                          \
 		\( -type d -name .git -prune \)), \
   $(if $(filter $(dir $(file)),./ ./$(SYSTEM)/ ./git/),  \
   $(file:./%=%)))
+LINKED = $(addprefix $(DESTDIR)/bin/, \
+         $(notdir $(filter $(ROOT)%,$(realpath $(wildcard $(DESTDIR)/bin/*)))))
 SEP    = :
 get    = $(word $1,$(subst $(SEP), ,$2))
 
@@ -71,11 +73,11 @@ all:
 mbp: $(MBP)
 mbp-arch: $(MBPARCH)
 rpi: $(RPI)
+relink: clean-links $(LINKED)
 # generic rules {{{2
 clean: ; $(RM) $(FILELIST)
 clean-links:
-	$(RM) $(addprefix $(DESTDIR)/bin/, \
-	      $(notdir $(filter $(ROOT)%,$(realpath $(wildcard $(DESTDIR)/bin/*)))))
+	$(RM) $(LINKED)
 
 # back end rules {{{1
 $(foreach file,$(FILES),$(eval $(call internal-linker,$(file))))
