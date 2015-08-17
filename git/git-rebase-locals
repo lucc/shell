@@ -1,0 +1,84 @@
+#!/bin/zsh
+
+# Rebase all local only branches on origin/master.
+
+ignore=(\*.bak \*.add)
+upstream=origin/master
+cmd=
+
+usage () {
+  local prog='git rebase-locals'
+  echo "$prog [-nx] [-i pattern] [-u upstream] [-- git-rebase(1) options]"
+  echo "$prog -h"
+}
+
+help () {
+  cat <<EOF
+
+Rebase all local branches on the same upstream branch.  Branches that have a
+remote tracking branch are ignored as are branches matching the ignore
+patterns.
+
+Options:
+-n		just print what would be done, don't so anything
+-x		give shell debuging output
+-i pattern	add pattern to the list of ignore patterns, give the empty
+		string as an argument to clear the list (default is *.bak,
+		*.add)
+-u upstream	set the upstream branch for the rebase (default is
+		origin/master)
+
+Everything after "--" will be passed to git-rebase(1) as options.
+EOF
+}
+
+check-pattern-list () {
+  # $1 an array name, the array should contain patterns
+  # $2 a string to test against every pattern in turn
+  # returns 0 if any pattern matches, 1 otherwise
+  local pattern
+  for pattern in ${(P)1}; do
+    if [[ $2 = ${~pattern} ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+# Parse the command line.
+while getopts hi:nu:x FLAG; do
+  case $FLAG in
+    h) usage; help; exit;;
+    i) if [[ -z $OPTARG ]]; then ignore=(); else ignore+=$OPTARG; fi;;
+    n) cmd=echo;;
+    u) upstream=$OPTARG;;
+    x) set -x;;
+    ?) usage; exit 2;;
+  esac
+done
+shift $(($OPTIND-1))
+
+# Populate the branches array.
+branches=()
+for branch in $(git branch | sed 's/^[ *] //'); do
+  if check-pattern-list ignore $branch; then
+    # The branch should be ignored.
+    continue
+  elif git config --get branch.$branch.remote &>/dev/null; then
+    # The branch has a remote tracking branch.
+    continue
+  else
+    branches+=$branch
+  fi
+done
+
+# Save the current HEAD.
+head=$(git rev-parse --abbrev-ref HEAD)
+
+# Do the actual rebasing.
+for branch in $branches; do
+  $cmd git rebase $@ $upstream $branch
+done
+
+# Check out the saved HEAD.
+git checkout $head 2>/dev/null
