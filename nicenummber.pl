@@ -19,7 +19,7 @@ EOF
   # TODO: explain more ...
 }
 sub find_rename {
-  for my $rename ("rename", "rename") {
+  for my $rename ("perl-rename", "rename") {
     # TODO: broken
     # test the executable more ...
     if ($rename) {
