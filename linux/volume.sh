@@ -32,13 +32,25 @@ dec_volume () {
 }
 
 usage () {
-  echo "$prog [-mu] [[+-]num]"
+  echo "$prog [[+-]num]"
+  echo "$prog [-mu]"
   echo "$prog -h"
+}
+
+help () {
+  echo
+  echo "Set, increase, decrease, mute and unmute the speaker with amixer(1)."
+  echo "Options:"
+  echo "  -m	mute speaker"
+  echo "  -u	unmute speaker"
+  echo "  num   set the volume to num%"
+  echo "  +num  increase the volume by num%"
+  echo "  -num  decrease the volume by num% (not implemented)"
 }
 
 while getopts hmud:0123456789 FLAG; do
   case $FLAG in
-    h) help; exit;;
+    h) usage; help; exit;;
     m) mute; done=true;;
     u) unmute; done=true;;
     d) device="$OPTARG";;
