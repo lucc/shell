@@ -1,0 +1,35 @@
+#!/bin/sh
+
+path=~/vcs/alot
+script=build/lib/alot
+log=~/log/alot.log
+
+build () {
+  (
+    set -e
+    cd $path
+    git checkout --quiet $branch
+    $python setup.py --quiet build
+  )
+}
+start () {
+  $python "$path/$script" --debug-level debug --logfile $log "$@"
+}
+alot2 () {
+  python=${ALOT_PYTHON:-python2}
+  branch=${ALOT_BRANCH:-master}
+  build
+  start "$@"
+}
+alot3 () {
+  python=${ALOT_PYTHON:-python}
+  branch=${ALOT_BRANCH:-pr/800}
+  build
+  start "$@"
+}
+
+case "$(basename "$0")" in
+  alot) alot2 "$@";;
+  alot3) alot3 "$@";;
+  *) alot2 "$@";;
+esac
