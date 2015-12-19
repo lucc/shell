@@ -6,7 +6,7 @@ else
   header = echo '$1'
 endif
 
-all: software mail git
+all: software notmuch git
 software:
 	@cecho green Updates:
 	@echo There are `pacman -Quq | wc -l` updates available.
@@ -24,8 +24,11 @@ mail:
 	@cecho green New mail:
 	@~/src/mailtools/check.py -e lists/zsh -e draft ~/mail || \
 	  echo No new mail.
+notmuch:
+	@cecho green New mail:
+	@if [ `notmuch count tag:inbox AND tag:unread` -eq 0 ]; then echo No new mail.; else notmuch search tag:inbox AND tag:unread; fi
 test:
 	@echo $$TERM
 
-.PHONY: software git mail all test
+.PHONY: software git mail all test notmuch
 # vim: ft=make
