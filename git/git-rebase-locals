@@ -81,4 +81,4 @@ for branch in $branches; do
 done
 
 # Check out the saved HEAD.
-git checkout $head 2>/dev/null
+$cmd git checkout $head 2>/dev/null
