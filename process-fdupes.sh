@@ -5,6 +5,7 @@ link='ln -f $verbose_opt "$last" "$next"'
 message=false
 verbose_opt=-v
 cmd="$link"
+header=false
 die () { echo "$@" >&2; exit 2; }
 ask () {
   local reply
@@ -21,8 +22,10 @@ while getopts ahnvqldc: FLAG; do
 	-l to link or
 	-d to delete duplicates,
 	-v and -q for verbose or quiet mode,
-	-a to ask before running the command and
-	-n for test runs (noop).';;
+	-a to ask before running the command,
+	-n for test runs (noop) and
+	-H to skip first line of each duplicates block (header lines).';;
+    H) header=true;;
     n) noop=true;;
     v) message=echo verbose_opt=-v;;
     q) message=false verbose_opt=;;
@@ -48,6 +51,10 @@ while read next; do
   elif [ "$next" = '' ]; then
     $message Read empty line, reseting \$last ... >&2
     last=
+    if $header; then
+      $message Reading \(and dropping\) header line ... >&2
+      read next
+    fi
   else
     eval $cmd
     last="$next"
