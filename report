@@ -13,7 +13,7 @@ software:
 git:
 	@cecho green Dirty git repositories:
 	@find $(HOME)                                         \
-	  -regex '^$(HOME)/\(\.local\|build\|vcs\)' -prune -o \
+	  -regex '^$(HOME)/\(\.local\|.cache\|build\|vcs\)' -prune -o \
 	  \(                                                  \
 	    -type d                                           \
 	    -name .git                                        \
