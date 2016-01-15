@@ -16,10 +16,10 @@ endif
 
 override ROOT := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 DESTDIR = ~/.local
-FILES := $(foreach file,                          \
-  $(shell find . -type f -perm -1 -print -o       \
-		\( -type d -name .git -prune \)), \
-  $(if $(filter $(dir $(file)),./ ./$(SYSTEM)/ ./git/),  \
+FILES := $(foreach file,                                     \
+  $(shell find . \( -type f -o -type l \) -perm -1 -print -o \
+		\( -type d -name .git -prune \)),            \
+  $(if $(filter $(dir $(file)),./ ./$(SYSTEM)/ ./git/),      \
   $(file:./%=%)))
 LINKED = $(addprefix $(DESTDIR)/bin/, \
          $(notdir $(filter $(ROOT)%,$(realpath $(wildcard $(DESTDIR)/bin/*)))))

@@ -1,0 +1,39 @@
+#!/bin/sh
+
+# Convert different addressbook formats with abook.
+
+prog="$(basename "$0")"
+
+usage () {
+  echo "$prog [infile [outfile]]"
+  echo "$prog help|--help|-h|-?"
+}
+help () {
+  echo "Convert the input from vCard to abook format.  The infile and outfile"
+  echo "default to stdin and stdout if not specified."
+}
+convert () {
+  abook --convert --informat  "$1" ${3:+--infile  "$3"} \
+                  --outformat "$2" ${4:+--outfile "$4"}
+}
+
+if [ "$1" = -h -o "$1" = --help -o "$1" = help -o "$1" = '-?' ]; then
+  usage
+  help
+  exit
+fi
+
+case "$prog" in
+  abook2ldif ) convert abook ldif  "$1" "$2";;
+  abook2vcard) convert abook vcard "$1" "$2";;
+  ldif2abook ) convert ldif  abook "$1" "$2";;
+  ldif2vcard ) convert ldif  vcard "$1" "$2";;
+  vcard2abook) convert vcard abook "$1" "$2";;
+  vcard2ldif ) convert vcard ldif  "$1" "$2";;
+  *) cat <<EOF >&2
+Unsupported basename. This file should be called as one of "abook2ldif"
+"abook2vcard" "ldif2abook" "ldif2vcard" "vcard2abook" "vcard2ldif".
+EOF
+    exit 2;;
+esac
+
