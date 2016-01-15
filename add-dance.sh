@@ -72,6 +72,11 @@ mpd_current () {
   echo "$dir/$file"
 }
 
+beet_interface () {
+  # The song query is in $@ the dance value in $dance.
+  beet modify --nowrite --yes "$@" dance="$dance"
+}
+
 # parse command line options
 prog=`basename "$0"`
 dance=
