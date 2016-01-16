@@ -1,0 +1,66 @@
+#!/bin/zsh
+
+# This is a script to collect shell snippets until I develop them into real
+# shell scripts.  "u" stands for "utils".  I got the idea from hans.
+
+if [[ $# -eq 0 ]]; then
+  set -- help
+fi
+
+case $1 in
+  help)
+    cat $0
+    ;;
+  complete)
+    echo Completion is not implemented yet. >&2
+    sed -n '/^case/,/^esac$/{s/^  \(.*\))\( *# *\(.*\)\)\{0,1\}$/\1 \3/p;}' $0
+    ;;
+  edit|e)
+    $EDITOR $0
+    ;;
+  bk)
+    mountpoint=/media/bk/1
+    name=backup1
+    device=/dev/mapper/$name
+    if findmnt $mountpoint >/dev/null && [[ -L $device && -b $device ]]; then
+      echo Unmounting ...
+      sudo umount $mountpoint && \
+	sudo cryptsetup close $name
+    elif ! findmnt $mountpoint >/dev/null && ! [[ -e $device ]]; then
+      echo Mounting ...
+      pass show disk/$name | \
+	sudo cryptsetup -v --key-file - --keyfile-size 20 open \
+	/dev/disk/by-partlabel/backup.crypt $name
+      sudo mount $device $mountpoint
+    else
+      echo Error
+      exit 1
+    fi
+    ;;
+  phone)
+    shift
+    case $1 in
+      savecontacts)
+	gammu backup $2.vcf <<<ALL
+	;;
+      *)
+	echo TODO >&2
+	exit 2
+	;;
+    esac
+    ;;
+  export-abook-for-nokia)
+    if [[ $# -ne 2 ]]; then
+      echo You have to give a filename >&2
+      exit 2
+    fi
+    #abook --convert --infile ~/.config/abook/addressbook --outformat vcard | \
+    #  iconv --to-code latin1 > ${2%.vcf}.vcf
+    tmp=$(mktemp)
+    abook --convert --infile ~/.config/abook/addressbook --outformat vcard --outfile $tmp
+    #vim -e -s -c 'set fileencoding=latin1' -c "saveas! ${2%.vcf}.vcf" -c 'quit!' $tmp
+    vim -e -s --cmd "edit $tmp" --cmd 'set fileencoding=latin1' --cmd "saveas! ${2%.vcf}.vcf" --cmd 'quit!'
+    rm $tmp
+    echo Saved to ${2%.vcf}.vcf.
+    ;;
+esac
