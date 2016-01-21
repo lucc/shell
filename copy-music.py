@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 
+'''
+module docstring
+'''
+
+# TODO is there a module to convert music between differnt formats?
+
 import argparse
 import logging
 import fnmatch
@@ -132,11 +138,13 @@ class Worker():
             self.ffmpeg(source, destination, os.path.splitext[-1][1:])
 
     def ffmpeg(self, infile, outfile, fmt):
-        """TODO: Docstring for copy.
+        """Read infile, convert it to fmt and write the result to outfile.  Use
+        the external ffmpeg program to do the conversion.
 
-        :source: TODO
-        :destination: TODO
-        :returns: TODO
+        :infile: the input file path
+        :outfile: the output file path
+        :fmt: the music file format to convert to
+        :returns: None
 
         """
         cmd = ['ffmpeg', '-n', '-nostdin', '-loglevel', 'warning', '-i',
@@ -216,8 +224,8 @@ def convert_tree(src, dest, format, force_convert=False, overwrite='never'):
                 if overwrite == 'never':
                     print('Skipping existing file', outfile)
                     continue
-                elif (os.path.getctime(outfile) >= os.path.getctime(infile)
-                        and overwrite == 'older'):
+                elif (os.path.getctime(outfile) >= os.path.getctime(infile) and
+                        overwrite == 'older'):
                     print('Skipping newer existing file', outfile)
                     continue
                 else:
