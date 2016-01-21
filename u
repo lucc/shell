@@ -3,22 +3,54 @@
 # This is a script to collect shell snippets until I develop them into real
 # shell scripts.  "u" stands for "utils".  I got the idea from hans.
 
+function assert () {
+  "$@"
+  local ret=$?
+  if [[ $ret -ne 0 ]]; then
+    echo "Failed to execute '$@'." >&2
+    exit 3
+  fi
+}
+function start-bluetooth () {
+  if [[ $(systemctl is-active bluetooth) != active ]]; then
+    echo Starting bluetooth service ...
+    sudo systemctl start bluetooth
+  fi
+}
+
+while getopts hx FLAG; do
+  case $FLAG in
+    h) set -- help; break;;
+    x) set -x;;
+  esac
+done
+
+shift $((OPTIND - 1))
+
+
 if [[ $# -eq 0 ]]; then
   set -- help
 fi
 
 case $1 in
-  help)
-    cat $0
+  help) # show this help message
+    echo "$(basename $0) [options] subcommand [options] [arguments ...]"
+    echo Possible subcommands are:
+    sed -n '/^case/,/^esac$/{s/^  \([[:space:]]*(\{0,1\}[^()]*\))\( *# *\(.*\)\)\{0,1\}$/\1 \3/p;}' $0 | \
+      while read arg help; do
+	printf '%s\t%s\n' $arg $help
+      done
     ;;
   complete)
     echo Completion is not implemented yet. >&2
     sed -n '/^case/,/^esac$/{s/^  \(.*\))\( *# *\(.*\)\)\{0,1\}$/\1 \3/p;}' $0
     ;;
-  edit|e)
-    $EDITOR $0
+  edit|e) # edit the source of this script
+    # Use exec to suppress syntax errors if parsing continues after the file
+    # was changed.
+    exec $EDITOR $0
     ;;
-  bk)
+  bk) # mount the backup hard disk
     mountpoint=/media/bk/1
     name=backup1
     device=/dev/mapper/$name
@@ -37,11 +69,38 @@ case $1 in
       exit 1
     fi
     ;;
-  phone)
+  phone) # phone related subcommands
     shift
     case $1 in
       savecontacts)
+	# check bluetooth service
+	start-bluetooth
+	echo Connecting to Nokia phone ...
+	bluetoothctl <<-EOF
+	power on
+	connect 00:25:47:10:0D:2D
+	exit
+	EOF
+	# Wait for the connection.
+	sleep 1
 	gammu backup $2.vcf <<<ALL
+	;;
+      put-vcf)
+	start-bluetooth
+	echo Connecting to Nokia phone ...
+	bluetoothctl <<-EOF
+	power on
+	connect 00:25:47:10:0D:2D
+	exit
+	EOF
+	# Wait for the connection.
+	sleep 1
+	tmp1=$(mktemp --suffix=.vcf)
+	tmp2=$(mktemp --suffix=.vcf)
+	sed '/^ADR[;:]/d' < $2 > $tmp1
+	iconv -c --to-code=latin1 --output=$tmp2 $tmp1
+	gammu restore $tmp2 <<<ALL
+	rm -f $tmp1 $tmp2
 	;;
       *)
 	echo TODO >&2
@@ -62,5 +121,31 @@ case $1 in
     vim -e -s --cmd "edit $tmp" --cmd 'set fileencoding=latin1' --cmd "saveas! ${2%.vcf}.vcf" --cmd 'quit!'
     rm $tmp
     echo Saved to ${2%.vcf}.vcf.
+    ;;
+  split-file-at-empty-lines)
+    shift
+    if [[ $1 = --windows || $1 = --crlf ]]; then
+      empty=$'\r'
+      shift
+    else
+      empty=''
+    fi
+    file=$1
+    # find the number of empty lines (corresponds to the number of files
+    # created) and then count the bytes in the decimal representation, which
+    # gives the length to which output filename numbers should be padded with
+    # zeros
+    length=$(($(echo $(($(grep --count "^$empty\$" $file) + 1)) | wc --bytes) - 1))
+    integer -Z $length i=0
+    mkdir -p $file.split
+    rm -f $file.split/*
+    while read line; do
+      if [[ $line = $empty ]]; then
+	((i++))
+	rm -f $file.split/$i
+      else
+	echo $line >> $file.split/$i
+      fi
+    done < $file
     ;;
 esac
