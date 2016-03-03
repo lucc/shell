@@ -5,6 +5,7 @@
 ignore=(\*.bak \*.add)
 upstream=origin/master
 cmd=
+verbose=0
 
 usage () {
   local prog='git rebase-locals'
@@ -46,12 +47,13 @@ check-pattern-list () {
 }
 
 # Parse the command line.
-while getopts hi:nu:x FLAG; do
+while getopts hi:nu:vx FLAG; do
   case $FLAG in
     h) usage; help; exit;;
     i) if [[ -z $OPTARG ]]; then ignore=(); else ignore+=$OPTARG; fi;;
     n) cmd=echo;;
     u) upstream=$OPTARG;;
+    v) verbose=1;;
     x) set -x;;
     ?) usage; exit 2;;
   esac
@@ -60,7 +62,7 @@ shift $(($OPTIND-1))
 
 # Populate the branches array.
 branches=()
-for branch in $(git branch | sed 's/^[ *] //'); do
+for branch in $(git branch | cut -c 3-); do
   if check-pattern-list ignore $branch; then
     # The branch should be ignored.
     continue
@@ -77,6 +79,7 @@ head=$(git rev-parse --abbrev-ref HEAD)
 
 # Do the actual rebasing.
 for branch in $branches; do
+  ((verbose)) && echo Rebasing $branch on $upstream ...
   $cmd git rebase $@ $upstream $branch
 done
 
