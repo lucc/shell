@@ -1,18 +1,39 @@
 #!/bin/sh
 
+git_cmd="$(basename "$0")"
+git_cmd="${git_cmd#git-}"
 command=wc
 files=''
 directory=.
 filter='tail -n 1'
+log_args=''
 
-while getopts c:d:f:F:h FLAG; do
+usage () {
+  echo "Usage: git $git_cmd [-x] [-c command] [-d directory] [-f files]"
+  echo "           ${git_cmd//?/ } [-F filter_cmd] [-l log_args]"
+  echo "       git $git_cmd -h"
+}
+help () {
+  echo "Check out each rev and execute a command.  Then print a line with the"
+  echo "ouput of the command prefixed with the commit id."
+  echo "Defaults:"
+  echo "  command: $command"
+  echo "  files: $files"
+  echo "  directory: $directory"
+  echo "  filter: $filter"
+  echo "  log_args: $log_args"
+}
+
+while getopts c:d:f:F:l:hx FLAG; do
   case $FLAG in
     c) command="$OPTARG";;
     d) directory="$OPTARG";;
     f) files="$files $OPTARG";;
     F) filter="$OPTARG";;
-    h) echo HELP; exit;;
-    *) exit 2;;
+    l) log_args="$OPTARG";;
+    h) usage; help; exit;;
+    x) set -x;;
+    *) usage >&2; exit 2;;
   esac
 done
 
@@ -28,7 +49,7 @@ fi
 
 head=$(git rev-parse --abbrev-ref HEAD)
 
-git log --oneline | while read ref msg; do
+git log --oneline $log_args | while read ref msg; do
   git checkout -f $ref 2>/dev/null
   printf '%s %-70s %s\n' $ref "$msg" "$($command $files 2>/dev/null | $filter)"
 done
