@@ -12,23 +12,27 @@ software:
 	@echo There are `pacman -Quq | wc -l` updates available.
 git:
 	@cecho green Dirty git repositories:
-	@find $(HOME)                                         \
+	@find $(HOME)                                                 \
 	  -regex '^$(HOME)/\(\.local\|.cache\|build\|vcs\)' -prune -o \
-	  \(                                                  \
-	    -type d                                           \
-	    -name .git                                        \
-	    -execdir git is-dirty \;                          \
-	    -exec dirname {} \;                               \
+	  \(                                                          \
+	    -type d                                                   \
+	    -name .git                                                \
+	    -execdir git is-dirty \;                                  \
+	    -exec dirname {} \;                                       \
 	  \) 2>/dev/null
 mail:
 	@cecho green New mail:
 	@~/src/mailtools/check.py -e lists/zsh -e draft ~/mail || \
 	  echo No new mail.
+notmuch: QUERY = $(patsubst %,'%', \
+  $(shell notmuch config get private.inbox_query))
 notmuch:
 	@cecho green New mail:
-	@if [ `notmuch count tag:inbox AND tag:unread` -eq 0 ]; then echo No new mail.; else notmuch search tag:inbox AND tag:unread; fi
-test:
-	@echo $$TERM
+	@if [ `notmuch count tag:unread and $(QUERY)` -eq 0 ]; then \
+	  echo No new mail.;                                        \
+	else                                                        \
+	  notmuch search tag:unread and $(QUERY);                   \
+	fi
 
 .PHONY: software git mail all test notmuch
 # vim: ft=make
