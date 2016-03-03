@@ -15,6 +15,32 @@ help () {
   echo "TODO: help text"
 }
 
+query_for_package () {
+  local reply=
+  local package="$1"
+  pacman --query --search "^$package$"
+  while true; do
+    echo 'Do you want to uninstall this package?' \
+      '[yes|No|view|quit|skip to uninstall]'
+    read reply
+    if [ -z "$reply" ]; then
+      reply=no
+    fi
+    case "$reply" in
+      y*|Y*) uninstall="$uninstall $package"; return;;
+      n*|N*)
+	count=$(($(cat "$cache/$package" 2>/dev/null) + 1))
+	echo $count > "$cache/$package"
+	return
+	;;
+      v*|V*) pacman --query --info "$package";;
+      s*|S*) return 1;;
+      q*|Q*) exit;;
+      *)     pacman --query --info "$package";;
+    esac
+  done
+}
+
 random=0
 all=1
 
@@ -34,6 +60,8 @@ cache=~/.cache/check-pack
 packages="$(pacman --query --explicit --unrequired --quiet)"
 uninstall=
 
+mkdir -p "$cache"
+
 if ((random)); then
   packages="$(echo "$packages" | sort --random)"
 fi
@@ -42,27 +70,7 @@ if ! ((all)); then
 fi
 
 for package in $packages; do
-  reply=
-  pacman --query --search "^$package$"
-  while true; do
-    echo 'Do you want to uninstall this package? [yes|No|view|quit|skip to uninstall]'
-    read reply
-    if [ -z "$reply" ]; then
-      reply=no
-    fi
-    case "$reply" in
-      y*|Y*) uninstall="$uninstall $package"; break;;
-      n*|N*)
-	count=$(($(cat "$cache/$package" 2>/dev/null) + 1))
-	echo $count "$cache/$package"
-	break
-	;;
-      v*|V*) pacman --query --info "$package";;
-      s*|S*) break 2;;
-      q*|Q*) exit;;
-      *)     pacman --query --info "$package";;
-    esac
-  done
+  query_for_package $package || break
 done
 
 if [ -n "$uninstall" ]; then
