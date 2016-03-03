@@ -16,6 +16,10 @@ build () {
 start () {
   $python "$path/$script" --debug-level debug --logfile $log "$@"
 }
+start () {
+  PYTHONPATH="$path" $python -m alot --debug-level debug --logfile "$logfile" "$@"
+}
+
 alot2 () {
   python=${ALOT_PYTHON:-python2}
   branch=${ALOT_BRANCH:-master}
