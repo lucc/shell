@@ -182,4 +182,12 @@ case $1 in
       fi
     done < $file
     ;;
+  backup)
+    backup.py snapshot --source ~/.config/gpg/ --exclude \
+      $(repeat 14 printf '[0-9]') --exclude latest \
+       nowip:backup/gpg
+    backup.py snapshot --source $PASSWORD_STORE_DIR/ --exclude .git \
+      --exclude .gitattributes \
+      nowip:backup/pass
+    ;;
 esac
