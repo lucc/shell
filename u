@@ -124,27 +124,61 @@ case $1 in
     ;;
   split-file-at-empty-lines)
     shift
-    if [[ $1 = --windows || $1 = --crlf ]]; then
-      empty=$'\r'
-      shift
-    else
-      empty=''
+    empty=''
+    extension=.vcf
+    while [[ $# -ge 1 ]]; do
+      case $1 in
+	--windows|--crlf|--dos)
+	  empty=$'\r'
+	  shift
+	  ;;
+	-d|--dir|--out|-o|--output)
+	  if [[ $# -eq 1 ]]; then
+	    echo The option $1 needs an argument. >&2
+	    exit 2
+	  fi
+	  output=$2
+	  shift 2
+	  ;;
+	--extension)
+	  if [[ $# -eq 1 ]]; then
+	    echo The option $1 needs an argument. >&2
+	    exit 2
+	  fi
+	  extension=$2
+	  shift 2
+	  ;;
+	--)
+	  shift
+	  break
+	  ;;
+	*)
+	  break
+	  ;;
+      esac
+    done
+    if [[ $# -ne 1 ]]; then
+      echo You need to give exactly one filename. >&2
+      exit 2
     fi
     file=$1
+    if [[ -z $output ]]; then
+      output=$file.split
+    fi
     # find the number of empty lines (corresponds to the number of files
     # created) and then count the bytes in the decimal representation, which
     # gives the length to which output filename numbers should be padded with
     # zeros
     length=$(($(echo $(($(grep --count "^$empty\$" $file) + 1)) | wc --bytes) - 1))
     integer -Z $length i=0
-    mkdir -p $file.split
-    rm -f $file.split/*
+    mkdir -p $output
+    rm -f $output/*(N)
     while read line; do
       if [[ $line = $empty ]]; then
 	((i++))
-	rm -f $file.split/$i
+	rm -f $output/$i$extension
       else
-	echo $line >> $file.split/$i
+	echo $line >> $output/$i$extension
       fi
     done < $file
     ;;
