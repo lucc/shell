@@ -1,54 +1,71 @@
 #!/bin/sh
 
-# try to connect to the wrong wlan in order to force netctl-auto to reconnect
-# test if we can ping localhost
-info_v () { echo Info: "$@" >&2; }
-die_v () { echo Error: "$@" >&2; exit 1; }
-info () { info_v "$@"; }
-die () { die_v "$@"; }
-
+output='%s\n'
 test_only=false
-force=false
 service=netctl-auto@wlan0.service
+prog=$(basename "$0")
 
+usage () {
+  unset -f echo
+  echo "Usage: $prog [-fikqtvx]"
+  echo "       $prog -h"
+}
+help () {
+  unset -f echo
+  echo Test if we can connect to the internet and restart the netctl
+  echo searvice as neccessary.
+  echo Options:
+  echo '  -f  force reconnection'
+  echo '  -i  print status'
+  echo '  -k  kill/stop service'
+  echo '  -q  be quiet'
+  echo '  -t  only test connection'
+  echo '  -v  be verbose'
+  echo '  -x  debug mode'
+}
+echo () {
+  printf "$output" "$*"
+}
 connection () {
-  if timeout 1s ping -c 1 -W 1 -q localhost >/dev/null; then
+  if eval timeout 1s ping -c 1 -W 1 -q localhost >/dev/null 2>&1; then
     # test if we can ping google
-    if timeout 1s ping -c 1 -W 1 -q google.com >/dev/null; then
-      info You seem to have internet connection.
+    if eval timeout 1s ping -c 1 -W 1 -q google.com >/dev/null 2>&1; then
+      echo You seem to have internet connection.
       return 0
     else
       return 1
     fi
   else
-    die Can not ping localhost.
+    echo Can not ping localhost.
     exit 1
   fi
 }
 
-if [ `id -u` -ne 0 ]; then
+if [ $(id -u) -ne 0 ]; then
   export SUDO_ASKPASS=/usr/lib/ssh/ssh-askpass
   sudo=sudo
 fi
 
-while getopts ifkqtvx FLAG; do
+while getopts fhikqtvx FLAG; do
   case $FLAG in
-    t) test_only=true;;
+    h) usage; help; exit;;
     f) exec $sudo systemctl restart $service;;
-    k) exec $sudo systemctl stop $service;;
     i) exec systemctl --no-pager status $service;;
-    q) info () { true; }; die () { exit 1; };;
-    v) info () { info_v "$@"; }; die () { die_v "$@"; };;
+    k) exec $sudo systemctl stop $service;;
+    t) test_only=true;;
+    q) output='> /dev/null 2>&1';;
+    v) output=;;
     x) set -x;;
+    *) usage; exit 2;;
   esac
 done
 
 if ! connection; then
   if $test_only; then
-    info "You don't have internet connection."
+    echo "You don't have internet connection."
     exit 1
   else
-    info Reconecting to the network ...
+    echo Reconecting to the network ...
     $sudo systemctl restart $service
   fi
 fi
