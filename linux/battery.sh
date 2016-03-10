@@ -311,9 +311,9 @@ else
   ExternalConnected=No
 fi
 AvgTimeToEmpty=1000000 # TODO
-MaxCapacity=`cat $sys_bat/energy_full`
+MaxCapacity=`cat $sys_bat/charge_full`
 Voltage=`cat $sys_bat/voltage_now`
-CurrentCapacity=`cat $sys_bat/energy_now`
+CurrentCapacity=`cat $sys_bat/charge_now`
 CycleCount=`cat $sys_bat/cycle_count`
 #FullyCharged=`cat $sys_bat/`
 #InstantAmperage=`cat $sys_bat/`
