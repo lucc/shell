@@ -65,8 +65,9 @@ graphical () {
 }
 
 new_graphical () {
-  local user=${1:-$USER}
-  exec $graphical_browser -new-instance -P $user
+  local user="${1:-$USER}"
+  shift
+  exec "$graphical_browser" -new-instance -P "$user" "$@"
 }
 
 while getopts hgntpx opt; do
