@@ -254,8 +254,11 @@ select_color () {
 
 # help functions {{{1
 usage () {
-  echo "Usage: `basename $0` [ -v ]"
-  echo "       `basename $0` -b [ -nc [ -e bash|zsh ] ]"
+  local prog=$(basename $0)
+  echo "Usage: $prog [ -v ]"
+  echo "       $prog -b [ -nc [ -e bash|zsh ] ]"
+}
+help () {
   echo "Options:"
   echo "  -b  print a bar to indicate battery status"
   echo "  -c  use color (default if stdout is a terminal)"
@@ -296,8 +299,8 @@ while getopts abce:hnpuU:v FLAG; do
     u) UTF8=true;;
     U) UTF8=true UTF8CHOISE="$OPTARG";;
     v) verbose=true BAR=false;;
-    h) usage; exit;;
-    *) echo "Try `basename "$0"` -h for help." >&2; exit 2;;
+    h) usage; help; exit;;
+    *) usage >&2; exit 2;;
   esac
 done
 
