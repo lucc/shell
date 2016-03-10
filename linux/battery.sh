@@ -13,7 +13,7 @@
 # output functions {{{1
 
 battery_percentage () {
-  echo $((100 * ${CurrentCapacity} / ${MaxCapacity}))
+  echo $((100 * CurrentCapacity / MaxCapacity))
 }
 
 concice_battery_info () {
@@ -23,13 +23,13 @@ concice_battery_info () {
 verbose_battery_info () {
   echo "Battery Information:"
   echo
-  if [ ${IsCharging} = "Yes" ]; then
+  if [ "$IsCharging" = Yes ]; then
     # TODO:
     echo "  Charging: ${CurrentCapacity}/${MaxCapacity}" \
-      "(`battery_percentage`% = ${AvgTimeToFull}min)"
+      "($(battery_percentage)% = ${AvgTimeToFull}min)"
   else
     echo "  Remaining: ${CurrentCapacity}/${MaxCapacity}" \
-    "(`battery_percentage`% = ${AvgTimeToEmpty}min)"
+    "($(battery_percentage)% = ${AvgTimeToEmpty}min)"
   fi
   echo "  Cycles: ${CycleCount}"
   echo "  Fully charged: ${FullyCharged}"
@@ -42,76 +42,76 @@ verbose_battery_info () {
 
 battery_bar () {
   select_utf8_char "$UTF8CHOISE"
-  if [ ${IsCharging} = "Yes" ]; then
+  if [ "$IsCharging" = Yes ]; then
     CHAR="$RIGHT"
   else
     CHAR="$LEFT"
   fi
-  local fill=$((`battery_percentage` / 10))
+  local fill=$(($(battery_percentage) / 10))
   unset OUT
   i=$fill
   while [ $i -gt 0 ]; do OUT="$OUT$CHAR"; i=$((i - 1)); done
   i=$((10 - fill))
   while [ $i -gt 0 ]; do OUT=" $OUT"; i=$((i - 1)); done
-  if [ ${AvgTimeToEmpty} -le 5 ]; then OUT="    ${AvgTimeToEmpty} min "; fi
+  if [ "$AvgTimeToEmpty" -le 5 ]; then OUT="    ${AvgTimeToEmpty} min "; fi
   if $color; then
     if [ $fill -le 2 ]; then color=red
     elif [ $fill -le 4 ]; then color=yellow
     else color=green
     fi
     if [ "$escape" = bash ]; then
-      bash_colors $fg_bg $color
+      bash_colors "$fg_bg" "$color"
     elif [ "$escape" = tmux ]; then
-      if [ $fg_bg = fg ]; then fg_bg=bg; else fg_bg=fg; fi
-      tmux_colors $fg_bg $color
+      if [ "$fg_bg" = fg ]; then fg_bg=bg; else fg_bg=fg; fi
+      tmux_colors "$fg_bg" "$color"
     elif [ "$escape" = zsh ]; then
-      zsh_colors $fg_bg $color
+      zsh_colors "$fg_bg" "$color"
     else
-      terminal_colors $fg_bg $color
+      terminal_colors "$fg_bg" "$color"
     fi
   else
     unset color
   fi
   OUT="[$color$OUT$default]"
-  if [ ${ExternalConnected} = "Yes" ]; then OUT="=$OUT"; fi
+  if [ "$ExternalConnected" = Yes ]; then OUT="=$OUT"; fi
   echo "$OUT"
 }
 
 battery_bar_for_prompt () {
   select_utf8_char "$UTF8CHOISE"
-  if [ ${IsCharging} = "Yes" ]; then
+  if [ "$IsCharging" = Yes ]; then
     CHAR="$RIGHT"
   else
     CHAR="$LEFT"
   fi
-  local fill=$((`battery_percentage` / 10))
+  local fill=$(($( battery_percentage) / 10))
   unset OUT
   i=$fill
   while [ $i -gt 0 ]; do OUT="$OUT$CHAR"; i=$((i - 1)); done
   i=$((10 - fill))
   while [ $i -gt 0 ]; do OUT=" $OUT"; i=$((i - 1)); done
-  if [ ${AvgTimeToEmpty} -le 5 ]; then OUT="    ${AvgTimeToEmpty} min "; fi
+  if [ "$AvgTimeToEmpty" -le 5 ]; then OUT="    ${AvgTimeToEmpty} min "; fi
   if $color; then
     if [ $fill -le 2 ]; then color=red
     elif [ $fill -le 4 ]; then color=yellow
     else color=green
     fi
     if [ "$escape" = bash ]; then
-      bash_colors $fg_bg $color
+      bash_colors "$fg_bg" "$color"
     elif [ "$escape" = tmux ]; then
-      if [ $fg_bg = fg ]; then fg_bg=bg; else fg_bg=fg; fi
-      tmux_colors $fg_bg $color
+      if [ "$fg_bg" = fg ]; then fg_bg=bg; else fg_bg=fg; fi
+      tmux_colors "$fg_bg" "$color"
     elif [ "$escape" = zsh ]; then
-      zsh_colors $fg_bg $color
+      zsh_colors "$fg_bg" "$color"
     else
-      terminal_colors $fg_bg $color
+      terminal_colors "$fg_bg" "$color"
     fi
   else
     unset color
   fi
   OUT="[$color$OUT$default"
-  if [ ${ExternalConnected} = "Yes" ]; then OUT="=$OUT"; fi
-  echo -n "$OUT"
+  if [ "$ExternalConnected" = Yes ]; then OUT="=$OUT"; fi
+  printf %s "$OUT"
 }
 
 # utf8 functions {{{1
@@ -192,25 +192,25 @@ select_utf8_char () {
     LEFT='<'
     length=1
   fi
-  if [ `printf "$RIGHT" | wc -c` -eq $length ] && \
-     [ `printf "$LEFT"  | wc -c` -eq $length ]; then
-    RIGHT="`printf "$RIGHT"`"
-    LEFT="`printf "$LEFT"`"
+  if [ "$(printf %s "$RIGHT" | wc -c)" -eq $length ] && \
+     [ "$(printf %s "$LEFT"  | wc -c)" -eq $length ]; then
+    RIGHT=$(printf %s "$RIGHT")
+    LEFT=$(printf %s "$LEFT")
   fi
 }
 
 # color selection functions {{{1
 terminal_colors () {
-  local start=`printf '\x1b['`
+  local start=$(printf '\x1b[')
   local end=m
   local fg_bg=
   default="${start}0${end}"
-  if [ $1 = fg ]; then
+  if [ "$1" = fg ]; then
     fg_bg=3
   else
     fg_bg=4
   fi
-  case $2 in
+  case "$2" in
     red)
       color="${start}${fg_bg}1${end}"
       ;;
@@ -224,7 +224,7 @@ terminal_colors () {
 }
 
 bash_colors () {
-  terminal_colors $1 $2
+  terminal_colors "$1" "$2"
   color='\['"$color"'\]'
   default='\['"$default"'\]'
 }
@@ -235,7 +235,7 @@ tmux_colors () {
 }
 
 zsh_colors () {
-  if [ $1 = fg ]; then
+  if [ "$1" = fg ]; then
     color="%F{$2}"
   else
     color="%K{$2}"
@@ -278,10 +278,10 @@ PROMPT=false
 escape=
 verbose=false
 fg_bg=fg
-if [ -t 0 -a -t 1 ]; then color=true; else color=false; fi
+if [ -t 0 ] && [ -t 1 ]; then color=true; else color=false; fi
 
 # possible utf8 chars for battery graphic
-if echo $LANG | grep -qi 'utf.\?8'; then
+if echo "$LANG" | grep -qi 'utf.\?8'; then
   UTF8=true
 else
   UTF8=false
@@ -297,7 +297,7 @@ while getopts abce:hnpuU:v FLAG; do
     n) color=false escape=;;
     p) PROMPT=true BAR=false verbose=false;;
     u) UTF8=true;;
-    U) UTF8=true UTF8CHOISE="$OPTARG";;
+    U) UTF8=true UTF8CHOISE=$OPTARG;;
     v) verbose=true BAR=false;;
     h) usage; help; exit;;
     *) usage >&2; exit 2;;
@@ -308,24 +308,24 @@ done
 # TODO use acpi
 sys_adp=/sys/class/power_supply/ADP1
 sys_bat=/sys/class/power_supply/BAT0
-if [ `cat $sys_adp/online` -eq 1 ]; then
+if [ "$(cat $sys_adp/online)" -eq 1 ]; then
   ExternalConnected=Yes
 else
   ExternalConnected=No
 fi
 AvgTimeToEmpty=1000000 # TODO
-MaxCapacity=`cat $sys_bat/charge_full`
-Voltage=`cat $sys_bat/voltage_now`
-CurrentCapacity=`cat $sys_bat/charge_now`
-CycleCount=`cat $sys_bat/cycle_count`
-#FullyCharged=`cat $sys_bat/`
-#InstantAmperage=`cat $sys_bat/`
-if [ `cat $sys_bat/status` = Charging ]; then
+MaxCapacity=$(cat $sys_bat/charge_full)
+Voltage=$(cat $sys_bat/voltage_now)
+CurrentCapacity=$(cat $sys_bat/charge_now)
+CycleCount=$(cat $sys_bat/cycle_count)
+#FullyCharged=$(cat $sys_bat/)
+#InstantAmperage=$(cat $sys_bat/)
+if [ "$(cat $sys_bat/status)" = Charging ]; then
   IsCharging=Yes
 else
   IsCharging=No
 fi
-#AvgTimeToFull=`cat $sys_bat/`
+#AvgTimeToFull=$(cat $sys_bat/)
 
 # process data {{{1
 if $PROMPT; then
