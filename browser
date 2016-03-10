@@ -12,9 +12,10 @@ graphical_browser=firefox
 quick_browser=luakit
 
 usage () {
-  echo "Usage: `basename "$0"` [-gt] url"
-  echo "       `basename "$0"` -n [profile] [url]"
-  echo "       cat file.html | `basename "$0"` -p [-gt]"
+  local prog=$(basename "$0")
+  echo "Usage: $prog [-gt] url"
+  echo "       $prog -n [profile] [url]"
+  echo "       cat file.html | $prog -p [-gt]"
 }
 help () {
   usage
@@ -38,18 +39,18 @@ firefox_profiles () {
 }
 firefox_open_profile () {
   local porfile
-  for profile in `profiles`; do
+  for profile in $(profiles); do
     if [ "$profile" = "$1" ]; then
       # TODO
       exec open -na Firefox --args -P "$profile" -no-remote
     fi
   done
-  echo $1 is not a valid profile. Try one of `profiles`.
+  echo "$1 is not a valid profile. Try one of $(profiles)."
   exit 2
 }
 
 text () {
-  if [ -t 1 -o -t 2 ]; then
+  if [ -t 1 ] || [ -t 2 ]; then
     exec "$text_browser" "$@"
   else
     exec term -e "$text_browser" "$@"
@@ -83,16 +84,16 @@ while getopts hgntpx opt; do
 done
 shift $((OPTIND-1))
 
-if [ $# -eq 1 -a "$1" = - ]; then
+if [ $# -eq 1 ] && [ "$1" = - ]; then
   shift
   pipe=true
 fi
 
 if $pipe; then
   # save stdin to a file
-  file=`mktemp -t tmp-$$-XXXXXX` || exit 1
+  file=$(mktemp -t tmp-$$-XXXXXX) || exit 1
   cat > "$file"                  || exit 1
-  case `file --brief --mime-type "$file"` in
+  case $(file --brief --mime-type "$file") in
     text/html)
       mv "$file" "$file.html"
       file="$file.html"
