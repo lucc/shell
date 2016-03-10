@@ -192,10 +192,12 @@ select_utf8_char () {
     LEFT='<'
     length=1
   fi
-  if [ "$(printf %s "$RIGHT" | wc -c)" -eq $length ] && \
-     [ "$(printf %s "$LEFT"  | wc -c)" -eq $length ]; then
-    RIGHT=$(printf %s "$RIGHT")
-    LEFT=$(printf %s "$LEFT")
+  if [ "${#RIGHT}" -eq $length ] && [ "${#LEFT}" -eq $length ]; then
+    : # do nothing
+  elif [ "$(printf "$RIGHT" | wc -c)" -eq $length ] && \
+     [ "$(printf "$LEFT"  | wc -c)" -eq $length ]; then
+    RIGHT=$(printf "$RIGHT")
+    LEFT=$(printf "$LEFT")
   fi
 }
 
