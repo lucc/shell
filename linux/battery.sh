@@ -10,6 +10,49 @@
 #                                                                            #
 ##############################################################################
 
+# data getters {{{1
+
+get_connect_from_sys_fs () {
+  if [ "$(cat /sys/class/power_supply/ADP1/online)" -eq 1 ]; then
+    ExternalConnected=Yes
+  else
+    ExternalConnected=No
+  fi
+}
+get_data_from_sys_fs () {
+  local sys_bat=/sys/class/power_supply/BAT0
+  AvgTimeToEmpty=1000000 # TODO
+  MaxCapacity=$(cat $sys_bat/charge_full)
+  Voltage=$(cat $sys_bat/voltage_now)
+  CurrentCapacity=$(cat $sys_bat/charge_now)
+  CycleCount=$(cat $sys_bat/cycle_count)
+  #FullyCharged=$(cat $sys_bat/)
+  #InstantAmperage=$(cat $sys_bat/)
+  if [ "$(cat $sys_bat/status)" = Charging ]; then
+    IsCharging=Yes
+  else
+    IsCharging=No
+  fi
+  #AvgTimeToFull=$(cat $sys_bat/)
+  get_connect_from_sys_fs
+}
+
+get_data_from_sys_fs_uevent () {
+  local data=$(cat /sys/class/power_supply/BAT0/uevent)
+  eval $data
+  MaxCapacity=$POWER_SUPPLY_CHARGE_FULL
+  Voltage=$POWER_SUPPLY_VOLTAGE_NOW
+  CurrentCapacity=$POWER_SUPPLY_CHARGE_NOW
+  CycleCount=$POWER_SUPPLY_CYCLE_COUNT
+  if [ "$POWER_SUPPLY_STATUS" = Charging ]; then
+    IsCharging=Yes
+  else
+    IsCharging=No
+  fi
+  get_connect_from_sys_fs
+  AvgTimeToEmpty=1000000 # TODO
+}
+
 # output functions {{{1
 
 battery_percentage () {
@@ -307,27 +350,7 @@ while getopts abce:hnpuU:v FLAG; do
 done
 
 # get data {{{1
-# TODO use acpi
-sys_adp=/sys/class/power_supply/ADP1
-sys_bat=/sys/class/power_supply/BAT0
-if [ "$(cat $sys_adp/online)" -eq 1 ]; then
-  ExternalConnected=Yes
-else
-  ExternalConnected=No
-fi
-AvgTimeToEmpty=1000000 # TODO
-MaxCapacity=$(cat $sys_bat/charge_full)
-Voltage=$(cat $sys_bat/voltage_now)
-CurrentCapacity=$(cat $sys_bat/charge_now)
-CycleCount=$(cat $sys_bat/cycle_count)
-#FullyCharged=$(cat $sys_bat/)
-#InstantAmperage=$(cat $sys_bat/)
-if [ "$(cat $sys_bat/status)" = Charging ]; then
-  IsCharging=Yes
-else
-  IsCharging=No
-fi
-#AvgTimeToFull=$(cat $sys_bat/)
+get_data_from_sys_fs_uevent
 
 # process data {{{1
 if $PROMPT; then
