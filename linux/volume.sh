@@ -76,7 +76,9 @@ if [ $# -eq 1 -o $# -eq 2 ]; then
     *) usage; exit 2;;
   esac
 elif [ $# -eq 0 ]; then
-  func=set_volume
+  set_volume
+  unmute
+  exit
 else
   usage
   exit 2
