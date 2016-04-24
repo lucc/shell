@@ -17,7 +17,14 @@ help () {
   echo TOOD
 }
 diff_wrapper () {
-  diff "$@"
+  if [[ $# -lt 2 && -t 0 ]]; then
+    echo "Error: Please specify at least two files." >&2
+    exit 2
+  elif which colordiff &>/dev/null; then
+    colordiff "$@"
+  else
+    diff "$@"
+  fi
 }
 git_diff_wrapper () {
   git diff "$@"
