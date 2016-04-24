@@ -190,4 +190,12 @@ case $1 in
       --exclude .gitattributes \
       nowip:backup/pass
     ;;
+  urxvt-font)
+    printf '\33]50;%s\007' $2;;
+  ycm-recompile)
+    cd ~/.local/share/nvim/plugins/YouCompleteMe
+    git pull
+    git submodule update --recursive
+    python2 ./install.py --clang-completer --system-libclang --system-boost
+    ;;
 esac
