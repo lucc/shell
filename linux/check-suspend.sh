@@ -5,9 +5,9 @@
 # Script to repeatedly check the battery status and hibernate the computer in
 # case the level drops below a threshold.
 
-version=2
+version=2.1
 delay=0
-prog=`basename "$0"`
+prog=${0##*/}
 battery_threshhold=5
 time_threshold=5
 
@@ -33,9 +33,9 @@ Options:
 
 EOF
 }
-connected() {
+connected () {
   # return 0 iff the external power supply is connected
-  [ `cat /sys/class/power_supply/ADP1/online` -eq 1 ]
+  [ "$(cat /sys/class/power_supply/ADP1/online)" -eq 1 ]
 }
 parse_data () {
   acpi --battery | sed -e 's/.*: /state=/'         \
@@ -60,13 +60,13 @@ done
 sleep "$delay"
 
 while ! connected; do
-  eval `parse_data`
+  eval $(parse_data)
   #echo state: $state
   #echo percent: $percent
   #echo time: $time
-  if [ $state = Charging ]; then
+  if [ "$state" = Charging ]; then
     exit
-  elif [ $percent -lt $battery_threshhold -o $time -lt $time_threshold ]; then
+  elif [ "$percent" -lt "$battery_threshhold" -o "$time" -lt "$time_threshold" ]; then
     systemctl hybrid-sleep
   else
     sleep 1
