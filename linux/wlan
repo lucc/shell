@@ -42,6 +42,7 @@ connection () {
 }
 
 if [ $(id -u) -ne 0 ]; then
+  # The askpass variable must be set to a path (no arguments).
   export SUDO_ASKPASS=/usr/lib/ssh/ssh-askpass
   sudo=sudo
 fi
