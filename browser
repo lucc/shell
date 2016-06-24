@@ -26,12 +26,6 @@ help () {
   echo '  -n    open a new instance with the given profile (implies -g)'
 }
 
-firefox_half_quiet () {
-  # pipe stderr of firefox into this, it's an open bug:
-  # https://bugzil.la/833117
-  sed -e "1{/^ *$/d;}" \
-    -e "2{/(process:[0-9]*): GLib-CRITICAL \*\*: g_slice_set_config: assertion 'sys_page_size == 0' failed/d;}"
-}
 firefox_profiles () {
   # TODO
   local ini="$HOME/.mozilla/firefox/profiles.ini"
