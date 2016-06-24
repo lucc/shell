@@ -1,10 +1,10 @@
 #!/bin/bash
-# vim: ft=sh
 # a script to start my favorite terminal emulator
 
 version=1.0
 args=( )
 execute=''
+big=
 case $(uname) in
   Darwin) term=iterm;;
   Linux)  term=urxvtc;;
@@ -52,15 +52,18 @@ iterm_wrapper () {
 	EOF
 }
 urxvt_wrapper () {
-  exec urxvt ${1:+-e} "${args[@]}"
+  exec urxvt ${big:+-fn "$(get_urxvt_font):size=17"} ${1:+-e} "${args[@]}"
 }
 urxvtc_wrapper () {
   # forks!
-  urxvtc ${1:+-e} "${args[@]}"
+  urxvtc ${big:+-fn "$(get_urxvt_font):size=17"} ${1:+-e} "${args[@]}"
   if [ $? -eq 2 ]; then
     urxvtd -q -o -f
-    urxvtc ${1:+-e} "${args[@]}"
+    urxvtc ${big:+-fn "$(get_urxvt_font):size=17"} ${1:+-e} "${args[@]}"
   fi
+}
+get_urxvt_font () {
+  xrdb -query | sed -En 's/^urxvt\.font\s*:\s*(.*):size=[[:digit:]]+$/\1/ip'
 }
 xterm_wrapper () {
   if [ $# -eq 0 ]; then
@@ -75,7 +78,7 @@ gnome_terminal_wrapper () {
   exec gnome-terminal ${1:+-e} "$args"
 }
 
-while getopts hve: opt; do
+while getopts bhve:x opt; do
   case $opt in
     h)
       echo "term [-e args ...]"
@@ -93,6 +96,12 @@ while getopts hve: opt; do
 	args=("${args[@]}" "$arg")
       done
       shift $#
+      ;;
+    b)
+      big=1
+      ;;
+    x)
+      set -x
       ;;
     *)
       ;;
