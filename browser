@@ -84,8 +84,9 @@ fi
 
 if $pipe; then
   # save stdin to a file
-  file=$(mktemp -t tmp-$$-XXXXXX) || exit 1
-  cat > "$file"                  || exit 1
+  file=$(mktemp -t tmp-$$-XXXXXX) || exit 3
+  trap 'trap - HUB INT TERM; rm -f "$file" "$file.html"' HUB INT TERM
+  cat > "$file" || exit 4
   case $(file --brief --mime-type "$file") in
     text/html)
       mv "$file" "$file.html"
