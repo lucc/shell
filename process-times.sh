@@ -14,7 +14,7 @@ shift $((OPTIND - 1))
 if echo "$1" | grep -q '^[0-9]*$'; then
   process=$1
 else
-  process="`pgrep "$1"`"
+  process=$(pgrep "$1")
 fi
 
-ps -o pid,m_size,start=start,start_time=start_time,lstart=lstart,cputime,%cpu,%mem,command $process
+ps -o pid,m_size,lstart,cputime,%cpu,%mem,command $process
