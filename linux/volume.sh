@@ -3,7 +3,7 @@
 # A simple script to collect some volume setting actions into a nice
 # interface.
 
-prog="$(basename "$0")"
+prog=${0##*/}
 device=Master
 done=false
 
@@ -46,15 +46,17 @@ help () {
   echo "  num   set the volume to num%"
   echo "  +num  increase the volume by num%"
   echo "  -num  decrease the volume by num% (not implemented)"
+  echo "  -x    debugging output"
 }
 
-while getopts hmud:0123456789 FLAG; do
+while getopts xhmud:0123456789 FLAG; do
   case $FLAG in
     h) usage; help; exit;;
     m) mute; done=true;;
     u) unmute; done=true;;
-    d) device="$OPTARG";;
+    d) device=$OPTARG;;
     [0-9]*) true;; # skip numbers
+    x) set -x;;
     *) usage; exit 2;;
   esac
 done
@@ -63,7 +65,7 @@ shift $(($OPTIND - 1))
 
 func=
 if [ $# -eq 1 -o $# -eq 2 ]; then
-  case "$1" in
+  case $1 in
     +) func=inc_volume; shift;;
     -) func=dec_volume; shift;;
     +[0-9]*) func=inc_volume; set "${1#+}";;
@@ -71,7 +73,7 @@ if [ $# -eq 1 -o $# -eq 2 ]; then
     [0-9]*) func=set_volume;;
     *) usage; exit 2;;
   esac
-  case "$1" in
+  case $1 in
     [0-9]|[0-9][0-9]|100) true;;
     *) usage; exit 2;;
   esac
