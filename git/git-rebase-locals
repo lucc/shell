@@ -2,6 +2,7 @@
 
 # Rebase all local only branches on origin/master.
 
+abort=0
 ignore=(\*.bak \*.add)
 upstream=origin/master
 cmd=
@@ -9,7 +10,7 @@ verbose=0
 
 usage () {
   local prog='git rebase-locals'
-  echo "$prog [-nx] [-i pattern] [-u upstream] [-- git-rebase(1) options]"
+  echo "$prog [-anx] [-i pattern] [-u upstream] [-- git-rebase(1) options]"
   echo "$prog -h"
 }
 
@@ -21,6 +22,7 @@ remote tracking branch are ignored as are branches matching the ignore
 patterns.
 
 Options:
+-a              abort a rabase that fails (and continue with the next one)
 -n		just print what would be done, don't so anything
 -x		give shell debuging output
 -i pattern	add pattern to the list of ignore patterns, give the empty
@@ -47,8 +49,9 @@ check-pattern-list () {
 }
 
 # Parse the command line.
-while getopts hi:nu:vx FLAG; do
+while getopts ahi:nu:vx FLAG; do
   case $FLAG in
+    a) abort=1;;
     h) usage; help; exit;;
     i) if [[ -z $OPTARG ]]; then ignore=(); else ignore+=$OPTARG; fi;;
     n) cmd=echo;;
@@ -81,6 +84,10 @@ head=$(git rev-parse --abbrev-ref HEAD)
 for branch in $branches; do
   ((verbose)) && echo Rebasing $branch on $upstream ...
   $cmd git rebase $@ $upstream $branch
+  if (( $? != 0 && abort )) && [[ -z $cmd ]]; then
+    ((verbose)) && echo Rebasing $branch on $upstream failed.  Aborting rebase.
+    git rebase --abort
+  fi
 done
 
 # Check out the saved HEAD.
