@@ -9,7 +9,7 @@ URL=http://luc42.lima-city.de
 text_browser=elinks
 # firefox dwb luakit jumanji surf uzbl
 graphical_browser=firefox
-quick_browser=luakit
+quick_browser=firefox
 
 usage () {
   local prog=$(basename "$0")
