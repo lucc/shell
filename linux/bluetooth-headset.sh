@@ -33,4 +33,5 @@ while getopts h FLAG; do
   esac
 done
 
+check_bluttooth
 connect_to_headset
