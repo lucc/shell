@@ -2,15 +2,14 @@
 
 # script to report some time information about a process
 
-quiet=false
-
-while getopts hvq FLAG; do
+while getopts hx FLAG; do
   case $FLAG in
-    h) print_help; exit;;
-    v) quiet=false;;
-    q) quiet=true;;
+    h) help; exit;;
+    x) set -x;;
+    *) usage; exit 2;;
   esac
 done
+shift $((OPTIND - 1))
 
 if echo "$1" | grep -q '^[0-9]*$'; then
   process=$1
