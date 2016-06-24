@@ -27,19 +27,18 @@ help () {
 }
 
 firefox_profiles () {
-  # TODO
-  local ini="$HOME/.mozilla/firefox/profiles.ini"
+  local ini=$HOME/.mozilla/firefox/profiles.ini
   grep '^Name=' "$ini" | cut -f 2 -d =
 }
 firefox_open_profile () {
-  local porfile
-  for profile in $(profiles); do
+  local profile
+  for profile in $(firefox_profiles); do
     if [ "$profile" = "$1" ]; then
       # TODO
       exec open -na Firefox --args -P "$profile" -no-remote
     fi
   done
-  echo "$1 is not a valid profile. Try one of $(profiles)."
+  echo "$1 is not a valid profile. Try one of $(firefox_profiles)."
   exit 2
 }
 
@@ -60,7 +59,7 @@ graphical () {
 }
 
 new_graphical () {
-  local user="${1:-$USER}"
+  local user=${1:-$USER}
   shift
   exec "$graphical_browser" -new-instance -P "$user" "$@"
 }
@@ -90,7 +89,7 @@ if $pipe; then
   case $(file --brief --mime-type "$file") in
     text/html)
       mv "$file" "$file.html"
-      file="$file.html"
+      file=$file.html
       ;;
   esac
   $type "$file"
