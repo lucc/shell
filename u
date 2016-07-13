@@ -233,4 +233,8 @@ case $1 in
     # thanks to https://gist.github.com/coderofsalvation/e1376e4d2b29607431df
     sudo gdb -q -batch -ex "attach $1" -ex "call putenv(\"$2\")" -ex 'detach'
     ;;
+  bank)
+    browser -n bank &
+    pass -c firefox/bank
+    ;;
 esac
