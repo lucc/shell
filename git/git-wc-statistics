@@ -1,9 +1,47 @@
 #!/bin/sh
-if [ "$1" = -h -o "$1" = --help ]; then
-  echo 'Usage: git wc-statistics [file ...]'
+
+# print word count of tracked files for each commit
+
+version=2
+prog=${0##*/}
+prog="git ${prog#git-}"
+wc_options=
+
+usage () {
+  echo "Usage: $prog [-clmwx] [file ...]"
+  echo "       $prog -h"
+  echo "       $prog -v"
+}
+
+help () {
   echo 'Print the word count of the given or all files for each commit.'
-  exit
+  echo
+  echo "  -h    display help"
+  echo "  -v    display version"
+  echo "  -x    debugging output"
+  echo "  -c    print the byte counts"
+  echo "  -m    print the character counts"
+  echo "  -l    print the newline counts"
+  echo "  -w    print the word counts"
+}
+
+while getopts hvxlcmw FLAG; do
+  case $FLAG in
+    h) usage; help; exit;;
+    v) echo "$prog -- version $version"; exit;;
+    x) set -x;;
+    c|l|m|w) wc_options=${wc_options}$FLAG;;
+    *) usage >&2; exit 2;;
+  esac
+done
+shift $((OPTIND - 1))
+
+if [ -n "$wc_options" ]; then
+  wc_options=-$wc_options
 fi
-git log --oneline | while read ref msg; do
-  printf '%s %-70s %s\n' $ref "$msg" "$(git archive $ref -- "$@" 2>/dev/null| tar -xO 2>/dev/null | wc)"
+
+git log --oneline | while read -r ref msg; do
+  printf '%s %-70s %s\n' "$ref" "$msg" \
+    "$(git archive "$ref" -- "$@" 2>/dev/null | tar -xO 2>/dev/null | \
+      wc $wc_options)"
 done
