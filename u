@@ -228,4 +228,9 @@ case $1 in
     journalctl --quiet --user-unit=fetchmail.service --lines=$((2*LINES)) \
       --no-pager
     ;;
+  setenv) # <PID> VARNAME=value
+    shift
+    # thanks to https://gist.github.com/coderofsalvation/e1376e4d2b29607431df
+    sudo gdb -q -batch -ex "attach $1" -ex "call putenv(\"$2\")" -ex 'detach'
+    ;;
 esac
