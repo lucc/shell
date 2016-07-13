@@ -3,6 +3,8 @@
 # This is a script to collect shell snippets until I develop them into real
 # shell scripts.  "u" stands for "utils".  I got the idea from hans.
 
+prog=${0##*/}
+
 function assert () {
   "$@"
   local ret=$?
@@ -34,10 +36,13 @@ fi
 
 case $1 in
   help) # show this help message
-    echo "$(basename $0) [options] subcommand [options] [arguments ...]"
+    echo "$prog [options] subcommand [options] [arguments ...]"
     echo Possible subcommands are:
-    sed -n '/^case/,/^esac$/{s/^  \([[:space:]]*(\{0,1\}[^()]*\))\( *# *\(.*\)\)\{0,1\}$/\1 \3/p;}' $0 | \
-      while read arg help; do
+    sed -n '
+      /^case/,/^esac$/{
+        s/^  \([[:space:]]*(\{0,1\}[^()]*\))\( *# *\(.*\)\)\{0,1\}$/\1 \3/p
+      }' $0 \
+    | while read arg help; do
 	printf '%s\t%s\n' $arg $help
       done
     ;;
