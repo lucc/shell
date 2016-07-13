@@ -217,4 +217,15 @@ case $1 in
 	;;
     esac
     ;;
+  bkstatus)
+    systemctl --no-pager --full \
+      status backup.py@-home-luc-.config-backup.py-arch.{timer,service} \
+      backup-pacman-cache.{service,timer}
+    systemctl --no-pager --user status \
+      backup.py@-home-luc-.config-backup.py-home.{timer,service}
+    ;;
+  mailstatus)
+    journalctl --quiet --user-unit=fetchmail.service --lines=$((2*LINES)) \
+      --no-pager
+    ;;
 esac
