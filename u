@@ -46,9 +46,46 @@ case $1 in
 	printf '%s\t%s\n' $arg $help
       done
     ;;
-  complete)
-    echo Completion is not implemented yet. >&2
-    sed -n '/^case/,/^esac$/{s/^  \(.*\))\( *# *\(.*\)\)\{0,1\}$/\1 \3/p;}' $0
+  complete) # print setup code for completion (for eval-ing)
+    # First define the completion function.  Avoid name colisions.
+    function _lucs_util_scipt_completion_function () {
+      local state
+      # First handle global options.  Everything that does not match a global
+      # option as defined here is handled later.  The $state is set to
+      # "subcommand" in this case.
+      _arguments \
+	'(- *)-h[show help]' \
+	'(-h -x)-x[debug output]' \
+	':subcommand:->subcommand' && return 0
+      case $state in
+	subcommand)
+	  local -a subcommands_array
+	  subcommands_array=(
+	    'help:show help'
+	    'edit:open the script itself in $EDITOR'
+	    'bk:mount the external backup hd'
+	    'phone:some phone related subcommands'
+	    'export-abook-for-nokia:todo'
+	    'split-file-at-empty-lines:split a text files into several files'
+	    'backup:foo todo'
+	    'urxvt-font:set the font in this urxvt'
+	    'ycm-recompile:recompile the ycm plugin'
+	    'bkstatus:show status of systemd backup units'
+	    'mailstatus:show fetchmail log'
+	    'setenv:set an environment var in a running process'
+	    'bank:open the bank browser'
+	  )
+	  # Use this array to complete the subcommands.
+	  _describe -t subcommands 'util subcommands' subcommands_array \
+	    && ret=0
+	  ;;
+	*) _message 'Error in completion function.';;
+      esac
+    }
+    # Print the defined completion function and the setup code.
+    functions _lucs_util_scipt_completion_function
+    print compdef _lucs_util_scipt_completion_function $prog
+    #sed -n '/^case/,/^esac$/{s/^  \(.*\))\( *# *\(.*\)\)\{0,1\}$/\1 \3/p;}' $0
     ;;
   edit|e) # edit the source of this script
     # Use exec to suppress syntax errors if parsing continues after the file
