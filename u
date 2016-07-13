@@ -56,8 +56,8 @@ case $1 in
     exec $EDITOR $0
     ;;
   bk) # mount the backup hard disk
-    mountpoint=/media/bk/1
-    name=backup1
+    mountpoint=/media/backup
+    name=backup
     device=/dev/mapper/$name
     if findmnt $mountpoint >/dev/null && [[ -L $device && -b $device ]]; then
       echo Unmounting ...
@@ -65,10 +65,10 @@ case $1 in
 	sudo cryptsetup close $name
     elif ! findmnt $mountpoint >/dev/null && ! [[ -e $device ]]; then
       echo Mounting ...
-      pass show disk/$name | \
+      pass show disk/${name}1 | \
 	sudo cryptsetup -v --key-file - --keyfile-size 20 open \
 	/dev/disk/by-partlabel/backup.crypt $name
-      sudo mount $device $mountpoint
+      mount $mountpoint
     else
       echo Error
       exit 1
