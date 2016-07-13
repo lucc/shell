@@ -201,6 +201,20 @@ case $1 in
     cd ~/.local/share/nvim/plugins/YouCompleteMe
     git pull
     git submodule update --recursive
-    python2 ./install.py --clang-completer --system-libclang --system-boost
+    case system in
+      system)
+	# This was making trouble:
+	# > The ycmd server SHUT DOWN (restart with ':YcmRestartServer').
+	# > Unexpected error while loading the YCM core library. Run
+	# > ':YcmToggleLogs stderr' to check the logs.
+	python2 ./install.py \
+	  --clang-completer --system-libclang --system-boost
+	;;
+      plain)
+	# This was making troube because the libtinfo symlink to ncurses (from
+	# AUR) is version 6 but ycm needs 5.
+	python2 ./install.py --clang-completer
+	;;
+    esac
     ;;
 esac
