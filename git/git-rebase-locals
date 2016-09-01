@@ -7,9 +7,10 @@ ignore=(\*.bak \*.add)
 upstream=origin/master
 cmd=
 verbose=0
+retry=0
 
 usage () {
-  local prog='git rebase-locals'
+  local prog="git ${${0##*/}#git-}"
   echo "$prog [-anx] [-i pattern] [-u upstream] [-- git-rebase(1) options]"
   echo "$prog -h"
 }
@@ -22,7 +23,7 @@ remote tracking branch are ignored as are branches matching the ignore
 patterns.
 
 Options:
--a              abort a rabase that fails (and continue with the next one)
+-a		abort a rabase that fails (and continue with the next one)
 -n		just print what would be done, don't so anything
 -x		give shell debuging output
 -i pattern	add pattern to the list of ignore patterns, give the empty
@@ -30,6 +31,7 @@ Options:
 		*.add)
 -u upstream	set the upstream branch for the rebase (default is
 		origin/master)
+-r 		use git-retry-rebase to retry a rebase that failed (impies -a)
 
 Everything after "--" will be passed to git-rebase(1) as options.
 EOF
@@ -48,13 +50,21 @@ check-pattern-list () {
   return 1
 }
 
+trap_handler () {
+  trap - INT STOP HUP
+  echo Caught signal.  Aborting all pending rebases. >&2
+  git rebase --abort &>/dev/null
+  return $((128 + $1))
+}
+
 # Parse the command line.
-while getopts ahi:nu:vx FLAG; do
+while getopts ahi:nru:vx FLAG; do
   case $FLAG in
     a) abort=1;;
     h) usage; help; exit;;
     i) if [[ -z $OPTARG ]]; then ignore=(); else ignore+=$OPTARG; fi;;
     n) cmd=echo;;
+    r) retry=1 abort=1;;
     u) upstream=$OPTARG;;
     v) verbose=1;;
     x) set -x;;
@@ -62,6 +72,11 @@ while getopts ahi:nu:vx FLAG; do
   esac
 done
 shift $(($OPTIND-1))
+
+if ((retry)) && ! [[ -x =git-retry-rebase ]]; then
+  echo git-retry-rebase is not available. >&2
+  retry=0
+fi
 
 # Populate the branches array.
 branches=()
@@ -80,6 +95,9 @@ done
 # Save the current HEAD.
 head=$(git rev-parse --abbrev-ref HEAD)
 
+# Set up the trap.
+trap trap_handler INT STOP HUP
+
 # Do the actual rebasing.
 for branch in $branches; do
   ((verbose)) && echo Rebasing $branch on $upstream ...
@@ -87,6 +105,7 @@ for branch in $branches; do
   if (( $? != 0 && abort )) && [[ -z $cmd ]]; then
     ((verbose)) && echo Rebasing $branch on $upstream failed.  Aborting rebase.
     git rebase --abort
+    ((retry)) && git retry-rebase -u $upstream -b $branch
   fi
 done
 
