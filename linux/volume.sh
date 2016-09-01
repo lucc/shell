@@ -19,6 +19,13 @@ unmute () {
   amixer_set unmute
 }
 
+get_volume () {
+  amixer get Master \
+  | sed -n \
+    -e '/Front Left/ {s/.*\[\([0-9]*%\)\] \[\(.*\)\]/\2 \1/p}' \
+    -e '/Front Right/{s/.*\[\([0-9]*%\)\] \[\(.*\)\]/\2 \1/p}'
+}
+
 set_volume () {
   amixer_set ${1:-100}%
 }
