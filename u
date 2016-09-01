@@ -38,6 +38,7 @@ case $1 in
   help) # show this help message
     echo "$prog [options] subcommand [options] [arguments ...]"
     echo Possible subcommands are:
+    #sed -n '/^case/,/^esac$/{s/^  \(.*\))\( *# *\(.*\)\)\{0,1\}$/\1 \3/p;}' $0
     sed -n '
       /^case/,/^esac$/{
         s/^  \([[:space:]]*(\{0,1\}[^()]*\))\( *# *\(.*\)\)\{0,1\}$/\1 \3/p
@@ -56,7 +57,9 @@ case $1 in
       _arguments \
 	'(- *)-h[show help]' \
 	'(-h -x)-x[debug output]' \
-	':subcommand:->subcommand' && return 0
+	':subcommand:->subcommand' \
+	'*::options:->options' \
+      && return 0
       case $state in
 	subcommand)
 	  local -a subcommands_array
@@ -70,14 +73,45 @@ case $1 in
 	    'backup:foo todo'
 	    'urxvt-font:set the font in this urxvt'
 	    'ycm-recompile:recompile the ycm plugin'
-	    'bkstatus:show status of systemd backup units'
-	    'mailstatus:show fetchmail log'
+	    'logs:show different logs'
 	    'setenv:set an environment var in a running process'
 	    'bank:open the bank browser'
 	  )
 	  # Use this array to complete the subcommands.
 	  _describe -t subcommands 'util subcommands' subcommands_array \
 	    && ret=0
+	  ;;
+	options)
+	  # TODO what is this?
+	  curcontext="${curcontext%:*}-${words[1]}:"
+	  case $words[1] in
+	    split-file-at-empty-lines) _arguments '*:: :_files';;
+	    urxvt-font) _arguments '*:: :_x_fonts';; # doesn't work yet
+	    export-abook-for-nokia) _arguments '*:: :_files';;
+	    phone)
+	      _arguments \
+		':subcommand:->subcommand' \
+		'*:: :_files'
+	      subcommands_array=(
+		put-vcf:'push contacts from a file to the phone'
+		savecontacts:'backup all contacts from phone to a file'
+	      )
+	      [[ $state = subcommand ]] \
+		&& _describe -t subcommands 'phone subcommands' subcommands_array \
+		&& ret=0
+	      ;;
+	    logs)
+	      _arguments ':subcommand:->subcommand' '*:: :_files'
+	      subcommands_array=(
+		{fetchmail,mailin,pop}:'logs for fetchmail'
+		{smtp,mailout}:'logs for msmtp'
+		{backup,bk}:'logs for different backup scripts'
+	      )
+	      [[ $state = subcommand ]] \
+		&& _describe -t subcommands 'phone subcommands' subcommands_array \
+		&& ret=0
+	      ;;
+	  esac
 	  ;;
 	*) _message 'Error in completion function.';;
       esac
