@@ -254,16 +254,30 @@ case $1 in
 	;;
     esac
     ;;
-  bkstatus)
-    systemctl --no-pager --full \
-      status backup.py@-home-luc-.config-backup.py-arch.{timer,service} \
-      backup-pacman-cache.{service,timer}
-    systemctl --no-pager --user status \
-      backup.py@-home-luc-.config-backup.py-home.{timer,service}
-    ;;
-  mailstatus)
-    journalctl --quiet --user-unit=fetchmail.service --lines=$((2*LINES)) \
-      --no-pager
+  logs)
+    shift
+    case $1 in
+      bk|backup)
+	systemctl --no-pager --full \
+	  status backup.py@-home-luc-.config-backup.py-arch.{timer,service} \
+	  backup-pacman-cache.{service,timer}
+	systemctl --no-pager --user status \
+	  backup.py@-home-luc-.config-backup.py-home.{timer,service}
+	;;
+      pop|mailin|fetchmail)
+	journalctl --quiet --no-pager --lines=$((2*LINES)) \
+	  --user-unit=fetchmail.service
+	;;
+      smtp|mailout)
+	journalctl --quiet --no-pager --lines=$((2*LINES)) \
+	  SYSLOG_IDENTIFIER=msmtp
+	;;
+      mail|mailall|allmail)
+	journalctl --quiet --no-pager --lines=$((2*LINES)) \
+	  SYSLOG_IDENTIFIER=msmtp + _SYSTEMD_USER_UNIT=fetchmail.service
+	;;
+      *) print Choose one of bk, pop or smtp. >&2; exit 2;;
+    esac
     ;;
   setenv) # <PID> VARNAME=value
     shift
