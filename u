@@ -233,7 +233,7 @@ case $1 in
       nowip:backup/pass
     ;;
   urxvt-font)
-    printf '\33]50;%s\007' $2;;
+    printf '\33]50;%s\007' ${2:-xft:terminus};;
   ycm-recompile)
     cd ~/.local/share/nvim/plugins/YouCompleteMe
     git pull
