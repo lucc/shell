@@ -10,6 +10,8 @@ else
 endif
 
 all: software notmuch git
+help:
+	@echo Usage: report '[help|git|mail|notmuch|all]'
 software:
 	@cecho green Updates:
 	@echo There are `pacman -Quq | wc -l` updates available.
