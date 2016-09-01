@@ -1,0 +1,87 @@
+#!/bin/sh
+
+# rebase branch as far as possible
+
+version=0.1
+prog="${0##*/}"
+upstream=master
+bisect=false
+
+usage () {
+  echo "Usage: $prog [-x] [-u upstream] [-b branch]"
+  echo "Usage: $prog [-x] [-u upstream] branch"
+  echo "       $prog -h"
+  echo "       $prog -v"
+}
+
+help () {
+  echo "rebase branch as far as possible"
+  echo
+  echo "  -h    display help"
+  echo "  -v    display version"
+  echo "  -x    debugging output"
+  echo "  -u    the upstream commit onto which to rebase"
+  echo "  -b    the branch to rebase"
+  echo "  -B    use git bisect to find the correct upstream commit"
+  echo "  -l    use a linear search to find the upstream commit (the default)"
+}
+
+trap_handler () {
+  trap - INT STOP HUP
+  echo Caught signal.  Aborting all pending rebases. >&2
+  git rebase --abort &>/dev/null
+  return $((128 + $1))
+}
+
+while getopts hvu:xb:Bl FLAG; do
+  case $FLAG in
+    h) usage; help; exit;;
+    v) echo "$prog -- version $version"; exit;;
+    x) set -x;;
+    u) upstream=$OPTARG;;
+    b) branch=$OPTARG;;
+    B) bisect=true;;
+    l) bisect=false;;
+    *) usage >&2; exit 2;;
+  esac
+done
+shift $((OPTIND - 1))
+
+if [ -z "$branch" -a $# -eq 1 ]; then
+  branch=$1
+elif [ -z "$branch" ]; then
+  echo Error: No branch specified for rebasing. >&2
+  exit 2
+fi
+
+upstream=$(git rev-parse "$upstream")
+base=$(git rev-parse "$(git merge-base "$upstream" "$branch")")
+
+# Set up the trap.
+trap trap_handler INT STOP HUP
+
+if bisect; then
+  # First try a normal rebase.  Only if that fails try to bisect.
+  if git rebase "$upstream" "$branch"; then
+    echo Info: Rebase succeeded >&2
+  else
+    git rebase --abort
+    git bisect --no-checkout start "$upstream" "$base"
+    git bisect --no-checkout run sh -c 'old=$(git rev-parse "$branch"); if git rebase $(git rev-parse BISECT_HEAD) "$branch"; then git reset --hard "$old"; exit 0; else git rebase --abort; exit 1; fi'
+  fi
+else
+  while true; do
+    if [ "$upstream" = "$base" ]; then
+      echo Warning: No reabase succeeded. >&2
+      break
+    fi
+    git rebase "$upstream" "$branch"
+    if [ $? -eq 0 ]; then
+      echo Info: Rebase succeeded >&2
+      break
+    else
+      git rebase --abort
+      upstream=$(git rev-parse "$upstream~1")
+    fi
+  done
+fi
