@@ -60,7 +60,7 @@ base=$(git rev-parse "$(git merge-base "$upstream" "$branch")")
 # Set up the trap.
 trap trap_handler INT STOP HUP
 
-if bisect; then
+if $bisect; then
   # First try a normal rebase.  Only if that fails try to bisect.
   if git rebase "$upstream" "$branch"; then
     echo Info: Rebase succeeded >&2
