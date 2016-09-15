@@ -292,11 +292,17 @@ case $1 in
     shift
     case $1 in
       bk|backup)
-	systemctl --no-pager --full \
-	  status backup.py@-home-luc-.config-backup.py-arch.{timer,service} \
-	  backup-pacman-cache.{service,timer}
-	systemctl --no-pager --user status \
-	  backup.py@-home-luc-.config-backup.py-home.{timer,service}
+	systemctl --no-pager --full status \
+	  backup-pacman-cache.timer \
+	  backup.py@-home-luc-.config-backup.py-arch.timer
+	systemctl --no-pager --full --user status \
+	  backup.py@-home-luc-.config-backup.py-home.timer
+	echo "==============================================================="
+	systemctl --no-pager --full status \
+	  backup-pacman-cache.service \
+	  backup.py@-home-luc-.config-backup.py-arch.service
+	systemctl --no-pager --full --user status \
+	  backup.py@-home-luc-.config-backup.py-home.service
 	;;
       pop|mailin|fetchmail)
 	journalctl --quiet --no-pager --lines=$((2*LINES)) \
