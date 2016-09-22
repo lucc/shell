@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Use tmux to manage some youtube-dl processes
 
@@ -75,9 +75,20 @@ case $command in
     fi
     ;;
   inner-load)
-    while ! youtube-dl "$url"; do
+    tmp=$(mktemp)
+    while
+      youtube-dl "$url" 2>&1 | tee "$tmp"
+      youtube_dl_return_code=${PIPESTATUS[0]}
+      errors="Unsupported URL|Unable to extract (URL|encrypted data)"
+      errors+="|Video .* does not exist"
+      if grep -E -q "^ERROR: ($errors)" "$tmp"; then
+	break
+      fi
+      ((youtube_dl_return_code == 0))
+    do
       sleep 10
     done
+    rm "$tmp"
     ;;
   list) list_windows '#{window_index}: #{window_name}';;
   quit) tmux kill-session -t "$session";;
