@@ -3,7 +3,7 @@
 # Use tmux to manage some youtube-dl processes
 
 version=0.1
-prog="${0##*/}"
+prog=${0##*/}
 session=youtube-dl
 dir=~/vid/tmp
 
@@ -56,7 +56,7 @@ case $command in
     ;;
   load)
     if [ $# -ne 1 ] || [ -z "$1" ]; then
-      usage
+      usage >&2
       exit 2
     fi
     url=$1
@@ -67,7 +67,6 @@ case $command in
       if list_windows '#{#window_name}' | fgrep -q "$url"; then
 	echo Alread registered: "$url"
       else
-	tmux send-keys -t "$session:register" "$url"$'\n'
 	tmux new-window -c "$dir" -d -a -t "$session:1" -n "$url" \
 	  "$0" -i "$url"
       fi
