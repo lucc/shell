@@ -6,6 +6,7 @@ version=0.1
 prog=${0##*/}
 session=youtube-dl
 dir=~/vid/tmp
+xtrace=
 
 usage () {
   echo "Usage: $prog [options] url"
@@ -44,7 +45,7 @@ while getopts ahi:lqtvx FLAG; do
     q) command=quit;;
     t) command=tail;;
     v) echo "$prog -- version $version"; exit;;
-    x) set -x;;
+    x) set -x; xtrace=-x;;
     *) usage >&2; exit 2;;
   esac
 done
@@ -71,7 +72,8 @@ case $command in
 	  "$0" -i "$url"
       fi
     else
-      tmux new-session -d -s "$session" -n "$url" -c "$dir" "$0" -i "$url"
+      tmux new-session -d -s "$session" -n "$url" -c "$dir" \
+	"$0" $xtrace -i "$url"
     fi
     ;;
   inner-load)
