@@ -66,11 +66,7 @@ get_urxvt_font () {
   xrdb -query | sed -En 's/^urxvt\.font\s*:\s*(.*):size=[[:digit:]]+$/\1/ip'
 }
 xterm_wrapper () {
-  if [ $# -eq 0 ]; then
-    exec xterm
-  else
-    exec xterm -e "${args[@]}"
-  fi
+  exec xterm ${1:+-e} "${args[@]}"
 }
 gnome_terminal_wrapper () {
   # TODO gnome-terminal forks!!
