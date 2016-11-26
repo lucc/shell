@@ -21,6 +21,7 @@ FILES := $(foreach file,                                          \
 		\( -type d -name .git -prune \)),                 \
   $(if $(filter $(dir $(file)),./ ./$(SYSTEM)/ ./git/ ./mailcap/), \
   $(file:./%=%)))
+NAMES  = $(foreach triple,$(NAMED),$(call get,1,$(triple)))
 LINKED = $(addprefix $(DESTDIR)/bin/, \
          $(notdir $(filter $(ROOT)%,$(realpath $(wildcard $(DESTDIR)/bin/*)))))
 SEP    = :
@@ -40,6 +41,14 @@ $(call get,2,$1): $(DESTDIR)/bin/$(call get,2,$1)
 $(DESTDIR)/bin/$(call get,2,$1): $(call get,1,$1)
 	@$(LN) $$< $$@
 .PHONY: $(call get,2,$1)
+endef
+define named-linker
+# the name (frontend) depends on first argument
+$(call get,1,$1): $(call get,3,$1)
+# the link is created from the second to the third argument
+$(call get,3,$1): $(ROOT)$(call get,2,$1)
+	@$(LN) $$< $$@
+.PHONY: $(call get,1,$1)
 endef
 
 # variables for some targets {{{2
@@ -62,6 +71,9 @@ APPLE = \
       /System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport$(SEP)airport \
       /System/Library/CoreServices/backupd.bundle/Contents/Resources/backupd-helper$(SEP)timemachine         \
       /Applications/TrueCrypt.app/Contents/MacOS/TrueCrypt$(SEP)truecrypt                                    \
+# files to link to custom locations {{{3
+NAMED = \
+	git-completions$(SEP)git/_git_custom_scripts.zsh$(SEP)~/.config/zsh/functions/_git-luc-custom-scripts
 # raspberry pi running arch linux {{{3
 RPI = \
 # mbp running arch {{{3
@@ -82,12 +94,13 @@ clean-links:
 # back end rules {{{1
 $(foreach file,$(FILES),$(eval $(call internal-linker,$(file))))
 $(foreach pair,$(APPLE),$(eval $(call external-linker,$(pair))))
-.PHONY: $(FILES)
+$(foreach args,$(NAMED),$(eval $(call named-linker,$(args))))
+.PHONY: $(FILES) $(NAMES)
 
 # hack to enable zsh completion for some dynamically generated targets {{{1
 FILELIST = .filelist
 include .filelist
 $(FILELIST):
 	@echo '# Dynamically created makefile for zsh completion' >$(FILELIST)
-	@echo $(FILES): >>$(FILELIST)
+	@echo $(FILES) $(NAMES): >>$(FILELIST)
 .PHONY: $(FILELIST)
