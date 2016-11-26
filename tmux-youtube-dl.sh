@@ -34,6 +34,9 @@ help () {
 list_windows () {
   tmux list-windows -t "$session" -F "$1"
 }
+has_session () {
+  tmux has-session -t "$session${1+:$1}" 2>/dev/null
+}
 
 command=load
 while getopts ahi:lqtvx FLAG; do
@@ -63,12 +66,17 @@ case $command in
     url=$1
     # If the tmux $session is running check if the url is alreay beeing
     # downloaded.  Else start $session and download the url.
-    if tmux has-session -t "$session" 2>/dev/null; then
+    if has_session; then
       # If $url is already beeing downloaded don't start a second instance.
-      if list_windows '#{#window_name}' | fgrep -q "$url"; then
+      if list_windows '#{window_name}' | fgrep -q "$url"; then
 	echo Alread registered: "$url"
       else
-	tmux new-window -c "$dir" -d -a -t "$session:1" -n "$url" \
+	if has_session 0; then
+	  append=-a
+	else
+	  append=
+	fi
+	tmux new-window -c "$dir" -d $append -t "$session:0" -n "$url" \
 	  "$0" -i "$url"
       fi
     else
@@ -77,6 +85,9 @@ case $command in
     fi
     ;;
   inner-load)
+    # TODO this is still buggy.  The success and failure conditions are not
+    # set correctly.  Normally the loop runs too often but on some error
+    # conditions it exits prematurely.
     tmp=$(mktemp)
     while
       youtube-dl "$url" 2>&1 | tee "$tmp"
@@ -96,7 +107,8 @@ case $command in
   quit) tmux kill-session -t "$session";;
   tail)
     list_windows '#{window_index}' | while read -r index; do
-      tmux capture-pane -J -p -t "$session:$index" | grep -v '^$' | tail -n 1
+      tmux capture-pane -J -p -t "$session:$index" | grep -v '^$' | \
+	tail "${@:--n1}"
     done
     ;;
   *)
