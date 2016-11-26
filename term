@@ -1,7 +1,7 @@
 #!/bin/bash
 # a script to start my favorite terminal emulator
 
-version=1.0
+version=2.1
 args=( )
 foreground=
 execute=
