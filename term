@@ -3,20 +3,14 @@
 
 version=1.0
 args=( )
-execute=''
+foreground=
+execute=
 big=
 case $(uname) in
   Darwin) term=iterm;;
   Linux)  term=urxvtc;;
 esac
 
-join_args () {
-  # quote and join args into a string that can be evaled by the shell
-  local new=''
-  for arg in "${args[@]}"; do
-    new="$new $(printf %q "$arg")"
-  done
-  args="$new"
 }
 iterm_wrapper () {
   # iTerm2.app on Mac OS X
@@ -72,12 +66,15 @@ xterm_wrapper () {
   exec xterm ${1:+-e} "${args[@]}"
 }
 gnome_terminal_wrapper () {
+  if [[ -n "$foreground" ]]; then
+    echo "How do I run $term in the foreground?" >&2
+    exit 1
+  fi
   # TODO gnome-terminal forks!!
-  join_args
-  exec gnome-terminal ${1:+-e} "$args"
+  exec gnome-terminal ${1:+-x} "${args[@]}"
 }
 
-while getopts bhve:x opt; do
+while getopts be:fhvx opt; do
   case $opt in
     h)
       echo "term [-e args ...]"
@@ -89,11 +86,7 @@ while getopts bhve:x opt; do
       ;;
     e)
       execute=1
-      args=("${args[@]}" "$OPTARG")
-      shift $((OPTIND-1))
-      for arg; do
-	args=("${args[@]}" "$arg")
-      done
+      args=("${args[@]}" "$OPTARG" "${@:$OPTIND}")
       shift $#
       ;;
     b)
@@ -101,6 +94,9 @@ while getopts bhve:x opt; do
       ;;
     x)
       set -x
+      ;;
+    f)
+      foreground=1
       ;;
     *)
       ;;
