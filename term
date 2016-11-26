@@ -77,6 +77,9 @@ gnome_terminal_wrapper () {
   # TODO gnome-terminal forks!!
   exec gnome-terminal ${1:+-x} "${args[@]}"
 }
+konsole_wrapper () {
+  exec konsole ${foreground:+--nofork} ${1:+-e} "${args[@]}"
+}
 
 while getopts be:fhvx opt; do
   case $opt in
