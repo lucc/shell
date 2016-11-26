@@ -55,11 +55,14 @@ urxvt_wrapper () {
   exec urxvt ${big:+-fn "$(get_urxvt_font):size=17"} ${1:+-e} "${args[@]}"
 }
 urxvtc_wrapper () {
-  # forks!
-  urxvtc ${big:+-fn "$(get_urxvt_font):size=17"} ${1:+-e} "${args[@]}"
-  if [ $? -eq 2 ]; then
-    urxvtd -q -o -f
+  if [[ -n "$foreground" ]]; then
+    urxvt_wrapper
+  else
     urxvtc ${big:+-fn "$(get_urxvt_font):size=17"} ${1:+-e} "${args[@]}"
+    if [[ $? -eq 2 ]]; then
+      urxvtd -q -o -f
+      urxvtc ${big:+-fn "$(get_urxvt_font):size=17"} ${1:+-e} "${args[@]}"
+    fi
   fi
 }
 get_urxvt_font () {
