@@ -11,6 +11,7 @@ xtrace=
 usage () {
   echo "Usage: $prog [options] url"
   echo "       $prog [options] -l"
+  echo "       $prog [options] -p index"
   echo "       $prog [options] -q"
   echo "       $prog [options] -t"
   echo "       $prog [options] -i url"
@@ -26,6 +27,8 @@ help () {
   echo "  -x    debugging output"
   echo "  -a    attach to the tmux session for manuall interaction"
   echo "  -l    list urls of running jobs"
+  # TODO poke
+  echo "  -p    poke TODO ..."
   echo "  -q    kill all jobs, quit the server"
   echo "  -t    show the tail -n 1 of every job"
   echo "  -i    run the downloading loop (for internal use only)"
@@ -39,12 +42,13 @@ has_session () {
 }
 
 command=load
-while getopts ahi:lqtvx FLAG; do
+while getopts ahi:lp:qtvx FLAG; do
   case $FLAG in
     a) command=attach;;
     h) usage; help; exit;;
     i) command=inner-load url=$OPTARG;;
     l) command=list;;
+    p) command=poke; index=$OPTARG;;
     q) command=quit;;
     t) command=tail;;
     v) echo "$prog -- version $version"; exit;;
@@ -104,6 +108,17 @@ case $command in
     rm "$tmp"
     ;;
   list) list_windows '#{window_index}: #{window_name}';;
+  poke)
+    if [[ "$index" == all ]]; then
+      ppids=( $(list_windows '#{pane_pid}') )
+    else
+      ppids=( $(list_windows '#{window_index} #{pane_pid}' | sed -n "s/^$index //p") )
+    fi
+    for ppid in "${ppids[@]}"; do
+      # TODO
+      :
+    done
+    ;;
   quit) tmux kill-session -t "$session";;
   tail)
     list_windows '#{window_index}' | while read -r index; do
