@@ -11,6 +11,10 @@ case $(uname) in
   Linux)  term=urxvtc;;
 esac
 
+usage () {
+  echo "Usage: ${0##*/} [-bfx] [-e args ...]"
+  echo "       ${0##*/} -h"
+  echo "       ${0##*/} -v"
 }
 iterm_wrapper () {
   # iTerm2.app on Mac OS X
@@ -77,7 +81,7 @@ gnome_terminal_wrapper () {
 while getopts be:fhvx opt; do
   case $opt in
     h)
-      echo "term [-e args ...]"
+      usage
       exit 0
       ;;
     v)
@@ -99,6 +103,8 @@ while getopts be:fhvx opt; do
       foreground=1
       ;;
     *)
+      usage >&2
+      exit 2
       ;;
   esac
 done
