@@ -3,7 +3,7 @@
 # An intelligent wrapper around different diff versions.
 
 prog=${0##*/}
-version=0.1
+version=0.2
 
 usage () {
   echo "Usage: $prog [diff-options] [files]"
@@ -25,15 +25,6 @@ diff_wrapper () {
   else
     diff "$@"
   fi
-}
-git_diff_wrapper () {
-  git diff "$@"
-}
-hg_diff_wrapper () {
-  hg diff "$@"
-}
-svn_diff_wrapper () {
-  svn diff "$@"
 }
 is_git_dir () {
   [[ "$(git rev-parse --is-inside-work-tree 2>/dev/null)" == true ]]
@@ -60,18 +51,17 @@ while [[ $# -ne 0 ]]; do
   esac
 done
 
-if [[ $# -eq 2 && -e "$1" && -e "$2" ]]; then
-  diff_wrapper "${options[@]}" "$@"
-elif [[ $# -eq 3 && -e "$1" && -e "$2" && -e "$3" ]]; then
+if [[ $# -eq 2 && -e "$1" && -e "$2" ]] || \
+   [[ $# -eq 3 && -e "$1" && -e "$2" && -e "$3" ]]; then
   diff_wrapper "${options[@]}" "$@"
 else
   # We are problably in a version control repository.
   if is_git_dir; then
-    git_diff_wrapper "${options[@]}" "$@"
+    git diff "${options[@]}" "$@"
   elif is_mercurial_dir; then
-    hg_diff_wrapper "${options[@]}" "$@"
+    hg diff "${options[@]}" "$@"
   elif is_subversion_dir; then
-    svn_diff_wrapper "${options[@]}" "$@"
+    svn diff "${options[@]}" "$@"
   else  # Fallback to normal diff.
     diff_wrapper "${options[@]}" "$@"
   fi
