@@ -2,7 +2,8 @@
 
 output='%s\n'
 test_only=false
-service=netctl-auto@wlan0.service
+interface=wlp3s0
+service=netctl-auto@$interface.service
 prog=$(basename "$0")
 
 usage () {
