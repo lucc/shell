@@ -8,7 +8,7 @@ execute=
 big=
 case $(uname) in
   Darwin) term=iterm;;
-  Linux)  term=urxvtc;;
+  Linux)  term=xterm;;
 esac
 
 usage () {
