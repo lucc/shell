@@ -13,7 +13,7 @@
 # data getters {{{1
 
 get_connect_from_sys_fs () {
-  if [ "$(cat /sys/class/power_supply/ADP1/online)" -eq 1 ]; then
+  if [ "$(cat /sys/class/power_supply/A{C,DP1}/online 2>/dev/null)" -eq 1 ]; then
     ExternalConnected=Yes
   else
     ExternalConnected=No
@@ -39,6 +39,21 @@ get_data_from_sys_fs () {
 
 get_data_from_sys_fs_uevent () {
   local data=$(cat /sys/class/power_supply/BAT0/uevent)
+  eval $data
+  MaxCapacity=$POWER_SUPPLY_CHARGE_FULL
+  Voltage=$POWER_SUPPLY_VOLTAGE_NOW
+  CurrentCapacity=$POWER_SUPPLY_CHARGE_NOW
+  CycleCount=$POWER_SUPPLY_CYCLE_COUNT
+  if [ "$POWER_SUPPLY_STATUS" = Charging ]; then
+    IsCharging=Yes
+  else
+    IsCharging=No
+  fi
+  get_connect_from_sys_fs
+  AvgTimeToEmpty=1000000 # TODO
+}
+get_data_from_sys_fs_uevent_grep () {
+  local data=$(grep 'FULL\|NOW\|COUNT\|STATUS' /sys/class/power_supply/BAT0/uevent)
   eval $data
   MaxCapacity=$POWER_SUPPLY_CHARGE_FULL
   Voltage=$POWER_SUPPLY_VOLTAGE_NOW
@@ -350,7 +365,7 @@ while getopts abce:hnpuU:v FLAG; do
 done
 
 # get data {{{1
-get_data_from_sys_fs_uevent
+get_data_from_sys_fs_uevent_grep
 
 # process data {{{1
 if $PROMPT; then
