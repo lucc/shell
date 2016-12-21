@@ -8,7 +8,7 @@ execute=
 big=
 case $(uname) in
   Darwin) term=iterm;;
-  Linux)  term=xterm;;
+  Linux)  term=urxvtc;;
 esac
 
 usage () {
@@ -54,7 +54,7 @@ urxvt_wrapper () {
 }
 urxvtc_wrapper () {
   if [[ -n "$foreground" ]]; then
-    urxvt_wrapper
+    urxvt_wrapper $1
   else
     urxvtc ${big:+-fn "$(get_urxvt_font):size=17"} ${1:+-e} "${args[@]}"
     if [[ $? -eq 2 ]]; then
