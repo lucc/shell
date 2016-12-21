@@ -67,6 +67,9 @@ get_data_from_sys_fs_uevent_grep () {
   get_connect_from_sys_fs
   AvgTimeToEmpty=1000000 # TODO
 }
+get_data_from_sys_devices () {
+:
+}
 
 # output functions {{{1
 
@@ -333,6 +336,9 @@ help () {
 }
 
 # init {{{1
+
+set -e
+
 BAR=false
 PROMPT=false
 escape=
@@ -365,7 +371,16 @@ while getopts abce:hnpuU:v FLAG; do
 done
 
 # get data {{{1
-get_data_from_sys_fs_uevent_grep
+#if [ ! -e /sys/devices/platform/smapi/BAT0/remaining_percent ]; then
+#  get_data_from_sys_devices
+if [ -e /sys/class/power_supply/BAT0/uevent ]; then
+  get_data_from_sys_fs_uevent_grep
+elif [ -e /sys/class/power_supply/BAT0 ]; then
+  get_data_from_sys_fs
+else
+  echo Can not obtain battery data. >&2
+  exit 1
+fi
 
 # process data {{{1
 if $PROMPT; then
