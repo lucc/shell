@@ -47,15 +47,15 @@ view () {
 
 # Select command to run or bail out.  If wget can be found we use it,
 # otherwise we look for curl.  If both are not available we exit.
-if which -s wget; then
+if which wget >/dev/null; then
   load_to_pipe () { wget --quiet --output-document=- "$@"; }
   load_to_file () { wget --no-verbose --continue "$@"; }
   quiet_switch=--quiet
-elif which -s curl; then
+elif which curl >/dev/null; then
   load_to_pipe () { curl --silent "$@"; }
   load_to_file () { curl --remote-name --continue-at - "$@"; }
   quiet_switch=--silent
-elif which -s elinks; then
+elif which elinks >/dev/null; then
   echo "Warning: Using elinks(1) which doesn't support continueing of" \
     "partial downloads." >&2
   load_to_pipe () { elinks -source "$1"; }
