@@ -6,13 +6,14 @@ args=( )
 foreground=
 execute=
 big=
+name=
 case $(uname) in
   Darwin) term=iterm;;
   Linux)  term=urxvtc;;
 esac
 
 usage () {
-  echo "Usage: ${0##*/} [-bfx] [-e args ...]"
+  echo "Usage: ${0##*/} [-bfx] [-n name] [-e args ...]"
   echo "       ${0##*/} -h"
   echo "       ${0##*/} -v"
 }
@@ -50,16 +51,22 @@ iterm_wrapper () {
 	EOF
 }
 urxvt_wrapper () {
-  exec urxvt ${big:+-fn "$(get_urxvt_font):size=17"} ${1:+-e} "${args[@]}"
+  exec $urxvt \
+    ${big:+-fn "$(get_urxvt_font):size=17"} \
+    ${name:+-name "$name"} \
+    ${1:+-e} \
+    "${args[@]}"
 }
 urxvtc_wrapper () {
   if [[ -n "$foreground" ]]; then
+    local urxvt=urxvt
     urxvt_wrapper $1
   else
-    urxvtc ${big:+-fn "$(get_urxvt_font):size=17"} ${1:+-e} "${args[@]}"
+    local urxvt=urxvtc
+    urxvt_wrapper $1
     if [[ $? -eq 2 ]]; then
       urxvtd -q -o -f
-      urxvtc ${big:+-fn "$(get_urxvt_font):size=17"} ${1:+-e} "${args[@]}"
+      urxvt_wrapper $1
     fi
   fi
 }
@@ -67,7 +74,7 @@ get_urxvt_font () {
   xrdb -query | sed -En 's/^urxvt\.font\s*:\s*(.*):size=[[:digit:]]+$/\1/ip'
 }
 xterm_wrapper () {
-  exec xterm ${1:+-e} "${args[@]}"
+  exec xterm ${name:+-name "$name"} ${1:+-e} "${args[@]}"
 }
 gnome_terminal_wrapper () {
   if [[ -n "$foreground" ]]; then
@@ -81,7 +88,7 @@ konsole_wrapper () {
   exec konsole ${foreground:+--nofork} ${1:+-e} "${args[@]}"
 }
 
-while getopts be:fhvx opt; do
+while getopts be:fhn:vx opt; do
   case $opt in
     h)
       usage
@@ -104,6 +111,9 @@ while getopts be:fhvx opt; do
       ;;
     f)
       foreground=1
+      ;;
+    n)
+      name=$OPTARG
       ;;
     *)
       usage >&2
