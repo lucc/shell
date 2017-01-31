@@ -29,14 +29,13 @@ mail:
 	@cecho green New mail:
 	@~/src/mailtools/check.py -e lists/zsh -e draft ~/mail || \
 	  echo No new mail.
-notmuch: QUERY = $(patsubst %,'%', \
-  $(shell notmuch config get private.inbox_query))
+notmuch: QUERY = tag:unread AND query:inbox
 notmuch:
 	@cecho green New mail:
-	@if [ `notmuch count tag:unread and $(QUERY)` -eq 0 ]; then \
-	  echo No new mail.;                                        \
-	else                                                        \
-	  notmuch search tag:unread and $(QUERY);                   \
+	@if [ `notmuch count $(QUERY)` -eq 0 ]; then \
+	  echo No new mail.;                         \
+	else                                         \
+	  notmuch search $(QUERY);                   \
 	fi
 
 .PHONY: software git mail all test notmuch
