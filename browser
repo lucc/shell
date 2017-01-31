@@ -1,15 +1,12 @@
 #!/bin/sh
 
-# general script to start a browser
+# General script to start a browser.  Possible browsers:
+# graphical: firefox qutebrowser dwb luakit jumanji surf uzbl
+# text: elinks w3m links lynx
 
 type=graphical
 pipe=false
 URL=http://luc42.lima-city.de
-# elinks w3m links lynx
-text_browser=elinks
-# firefox dwb luakit jumanji surf uzbl
-graphical_browser=firefox
-quick_browser=firefox
 
 usage () {
   local prog=$(basename "$0")
@@ -41,8 +38,20 @@ firefox_open_profile () {
   echo "$1 is not a valid profile. Try one of $(firefox_profiles)."
   exit 2
 }
+qutebrowser () {
+  exec qutebrowser --backend webengine "$@"
+}
+firefox () {
+  exec firefox "$@"
+}
+new_firefox () {
+  local user=${1:-$USER}
+  shift
+  firefox -new-instance -P "$user" "$@"
+}
 
 text () {
+  local text_browser=elinks
   if [ -t 1 ] || [ -t 2 ]; then
     exec "$text_browser" "$@"
   else
@@ -51,17 +60,11 @@ text () {
 }
 
 graphical () {
-  if pgrep "$graphical_browser" >/dev/null; then
-    exec "$graphical_browser" "$@"
-  else
-    exec "$quick_browser" "$@"
-  fi
+  firefox "$@"
 }
 
 new_graphical () {
-  local user=${1:-$USER}
-  shift
-  exec "$graphical_browser" -new-instance -P "$user" "$@"
+  new_firefox "$@"
 }
 
 while getopts hgntpx opt; do
