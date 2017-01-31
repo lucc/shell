@@ -49,4 +49,3 @@ for disconnected in $(xrandr | grep disconnected | cut -f 1 -d ' ') ${connected[
 done
 
 xrandr --verbose ${options[@]}
-echo 'awesome.restart()' | awesome-client
