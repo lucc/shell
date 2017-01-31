@@ -272,7 +272,7 @@ case $1 in
     cd ~/.local/share/nvim/plugins/YouCompleteMe
     git pull
     git submodule update --recursive
-    case system in
+    case plain in
       system)
 	# This was making trouble:
 	# > The ycmd server SHUT DOWN (restart with ':YcmRestartServer').
