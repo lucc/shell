@@ -5,10 +5,11 @@ quiet=
 background=
 view=false
 url=http://www.tagesschau.de/export/video-podcast/tagesschau/
+directory=.
 
 usage () {
-  local prog="`basename "$0"`"
-  echo "Usage: $prog [ -s | -m | -l ] [ -q ] [ -b ] [ -v ] [ -x ]"
+  local prog=${0##*/}
+  echo "Usage: $prog [ -s | -m | -l ] [ -q ] [ -b ] [ -v ] [ -x ] [-d dir]"
   echo "       $prog -h"
 }
 
@@ -19,6 +20,7 @@ help () {
 options () {
   echo "Options:"
   echo "-s, -m, -l  size to download"
+  echo "-d dir      download to dir"
   echo "-q          supress output"
   echo "-b          work in background"
   echo "-v          open file after downloading"
@@ -27,20 +29,22 @@ options () {
 
 load () {
   # find the right file to download online
-  url=`load_to_pipe $url | \
+  url=$(load_to_pipe $url | \
     sed -n '/<enclosure url/{
               s/<enclosure url="\([^"]*\)" length.*\/>/\1/p
 	      q
-	    }'`
+	    }')
   url=${url%.h264.mp4}${size}.h264.mp4
   # go to final download directory
   load_to_file $quiet $url
 }
 
 view () {
+  local file=${url##/*}
   # open the video after downloading it.
-  case `uname` in
-    Darwin) open --background "`basename "$url"`";;
+  case $(uname) in
+    Darwin) open --background "${url##*/}";;
+    Linux) echo xdg-open "$file";;
     *) echo "Not implemente yet!" >&2; exit 1;;
   esac
 }
@@ -59,7 +63,7 @@ elif which elinks >/dev/null; then
   echo "Warning: Using elinks(1) which doesn't support continueing of" \
     "partial downloads." >&2
   load_to_pipe () { elinks -source "$1"; }
-  load_to_file () { elinks -source "$1" > "`basename "$1"`"; }
+  load_to_file () { elinks -source "$1" > "${1##*/}"; }
   quiet_switch=
 else
   echo "Can not find wget/curl/elinks.  Stop."
@@ -67,9 +71,10 @@ else
 fi
 
 # give help on commandline
-while getopts bhlmqsvx FLAG; do
+while getopts bd:hlmqsvx FLAG; do
   case $FLAG in
     b) background='&';;
+    d) directory=$OPTARG;;
     h) help; usage; options; exit;;
     l) size=.webl;;
     m) size=.webm;;
@@ -82,7 +87,13 @@ while getopts bhlmqsvx FLAG; do
 done
 
 # load the file
-cd $HOME/Desktop || cd $HOME/tmp || cd
+if [ -d "$directory" ]; then
+  cd "$directory"
+else
+  echo "Can not cd to final directory: $directory" >&2
+  exit 1
+fi
+
 #eval if load; then if $view; then view; fi; fi $background
 eval "( load && $view && view )" $background
 
