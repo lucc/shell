@@ -1,26 +1,36 @@
 #!/usr/bin/python
 
+"""A small script to collect some usefull gpg commands in nice user
+interface."""
+
 import argparse
 import subprocess
 import sys
 
+iofiles = argparse.ArgumentParser()
+iofiles.add_argument('--input', default=sys.stdin, type=argparse.FileType('r'))
+iofiles.add_argument('--output', default=sys.stdout, type=argparse.FileType('w'))
+
 parser = argparse.ArgumentParser()
 subparsers = parser.add_subparsers()
-decode = subparsers.add_parser('decode', help='decode stdin')
+decode = subparsers.add_parser('decode', parents=[iofiles], help='decode stdin')
 decode.set_defaults(command='-d')
-encode = subparsers.add_parser('encode', help='encode stdin')
-decode.set_defaults(command='-e')
-sign = subparsers.add_parser('sing', help='sign stdin')
-decode.set_defaults(command='-s')
+
+encode = subparsers.add_parser('encode', parents=[iofiles], help='encode stdin')
+encode.set_defaults(command='-e')
+sign = subparsers.add_parser('sign', help='sign stdin')
+sign.set_defaults(command='-s')
 import_ = subparsers.add_parser(
     'import',
     help='import a new key from a file or a key server')
-decode.set_defaults(command='--import')
+import_.set_defaults(command='--import')
+export = subparsers.add_parser('export', help='export a key')
+export.set_defaults(command='--export')
 update = subparsers.add_parser('update', help='update the keyring')
-decode.set_defaults(command='--update-keys')
+update.set_defaults(command='--update-keys')
 
 args = parser.parse_args()
 the_args = []
 
-ret = subprocess.call('gpg', args.command, *the_args)
+ret = subprocess.call(['gpg', args.command] + the_args)
 sys.exit(ret)
