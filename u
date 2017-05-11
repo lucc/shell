@@ -76,6 +76,9 @@ case $1 in
 	    'logs:show different logs'
 	    'setenv:set an environment var in a running process'
 	    'bank:open the bank browser'
+	    'python-profile:create a png from a python profileing run'
+	    'test-vim-startup:mesure and sort nvim startup time'
+	    'cmp-git-branch:run command on this branch and master (-u)'
 	  )
 	  # Use this array to complete the subcommands.
 	  _describe -t subcommands 'util subcommands' subcommands_array \
@@ -325,7 +328,44 @@ case $1 in
     sudo gdb -q -batch -ex "attach $1" -ex "call putenv(\"$2\")" -ex 'detach'
     ;;
   bank)
-    browser -n bank &
-    pass -c firefox/bank
+    browser -b \
+      https://www.onlinebanking-vr-ll.de/banking-private/entry \
+      https://banking.umweltbank.de/ &
+    ;;
+  python-profile)
+    shift
+    name=profile
+    while getopts n: FLAG; do
+      case $FLAG in
+	n) name=$OPTARG;;
+      esac
+    done
+    shift $((OPTIND - 1))
+    PYTHONPATH=. python -m cProfile -o $name.pstats $@
+    gprof2dot -f pstats $name.pstats > $name.dot
+    dot -T png -o $name.png $name.dot
+    feh $name.png
+    ;;
+  test-vim-startup)
+    nvim --headless -c 'quitall!' --startuptime >(grep sourcing | \
+      sort -n --key=3)
+    ;;
+  cmp-git-branch)
+    shift
+    upsteam=master
+    count=10
+    while getopts u:c: FLAG; do
+      case $FLAG in
+	u) upstream=$OPTARG;;
+	c) count=$OPTARG;;
+      esac
+    done
+    shift $((OPTIND - 1))
+    # Save the current HEAD.
+    head=$(git rev-parse --abbrev-ref HEAD)
+    time (for i in {0..$count}; do $@ &>/dev/null; done )
+    git checkout $upstream
+    time (for i in {0..$count}; do $@ &>/dev/null; done )
+    git checkout $head
     ;;
 esac
