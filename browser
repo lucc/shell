@@ -9,21 +9,23 @@ pipe=false
 URL=http://luc42.lima-city.de
 
 usage () {
-  local prog=$(basename "$0")
-  echo "Usage: $prog [-gt] url"
+  local prog=${0##*/}
+  echo "Usage: $prog [-gtpPb] [url]"
   echo "       $prog -n [profile] [url]"
-  echo "       cat file.html | $prog -p [-gt]"
+  echo "       cat file.html | $prog -s [options]"
 }
 help () {
   usage
   echo
-  echo '  -g	open a graphical browser'
-  echo '  -t	open a text browser'
-  echo '  -s	expect document on stdin (no url allowed)'
-  echo '  -n    open a new instance with the given profile (implies -g)'
-  echo '  -p    start in private browsing mode (implies -g)'
-  echo '  -P    start in private browsing mode (qutebrowser)'
-  echo '  -b    for banking'
+  printf '  %s\t%s\n' \
+    -g 'open a graphical browser'                                \
+    -t 'open a text browser'                                     \
+    -s 'expect document on stdin (no url allowed)'               \
+    -n 'open a new instance with the given profile (implies -g)' \
+    -p 'start in private browsing mode (implies -g)'             \
+    -P 'start in private browsing mode (qutebrowser)'            \
+    -b 'for banking'                                             \
+
 }
 
 firefox_profiles () {
