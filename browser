@@ -42,7 +42,9 @@ firefox_open_profile () {
   exit 2
 }
 qutebrowser () {
+  #export QT_QPA_PLATFORM=wayland-egl QT_WAYLAND_DISABLE_WINDOWDECORATION=1
   exec qutebrowser --backend webengine "$@"
+  #exec qutebrowser "$@"
 }
 firefox () {
   export VIMPERATOR_RUNTIME=~/.config/vimperator
