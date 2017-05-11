@@ -65,7 +65,7 @@ text () {
 }
 
 graphical () {
-  firefox "$@"
+  qutebrowser "$@"
 }
 
 new_graphical () {
