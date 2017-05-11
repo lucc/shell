@@ -42,6 +42,8 @@ qutebrowser () {
   exec qutebrowser --backend webengine "$@"
 }
 firefox () {
+  export VIMPERATOR_RUNTIME=~/.config/vimperator
+  export VIMPERATOR_INIT="source $VIMPERATOR_RUNTIME/vimperatorrc"
   exec firefox "$@"
 }
 new_firefox () {
