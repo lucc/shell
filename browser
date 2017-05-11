@@ -19,8 +19,11 @@ help () {
   echo
   echo '  -g	open a graphical browser'
   echo '  -t	open a text browser'
-  echo '  -p	expect document on stdin (no url allowed)'
+  echo '  -s	expect document on stdin (no url allowed)'
   echo '  -n    open a new instance with the given profile (implies -g)'
+  echo '  -p    start in private browsing mode (implies -g)'
+  echo '  -P    start in private browsing mode (qutebrowser)'
+  echo '  -b    for banking'
 }
 
 firefox_profiles () {
@@ -69,13 +72,46 @@ new_graphical () {
   new_firefox "$@"
 }
 
-while getopts hgntpx opt; do
+private () {
+  exec firefox --new-instance --private-window "$@"
+}
+private_qute () {
+  local tempdir=$(mktemp -d)
+  cp -r ~/.config/qutebrowser "$tempdir/config"
+  mkdir "$tempdir/data"
+  cp -r ~/.local/share/qutebrowser/userscripts "$tempdir/data/userscripts"
+  #trap 'rm -rf "$tempdir"' EXIT SIGTERM SIGKILL
+  command qutebrowser \
+    --basedir "$tempdir" \
+    --set general auto-save-config false \
+    --set network user-agent 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.106 Safari/537.36' \
+    "$@"
+  rm -rf "$tempdir"
+}
+
+bank () {
+  local tempdir=$(mktemp -d)
+  cp -r ~/.config/qutebrowser "$tempdir/config"
+  mkdir "$tempdir/data"
+  cp -r ~/.local/share/qutebrowser/userscripts "$tempdir/data/userscripts"
+  #trap 'rm -rf "$tempdir"' EXIT SIGTERM SIGKILL
+  command qutebrowser \
+    --backend webengine \
+    --basedir "$tempdir" \
+    "$@"
+  rm -rf "$tempdir"
+}
+
+while getopts bhgntpPsx opt; do
   case $opt in
+    b) type=bank;;
     h) help; exit;;
     g) type=graphical;;
     n) type=new_graphical;;
     t) type=text;;
-    p) pipe=true;;
+    p) type=private;;
+    P) type=private_qute;;
+    s) pipe=true;;
     x) set -x;;
     *) usage >&2; exit 2;
   esac
