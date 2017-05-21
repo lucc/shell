@@ -3,7 +3,8 @@
 # Rebase all local only branches on origin/master.
 
 abort=0
-ignore=(\*.bak \*.add)
+exclude=(\*.bak \*.add)
+include=()
 upstream=origin/master
 cmd=
 verbose=0
@@ -11,7 +12,7 @@ retry=0
 
 usage () {
   local prog="git ${${0##*/}#git-}"
-  echo "$prog [-anx] [-i pattern] [-u upstream] [-- git-rebase(1) options]"
+  echo "$prog [-alnrx] [-i pattern] [-e pattern] [-u upstream] [-- git-rebase(1) options]"
   echo "$prog -h"
 }
 
@@ -24,13 +25,15 @@ patterns.
 
 Options:
 -a		abort a rabase that fails (and continue with the next one)
--n		just print what would be done, don't so anything
+-n		just print what would be done, don't do anything
 -x		give shell debuging output
--i pattern	add pattern to the list of ignore patterns, give the empty
-		string as an argument to clear the list (default is *.bak,
-		*.add)
--u upstream	set the upstream branch for the rebase (default is
-		origin/master)
+-l		populate the include list with all local branches (which don't
+		have an upstream tracking branch)
+-e pattern	add pattern to the list of excluded patterns, give the empty
+		string as an argument to clear the list (default is $exclude)
+-i pattern      add pattern to the list of included patterns, give the empty
+		string as an argument to clear the list (default $include)
+-u upstream	set the upstream branch for the rebase (default is $upstream)
 -r 		use git-retry-rebase to retry a rebase that failed (impies -a)
 
 Everything after "--" will be passed to git-rebase(1) as options.
@@ -50,7 +53,22 @@ check-pattern-list () {
   return 1
 }
 
-trap_handler () {
+find-local-branches () {
+  # Populate the branches array.
+  local branches=()
+  local branch
+  for branch in $(git branch | cut -c 3-); do
+    if git config --get branch.$branch.remote &>/dev/null; then
+      # The branch has a remote tracking branch.
+      continue
+    else
+      branches+=$branch
+    fi
+  done
+  echo $branches
+}
+
+trap-handler () {
   trap - INT STOP HUP
   echo Caught signal.  Aborting all pending rebases. >&2
   git rebase --abort &>/dev/null
@@ -58,11 +76,13 @@ trap_handler () {
 }
 
 # Parse the command line.
-while getopts ahi:nru:vx FLAG; do
+while getopts ae:hi:lnru:vx FLAG; do
   case $FLAG in
     a) abort=1;;
     h) usage; help; exit;;
-    i) if [[ -z $OPTARG ]]; then ignore=(); else ignore+=$OPTARG; fi;;
+    e) if [[ -z $OPTARG ]]; then exclude=(); else exclude+=$OPTARG; fi;;
+    i) if [[ -z $OPTARG ]]; then include=(); else include+=$OPTARG; fi;;
+    l) include+=( $(find-local-branches) );;
     n) cmd=echo;;
     r) retry=1 abort=1;;
     u) upstream=$OPTARG;;
@@ -78,28 +98,14 @@ if ((retry)) && ! [[ -x =git-retry-rebase ]]; then
   retry=0
 fi
 
-# Populate the branches array.
-branches=()
-for branch in $(git branch | cut -c 3-); do
-  if check-pattern-list ignore $branch; then
-    # The branch should be ignored.
-    continue
-  elif git config --get branch.$branch.remote &>/dev/null; then
-    # The branch has a remote tracking branch.
-    continue
-  else
-    branches+=$branch
-  fi
-done
-
 # Save the current HEAD.
 head=$(git rev-parse --abbrev-ref HEAD)
 
 # Set up the trap.
-trap trap_handler INT STOP HUP
+trap trap-handler INT STOP HUP
 
 # Do the actual rebasing.
-for branch in $branches; do
+for branch in ${include:|exclude}; do
   ((verbose)) && echo Rebasing $branch on $upstream ...
   $cmd git rebase $@ $upstream $branch
   if (( $? != 0 && abort )) && [[ -z $cmd ]]; then
