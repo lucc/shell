@@ -347,7 +347,9 @@ case $1 in
     feh $name.png
     ;;
   test-vim-startup)
-    nvim --headless -c 'quitall!' --startuptime >(grep sourcing | \
+    shift
+    searchterm=${1:-sourcing}
+    nvim --headless -c 'quitall!' --startuptime >(grep ${@:-sourcing} | \
       sort -n --key=3)
     ;;
   cmp-git-branch)
