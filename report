@@ -17,7 +17,7 @@ software:
 	@echo There are `pacman -Quq | wc -l` updates available.
 git:
 	@cecho green Dirty git repositories:
-	@find $(HOME)                      \
+	@-find $(HOME)                     \
 	  -regex '$(EXCLUDE_RE)' -prune -o \
 	  \(                               \
 	    -type d                        \
