@@ -105,7 +105,7 @@ head=$(git rev-parse --abbrev-ref HEAD)
 trap trap-handler INT STOP HUP
 
 # Do the actual rebasing.
-for branch in ${include:|exclude}; do
+for branch in ${(u)include:|exclude}; do
   ((verbose)) && echo Rebasing $branch on $upstream ...
   $cmd git rebase $@ $upstream $branch
   if (( $? != 0 && abort )) && [[ -z $cmd ]]; then
