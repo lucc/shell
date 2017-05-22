@@ -53,11 +53,15 @@ check-pattern-list () {
   return 1
 }
 
+find-branches () {
+  git branch | cut -c 3-
+}
+
 find-local-branches () {
   # Populate the branches array.
   local branches=()
   local branch
-  for branch in $(git branch | cut -c 3-); do
+  for branch in $(find-branches); do
     if git config --get branch.$branch.remote &>/dev/null; then
       # The branch has a remote tracking branch.
       continue
@@ -93,10 +97,20 @@ while getopts ae:hi:lnru:vx FLAG; do
 done
 shift $(($OPTIND-1))
 
+exclude+=$upstream
+
 if ((retry)) && ! [[ -x =git-retry-rebase ]]; then
   echo git-retry-rebase is not available. >&2
   retry=0
 fi
+
+branches=()
+for branch in $(find-branches); do
+  if check-pattern-list include $branch && \
+      ! check-pattern-list exclude $branch; then
+    branches+=$branch
+  fi
+done
 
 # Save the current HEAD.
 head=$(git rev-parse --abbrev-ref HEAD)
@@ -105,7 +119,7 @@ head=$(git rev-parse --abbrev-ref HEAD)
 trap trap-handler INT STOP HUP
 
 # Do the actual rebasing.
-for branch in ${(u)include:|exclude}; do
+for branch in ${(u)branches}; do
   ((verbose)) && echo Rebasing $branch on $upstream ...
   $cmd git rebase $@ $upstream $branch
   if (( $? != 0 && abort )) && [[ -z $cmd ]]; then
