@@ -79,31 +79,23 @@ new_graphical () {
 private () {
   exec firefox --new-instance --private-window "$@"
 }
-private_qute () {
+temp_qute () {
   local tempdir=$(mktemp -d)
   cp -r ~/.config/qutebrowser "$tempdir/config"
   mkdir "$tempdir/data"
   cp -r ~/.local/share/qutebrowser/userscripts "$tempdir/data/userscripts"
   #trap 'rm -rf "$tempdir"' EXIT SIGTERM SIGKILL
-  command qutebrowser \
-    --basedir "$tempdir" \
+  command qutebrowser --backend webengine --basedir "$tempdir" "$@"
+  rm -rf "$tempdir"
+}
+private_qute () {
+  temp_qute \
     --set general auto-save-config false \
     --set network user-agent 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.106 Safari/537.36' \
     "$@"
-  rm -rf "$tempdir"
 }
-
 bank () {
-  local tempdir=$(mktemp -d)
-  cp -r ~/.config/qutebrowser "$tempdir/config"
-  mkdir "$tempdir/data"
-  cp -r ~/.local/share/qutebrowser/userscripts "$tempdir/data/userscripts"
-  #trap 'rm -rf "$tempdir"' EXIT SIGTERM SIGKILL
-  command qutebrowser \
-    --backend webengine \
-    --basedir "$tempdir" \
-    "$@"
-  rm -rf "$tempdir"
+  temp_qute "$@"
 }
 
 while getopts bhgntpPsx opt; do
