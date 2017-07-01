@@ -3,11 +3,13 @@
 # A shell wrapper to call different programms.  To be used in the mailcap
 # file.
 
-version=0.1
-prog="$(basename "$0")"
+version=0.2
+prog=${0##*/}
+mimetype=
+charset=
 
 usage () {
-  echo "Usage: $prog"
+  echo "Usage: $prog [-m mime/type] [-c charset] file"
   echo "       $prog -h"
   echo "       $prog -v"
 }
@@ -16,23 +18,39 @@ help () {
   echo "Mailcap wrapper script."
 }
 
-while getopts hv FLAG; do
+while getopts c:hm:v FLAG; do
   case $FLAG in
+    c) charset=$OPTARG;;
     h) usage; help; exit;;
+    m) mimetype=$OPTARG;;
     v) echo "$prog -- version $version"; exit;;
     *) usage >&2; exit 2;;
   esac
 done
 shift $((OPTIND - 1))
 
-if [ $# -ne 2 ]; then
+if [ $# -ne 1 ]; then
   usage >&2
   exit 2
 fi
-case "$1" in
+case $mimetype in
   text/html)
-    # Thanks to @don_christi: http://unix.stackexchange.com/a/279635/88313
-    elinks -no-home -dump "$2" | \
+    # Thanks to don_christi: http://unix.stackexchange.com/a/279635/88313
+    # and pazz: https://github.com/pazz/alot/pull/1015
+    eval=
+    code=
+    if [ -n "$charset" ]; then
+      eval=-eval
+      code="set document.codepage.assume = \"$charset\""
+    fi
+    #-dump-color-mode 3 \
+    elinks \
+      -no-home \
+      -force-html \
+      -dump \
+      -dump-charset utf8 \
+      "$eval" "$code" \
+      "$1" | \
       sed '    # Remove all common leading ws ignoring blank lines.
         H      # append to hold space
 	$!d    # delete all but the last line
@@ -44,7 +62,7 @@ case "$1" in
 	'
     ;;
   *)
-    echo "Unsuported mime type: $1" >&2
+    echo "Unsuported mime type: $mimetype" >&2
     exit 1
     ;;
 esac
