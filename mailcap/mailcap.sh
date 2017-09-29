@@ -49,7 +49,7 @@ case $mimetype in
       -force-html \
       -dump \
       -dump-charset utf8 \
-      "$eval" "$code" \
+      ${eval:+"$eval" "$code"} \
       "$1" | \
       sed '    # Remove all common leading ws ignoring blank lines.
         H      # append to hold space
