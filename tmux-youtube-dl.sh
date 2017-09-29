@@ -9,7 +9,7 @@ dir=~/vid/tmp
 xtrace=
 
 usage () {
-  echo "Usage: $prog [options] url"
+  echo "Usage: $prog [options] url [url ...]"
   echo "       $prog [options] -l"
   echo "       $prog [options] -p index"
   echo "       $prog [options] -q"
@@ -63,30 +63,35 @@ case $command in
     exec tmux attach-session -t "$session"
     ;;
   load)
-    if [ $# -ne 1 ] || [ -z "$1" ]; then
+    if [ $# -eq 0 ]; then
       usage >&2
       exit 2
     fi
-    url=$1
-    # If the tmux $session is running check if the url is alreay beeing
-    # downloaded.  Else start $session and download the url.
-    if has_session; then
-      # If $url is already beeing downloaded don't start a second instance.
-      if list_windows '#{window_name}' | fgrep -q "$url"; then
-	echo Alread registered: "$url"
-      else
-	if has_session 0; then
-	  append=-a
-	else
-	  append=
-	fi
-	tmux new-window -c "$dir" -d $append -t "$session:0" -n "$url" \
-	  "$0" -i "$url"
+    for url; do
+      if [ -z "$url" ]; then
+	usage >&2
+	exit 2
       fi
-    else
-      tmux new-session -d -s "$session" -n "$url" -c "$dir" \
-	"$0" $xtrace -i "$url"
-    fi
+      # If the tmux $session is running check if the url is alreay beeing
+      # downloaded.  Else start $session and download the url.
+      if has_session; then
+	# If $url is already beeing downloaded don't start a second instance.
+	if list_windows '#{window_name}' | fgrep -q "$url"; then
+	  echo Alread registered: "$url"
+	else
+	  if has_session 0; then
+	    append=-a
+	  else
+	    append=
+	  fi
+	  tmux new-window -c "$dir" -d $append -t "$session:0" -n "$url" \
+	    "$0" -i "$url"
+	fi
+      else
+	tmux new-session -d -s "$session" -n "$url" -c "$dir" \
+	  "$0" $xtrace -i "$url"
+      fi
+    done
     ;;
   inner-load)
     # TODO this is still buggy.  The success and failure conditions are not
