@@ -6,7 +6,6 @@
 
 type=graphical
 pipe=false
-URL=http://luc42.lima-city.de
 
 usage () {
   local prog=${0##*/}
@@ -28,11 +27,30 @@ help () {
 
 }
 
+qutebrowser () {
+  #export QT_QPA_PLATFORM=wayland-egl QT_WAYLAND_DISABLE_WINDOWDECORATION=1
+  exec qutebrowser --backend webengine "$@"
+}
+qutebrowser_tmp () {
+  local tempdir=$(mktemp -d)
+  cp -r ~/.config/qutebrowser "$tempdir/config"
+  mkdir "$tempdir/data"
+  cp -r ~/.local/share/qutebrowser/userscripts "$tempdir/data/userscripts"
+  #trap 'rm -rf "$tempdir"' EXIT SIGTERM SIGKILL
+  command qutebrowser --backend webengine --basedir "$tempdir" "$@"
+  rm -rf "$tempdir"
+}
+qutebrowser_private () {
+  qutebrowser_tmp \
+    --set auto_save.session false \
+    --set content.headers.user_agent 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.106 Safari/537.36' \
+    "$@"
+}
 firefox_profiles () {
   local ini=$HOME/.mozilla/firefox/profiles.ini
   grep '^Name=' "$ini" | cut -f 2 -d =
 }
-firefox_open_profile () {
+firefox_mac () {
   local profile
   for profile in $(firefox_profiles); do
     if [ "$profile" = "$1" ]; then
@@ -43,20 +61,18 @@ firefox_open_profile () {
   echo "$1 is not a valid profile. Try one of $(firefox_profiles)."
   exit 2
 }
-qutebrowser () {
-  #export QT_QPA_PLATFORM=wayland-egl QT_WAYLAND_DISABLE_WINDOWDECORATION=1
-  exec qutebrowser --backend webengine "$@"
-  #exec qutebrowser "$@"
-}
 firefox () {
   export VIMPERATOR_RUNTIME=~/.config/vimperator
   export VIMPERATOR_INIT="source $VIMPERATOR_RUNTIME/vimperatorrc"
   exec firefox "$@"
 }
-new_firefox () {
+firefox_new () {
   local user=${1:-$USER}
   shift
   firefox -new-instance -P "$user" "$@"
+}
+firefox_private () {
+  exec firefox --new-instance --private-window "$@"
 }
 
 text () {
@@ -67,35 +83,17 @@ text () {
     exec term -e "$text_browser" "$@"
   fi
 }
-
 graphical () {
   qutebrowser "$@"
 }
-
 new_graphical () {
-  new_firefox "$@"
+  firefox_new "$@"
 }
-
 private () {
-  exec firefox --new-instance --private-window "$@"
-}
-temp_qute () {
-  local tempdir=$(mktemp -d)
-  cp -r ~/.config/qutebrowser "$tempdir/config"
-  mkdir "$tempdir/data"
-  cp -r ~/.local/share/qutebrowser/userscripts "$tempdir/data/userscripts"
-  #trap 'rm -rf "$tempdir"' EXIT SIGTERM SIGKILL
-  command qutebrowser --backend webengine --basedir "$tempdir" "$@"
-  rm -rf "$tempdir"
-}
-private_qute () {
-  temp_qute \
-    --set general auto-save-config false \
-    --set network user-agent 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.106 Safari/537.36' \
-    "$@"
+  qutebrowser_private "$@"
 }
 bank () {
-  temp_qute "$@"
+  qutebrowser_tmp "$@"
 }
 
 while getopts bhgntpPsx opt; do
@@ -106,7 +104,7 @@ while getopts bhgntpPsx opt; do
     n) type=new_graphical;;
     t) type=text;;
     p) type=private;;
-    P) type=private_qute;;
+    P) type=firefox_private;;
     s) pipe=true;;
     x) set -x;;
     *) usage >&2; exit 2;
