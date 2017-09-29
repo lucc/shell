@@ -25,6 +25,7 @@ help () {
   echo "  -h    display help"
   echo "  -v    display version"
   echo "  -x    debugging output"
+  echo "  -d    set working directory to given argument"
   echo "  -a    attach to the tmux session for manuall interaction"
   echo "  -l    list urls of running jobs"
   # TODO poke
@@ -42,9 +43,10 @@ has_session () {
 }
 
 command=load
-while getopts ahi:lp:qtvx FLAG; do
+while getopts ad:hi:lp:qtvx FLAG; do
   case $FLAG in
     a) command=attach;;
+    d) dir=$OPTARG;;
     h) usage; help; exit;;
     i) command=inner-load url=$OPTARG;;
     l) command=list;;
