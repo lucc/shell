@@ -13,7 +13,7 @@ usage () {
   echo "       $prog [options] -l"
   echo "       $prog [options] -p index"
   echo "       $prog [options] -q"
-  echo "       $prog [options] -t"
+  echo "       $prog [options] -t [ -- <tail-options>]"
   echo "       $prog [options] -i url"
   echo "       $prog -h"
   echo "       $prog -v"
