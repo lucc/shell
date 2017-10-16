@@ -9,7 +9,7 @@ big=
 name=
 case $(uname) in
   Darwin) term=iterm;;
-  Linux)  term=urxvtc;;
+  Linux)  term=termite;;
 esac
 
 usage () {
@@ -86,6 +86,9 @@ gnome_terminal_wrapper () {
 }
 konsole_wrapper () {
   exec konsole ${foreground:+--nofork} ${1:+-e} "${args[@]}"
+}
+termite_wrapper () {
+  exec termite ${name:+--name "$name"} ${1:+-e} "${args[*]}"
 }
 
 while getopts be:E:fhn:vx opt; do
