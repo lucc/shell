@@ -29,7 +29,7 @@ help () {
 
 qutebrowser () {
   #export QT_QPA_PLATFORM=wayland-egl QT_WAYLAND_DISABLE_WINDOWDECORATION=1
-  exec qutebrowser --backend webengine "$@"
+  exec qutebrowser "$@"
 }
 qutebrowser_tmp () {
   local tempdir=$(mktemp -d)
@@ -37,7 +37,7 @@ qutebrowser_tmp () {
   mkdir "$tempdir/data"
   cp -r ~/.local/share/qutebrowser/userscripts "$tempdir/data/userscripts"
   #trap 'rm -rf "$tempdir"' EXIT SIGTERM SIGKILL
-  command qutebrowser --backend webengine --basedir "$tempdir" "$@"
+  command qutebrowser --basedir "$tempdir" "$@"
   rm -rf "$tempdir"
 }
 qutebrowser_private () {
