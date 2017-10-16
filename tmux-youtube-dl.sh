@@ -14,6 +14,8 @@ usage () {
   echo "       $prog [options] -p index"
   echo "       $prog [options] -q"
   echo "       $prog [options] -t [ -- <tail-options>]"
+  echo "       $prog [options] -k index"
+  echo "       $prog [options] -r {url,index}"
   echo "       $prog [options] -i url"
   echo "       $prog -h"
   echo "       $prog -v"
@@ -32,6 +34,8 @@ help () {
   echo "  -p    poke TODO ..."
   echo "  -q    kill all jobs, quit the server"
   echo "  -t    show the tail -n 1 of every job"
+  echo "  -k    kill a job"
+  echo "  -r    restart a job"
   echo "  -i    run the downloading loop (for internal use only)"
 }
 
@@ -43,15 +47,17 @@ has_session () {
 }
 
 command=load
-while getopts ad:hi:lp:qtvx FLAG; do
+while getopts ad:hi:k:lp:qr:tvx FLAG; do
   case $FLAG in
     a) command=attach;;
     d) dir=$OPTARG;;
     h) usage; help; exit;;
     i) command=inner-load url=$OPTARG;;
+    k) command=kill index=$OPTARG;;
     l) command=list;;
     p) command=poke; index=$OPTARG;;
     q) command=quit;;
+    r) command=restart id=$OPTARG;;
     t) command=tail;;
     v) echo "$prog -- version $version"; exit;;
     x) set -x; xtrace=-x;;
@@ -114,6 +120,7 @@ case $command in
     done
     rm "$tmp"
     ;;
+  kill) tmux kill-window -t "$session:$index";;
   list) list_windows '#{window_index}: #{window_name}';;
   poke)
     if [[ "$index" == all ]]; then
@@ -127,6 +134,15 @@ case $command in
     done
     ;;
   quit) tmux kill-session -t "$session";;
+  restart)
+    list_windows '#{window_index}	#{window_name}' | \
+      while read -r index name; do
+	if [[ "$index" == "$id" || "$name" == "$id" ]]; then
+	  "$0" -k "$index"
+	  "$0" "$name"
+	fi
+      done
+    ;;
   tail)
     list_windows '#{window_index}' | while read -r index; do
       tmux capture-pane -J -p -t "$session:$index" | grep -v '^$' | \
