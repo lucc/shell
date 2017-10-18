@@ -1,7 +1,7 @@
 #!/bin/bash
 # a script to start my favorite terminal emulator
 
-version=2.2
+version=2.3
 args=( )
 foreground=
 execute=
@@ -13,7 +13,7 @@ case $(uname) in
 esac
 
 usage () {
-  echo "Usage: ${0##*/} [-bfx] [-n name] [-E arg] [-e args ...]"
+  echo "Usage: ${0##*/} [-bfx] [-t backend] [-n name] [-E arg] [-e args ...]"
   echo "       ${0##*/} -h"
   echo "       ${0##*/} -v"
 }
@@ -98,41 +98,18 @@ termite_wrapper () {
   fi
 }
 
-while getopts be:E:fhn:vx opt; do
+while getopts be:E:fhn:t:vx opt; do
   case $opt in
-    h)
-      usage
-      exit 0
-      ;;
-    v)
-      echo "term -- Version $version (wrapping $term)"
-      exit 0
-      ;;
-    e)
-      execute=1
-      args=("${args[@]}" "$OPTARG" "${@:$OPTIND}")
-      shift $#
-      ;;
-    E)
-      execute=1
-      args=("${args[@]}" $OPTARG)
-      ;;
-    b)
-      big=1
-      ;;
-    x)
-      set -x
-      ;;
-    f)
-      foreground=1
-      ;;
-    n)
-      name=$OPTARG
-      ;;
-    *)
-      usage >&2
-      exit 2
-      ;;
+    h) usage; exit;;
+    v) echo "term -- Version $version (wrapping $term)"; exit;;
+    x) set -x;;
+    b) big=1;;
+    e) execute=1; args=("${args[@]}" "$OPTARG" "${@:$OPTIND}"); shift $#;;
+    E) execute=1; args=("${args[@]}" $OPTARG);;
+    f) foreground=1;;
+    n) name=$OPTARG;;
+    t) term=$OPTARG;;
+    *) usage >&2; exit 2;;
   esac
 done
 
