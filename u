@@ -66,7 +66,7 @@ case $1 in
 	  subcommands_array=(
 	    'help:show help'
 	    'edit:open the script itself in $EDITOR'
-	    'bk:mount the external backup hd'
+	    'bk:mount the external backup hd and make a backup'
 	    'phone:some phone related subcommands'
 	    'export-abook-for-nokia:todo'
 	    'split-file-at-empty-lines:split a text files into several files'
@@ -129,24 +129,21 @@ case $1 in
     # was changed.
     exec $EDITOR $0
     ;;
-  bk) # mount the backup hard disk
-    mountpoint=/media/backup
-    name=backup
-    device=/dev/mapper/$name
-    if findmnt $mountpoint >/dev/null && [[ -L $device && -b $device ]]; then
-      echo Unmounting ...
-      sudo umount $mountpoint && \
-	sudo cryptsetup close $name
-    elif ! findmnt $mountpoint >/dev/null && ! [[ -e $device ]]; then
-      echo Mounting ...
-      pass show disk/${name}1 | \
-	sudo cryptsetup -v --key-file - --keyfile-size 20 open \
-	/dev/disk/by-partlabel/backup.crypt $name
-      mount $mountpoint
-    else
-      echo Error
-      exit 1
-    fi
+  bk) # mount the backup hard disk and make a backup
+    until
+      findmnt /media/bak >/dev/null
+    do
+      echo Please plug in the external backup disk.
+      sleep 1
+      sudo mount LABEL=bak.fs
+    done
+    backup.py -v \
+      snap \
+      --exclude=/{.cache,tmp,vid,audio,img,comic,TV-'*'.webl.h264.mp4} \
+      /media/bak/home
+    ret=$?
+    sudo umount /media/bak
+    exit $ret
     ;;
   phone) # phone related subcommands
     shift
