@@ -325,9 +325,10 @@ case $1 in
     sudo gdb -q -batch -ex "attach $1" -ex "call putenv(\"$2\")" -ex 'detach'
     ;;
   bank)
+    shift
     browser -b \
       https://www.onlinebanking-vr-ll.de/banking-private/entry \
-      https://banking.umweltbank.de/ &
+      https://banking.umweltbank.de/ $@ &
     ;;
   python-profile)
     shift
