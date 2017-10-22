@@ -143,6 +143,7 @@ case $1 in
       --exclude=/{.cache,tmp,vid,audio,img,comic,TV-'*'.webl.h264.mp4} \
       /media/bak/home
     ret=$?
+    df -h /media/bak
     sudo umount /media/bak
     exit $ret
     ;;
