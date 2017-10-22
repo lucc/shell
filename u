@@ -79,6 +79,7 @@ case $1 in
 	    'python-profile:create a png from a python profileing run'
 	    'test-vim-startup:mesure and sort nvim startup time'
 	    'cmp-git-branch:run command on this branch and master (-u)'
+	    'true-color-test:test true color support of the terminal'
 	  )
 	  # Use this array to complete the subcommands.
 	  _describe -t subcommands 'util subcommands' subcommands_array \
@@ -369,4 +370,18 @@ case $1 in
     time (for i in {0..$count}; do $@ &>/dev/null; done )
     git checkout $head
     ;;
+  true-color-test) # print some colors to test true color support of the term
+    awk 'BEGIN{
+    s="/\\/\\/\\/\\/\\"; s=s s s s s s s s;
+    for (colnum = 0; colnum<77; colnum++) {
+      r = 255-(colnum*255/76);
+      g = (colnum*510/76);
+      b = (colnum*255/76);
+      if (g>255) g = 510-g;
+	printf "\033[48;2;%d;%d;%dm", r,g,b;
+	printf "\033[38;2;%d;%d;%dm", 255-r,255-g,255-b;
+	printf "%s\033[0m", substr(s,colnum+1,1);
+      }
+      printf "\n";
+    }'
 esac
