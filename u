@@ -147,6 +147,19 @@ case $1 in
     sudo umount /media/bak
     exit $ret
     ;;
+  bk-mini)
+    set -e
+    myip=$(curl --silent http://luc42.lima-city.de/ip.php)
+    piip=$(dig +short luc.now-dns.net)
+    if [[ $myip = $piip ]]
+    then domain=pi
+    else domain=nowip
+    fi
+    backup.py -v snap \
+      -s etc -s mail -s .config \
+      -s uni --exclude=/uni/'[^si]*' \
+      ${domain}:backup/tp/home
+    ;;
   phone) # phone related subcommands
     shift
     case $1 in
