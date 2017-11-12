@@ -84,7 +84,8 @@ case $command in
       # downloaded.  Else start $session and download the url.
       if has_session; then
 	# If $url is already beeing downloaded don't start a second instance.
-	if list_windows '#{window_name}' | fgrep -q "$url"; then
+	if list_windows '#{window_name}' | grep --quiet --fixed-strings "$url"
+	then
 	  echo Alread registered: "$url"
 	else
 	  if has_session 0; then
