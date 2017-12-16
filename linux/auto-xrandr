@@ -3,7 +3,7 @@
 # preferred order of monitors (highest to lowest priority)
 order=(LVDS DP HDMI VGA)
 # preferred position of monitors (relative to previsous monitor in $order)
-position=${1:-above}
+position=${1:-left-of}
 # maximum number of monitors to use (only names from $order will be used)
 max=10
 
