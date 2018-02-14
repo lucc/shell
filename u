@@ -166,7 +166,7 @@ case $1 in
     done
     backup.py -v \
       snap \
-      --exclude=/{.cache,tmp,vid,audio,img,comic,TV-'*'.webl.h264.mp4} \
+      --exclude=/{.cache,tmp,vid,audio,img,comic,TV-'*'.webl.h264.mp4,torrents} \
       /media/bak/home
     ret=$?
     df -h /media/bak
@@ -183,7 +183,7 @@ case $1 in
     fi
     backup.py -v snap \
       -s etc -s mail -s .config \
-      -s uni --exclude=/uni/'[^si]*' \
+      -s uni --exclude=/uni/'[^si]*' --exclude='*.m4v' \
       ${domain}:backup/tp/home
     ;;
   phone) # phone related subcommands (nokia)
