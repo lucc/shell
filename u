@@ -422,13 +422,13 @@ case $1 in
     ;;
   time-management)
     shift
+    function list-loaded-timers () {
+      systemctl --user list-units --plain 'time-management-warning@*.timer' |\
+	sed -n '1d;/^$/q;s/ .*//p'
+    }
     case $1 in
-      list)
-	systemctl --user list-timers | grep time-management-warning@
-	;;
-      reset)
-	systemctl --user start time-management-warning
-	;;
+      list) systemctl --user list-timers 'time-management-warning@*.timer';;
+      reset) systemctl --user start time-management-warning;;
       start)
 	if [[ -z $2 ]]; then
 	  echo You have to give a time argument. >&2
@@ -437,13 +437,13 @@ case $1 in
 	systemctl --user start time-management-warning@$2.timer
 	;;
       stop)
+	for timer in $(list-loaded-timers); do
+	  systemctl --user stop $timer
+	done
 	;;
-      pause)
-	;;
-      continue)
-	;;
-      *)
-	;;
+      pause) systemctl --user mask --runtime timer-management-warning;;
+      continue) systemctl --user unmask --runtime timer-management-warning;;
+      *) echo argument error >&2; exit 2;;
     esac
     ;;
   show-term-attributes)
