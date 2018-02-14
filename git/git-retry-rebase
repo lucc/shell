@@ -9,13 +9,13 @@ bisect=false
 
 usage () {
   echo "Usage: $prog [-x] [-u upstream] [-b branch]"
-  echo "Usage: $prog [-x] [-u upstream] branch"
+  echo "       $prog [-x] [-u upstream] branch"
   echo "       $prog -h"
   echo "       $prog -v"
 }
 
 help () {
-  echo "rebase branch as far as possible"
+  echo "rebase branch as far as automatically possible"
   echo
   echo "  -h    display help"
   echo "  -v    display version"
@@ -47,8 +47,9 @@ while getopts hvu:xb:Bl FLAG; do
 done
 shift $((OPTIND - 1))
 
-if [ -z "$branch" -a $# -eq 1 ]; then
+if [ -z "$branch" -a $# -ge 1 ]; then
   branch=$1
+  shift
 elif [ -z "$branch" ]; then
   echo Error: No branch specified for rebasing. >&2
   exit 2
@@ -62,7 +63,7 @@ trap trap_handler INT STOP HUP
 
 if $bisect; then
   # First try a normal rebase.  Only if that fails try to bisect.
-  if git rebase "$upstream" "$branch"; then
+  if git rebase "$@" "$upstream" "$branch"; then
     echo Info: Rebase succeeded >&2
   else
     git rebase --abort
@@ -75,7 +76,7 @@ else
       echo Warning: No reabase succeeded. >&2
       break
     fi
-    git rebase "$upstream" "$branch"
+    git rebase "$@" "$upstream" "$branch"
     if [ $? -eq 0 ]; then
       echo Info: Rebase succeeded >&2
       break
