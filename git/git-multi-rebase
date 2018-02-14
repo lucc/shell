@@ -125,7 +125,7 @@ for branch in ${(u)branches}; do
   if (( $? != 0 && abort )) && [[ -z $cmd ]]; then
     ((verbose)) && echo Rebasing $branch on $upstream failed.  Aborting rebase.
     git rebase --abort
-    ((retry)) && git retry-rebase -u $upstream -b $branch
+    ((retry)) && git retry-rebase -u $upstream -b $branch -- $@
   fi
 done
 
