@@ -186,7 +186,7 @@ case $1 in
       -s uni --exclude=/uni/'[^si]*' \
       ${domain}:backup/tp/home
     ;;
-  phone) # phone related subcommands
+  phone) # phone related subcommands (nokia)
     shift
     case $1 in
       savecontacts)
@@ -224,20 +224,6 @@ case $1 in
 	exit 2
 	;;
     esac
-    ;;
-  export-abook-for-nokia)
-    if [[ $# -ne 2 ]]; then
-      echo You have to give a filename >&2
-      exit 2
-    fi
-    #abook --convert --infile ~/.config/abook/addressbook --outformat vcard | \
-    #  iconv --to-code latin1 > ${2%.vcf}.vcf
-    tmp=$(mktemp)
-    abook --convert --infile ~/.config/abook/addressbook --outformat vcard --outfile $tmp
-    #vim -e -s -c 'set fileencoding=latin1' -c "saveas! ${2%.vcf}.vcf" -c 'quit!' $tmp
-    vim -e -s --cmd "edit $tmp" --cmd 'set fileencoding=latin1' --cmd "saveas! ${2%.vcf}.vcf" --cmd 'quit!'
-    rm $tmp
-    echo Saved to ${2%.vcf}.vcf.
     ;;
   split-file-at-empty-lines)
     shift
