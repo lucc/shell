@@ -459,4 +459,13 @@ case $1 in
       *)
 	;;
     esac
+    ;;
+  show-term-attributes)
+    for i in {0..15}; do
+      printf 'i=%-3s --[\e[%sm terminal code test string \e[0m]--\n' $i: $i
+    done
+    ;;
+  updateinfo)
+    pacman -Qquet | xargs pacman -Qi | \
+      sed -E '/(^(Version|Architecture|Licenses|Packager|Build Date|Install Date|Install Reason|Install Script|Validated By)|None$)/d; s/^Name.*/\x1b[31m&\x1b[m/'
 esac
