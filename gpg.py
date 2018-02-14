@@ -4,6 +4,7 @@
 interface."""
 
 import argparse
+import logging
 import subprocess
 import sys
 
@@ -13,6 +14,7 @@ iofiles.add_argument('--output', default=sys.stdout,
                      type=argparse.FileType('w'))
 
 parser = argparse.ArgumentParser()
+parser.add_argument('--debug', '-d', action='store_true')
 subparsers = parser.add_subparsers()
 decode = subparsers.add_parser('decode', parents=[iofiles],
                                help='decode stdin')
@@ -30,9 +32,22 @@ export = subparsers.add_parser('export', help='export a key')
 export.set_defaults(command='--export')
 update = subparsers.add_parser('update', help='update the keyring')
 update.set_defaults(command='--update-keys')
+listkey = subparsers.add_parser('list', help='list key(s)')
+listkey.set_defaults(command='--list-key')
+listkey.add_argument('args',  nargs='*')
 
 args = parser.parse_args()
-the_args = []
 
-ret = subprocess.call(['gpg', args.command] + the_args)
+if args.debug:
+    logging. basicConfig(level=logging.DEBUG)
+    logging.debug(args)
+
+cmd = ['gpg']
+if 'command' in args and args.command:
+    cmd += [args.command]
+if 'args' in args and args.args:
+    cmd += args.args
+
+logging.debug(cmd)
+ret = subprocess.call(cmd)
 sys.exit(ret)
