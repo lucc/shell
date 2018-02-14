@@ -9,20 +9,22 @@ import sys
 
 iofiles = argparse.ArgumentParser()
 iofiles.add_argument('--input', default=sys.stdin, type=argparse.FileType('r'))
-iofiles.add_argument('--output', default=sys.stdout, type=argparse.FileType('w'))
+iofiles.add_argument('--output', default=sys.stdout,
+                     type=argparse.FileType('w'))
 
 parser = argparse.ArgumentParser()
 subparsers = parser.add_subparsers()
-decode = subparsers.add_parser('decode', parents=[iofiles], help='decode stdin')
+decode = subparsers.add_parser('decode', parents=[iofiles],
+                               help='decode stdin')
 decode.set_defaults(command='-d')
 
-encode = subparsers.add_parser('encode', parents=[iofiles], help='encode stdin')
+encode = subparsers.add_parser('encode', parents=[iofiles],
+                               help='encode stdin')
 encode.set_defaults(command='-e')
 sign = subparsers.add_parser('sign', help='sign stdin')
 sign.set_defaults(command='-s')
-import_ = subparsers.add_parser(
-    'import',
-    help='import a new key from a file or a key server')
+import_ = subparsers.add_parser('import', help='import a new key from a file '
+                                'or a key server')
 import_.set_defaults(command='--import')
 export = subparsers.add_parser('export', help='export a key')
 export.set_defaults(command='--export')
