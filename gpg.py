@@ -7,7 +7,7 @@ import argparse
 import subprocess
 import sys
 
-iofiles = argparse.ArgumentParser()
+iofiles = argparse.ArgumentParser(add_help=False)
 iofiles.add_argument('--input', default=sys.stdin, type=argparse.FileType('r'))
 iofiles.add_argument('--output', default=sys.stdout,
                      type=argparse.FileType('w'))
