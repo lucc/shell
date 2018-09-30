@@ -66,6 +66,10 @@ while getopts ad:hi:k:lp:qr:tvx FLAG; do
 done
 shift $((OPTIND - 1))
 
+if [[ "$command" = load && $# -eq 0 ]]; then
+  command=attach
+fi
+
 case $command in
   attach)
     exec tmux attach-session -t "$session"
