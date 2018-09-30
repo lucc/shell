@@ -5,13 +5,15 @@
 # text: elinks w3m links lynx
 
 type=graphical
+mode=normal
+branch=stable
 pipe=false
 
 usage () {
   local prog=${0##*/}
-  echo "Usage: $prog [-gtpPb] [url]"
-  echo "       $prog -n [profile] [url]"
+  echo "Usage: $prog [-dgpt] [url]"
   echo "       cat file.html | $prog -s [options]"
+  echo "       $prog -h"
 }
 help () {
   usage
@@ -27,7 +29,7 @@ help () {
 }
 
 qutebrowser () {
-  qutebrowser_stable "$@"
+  qutebrowser_$mode "$@"
 }
 qutebrowser_dev () {
   #export QT_QPA_PLATFORM=wayland-egl QT_WAYLAND_DISABLE_WINDOWDECORATION=1
@@ -37,13 +39,16 @@ qutebrowser_dev () {
 qutebrowser_stable () {
   command qutebrowser "$@"
 }
-qutebrowser_tmp () {
+qutebrowser_normal () {
+  qutebrowser_$branch "$@"
+}
+qutebrowser_private () {
   local tempdir=$(mktemp -d)
   cp -r ~/.config/qutebrowser "$tempdir/config"
   mkdir "$tempdir/data"
   cp -r ~/.local/share/qutebrowser/userscripts "$tempdir/data/userscripts"
   #trap 'rm -rf "$tempdir"' EXIT SIGTERM SIGKILL
-  qutebrowser \
+  qutebrowser_$branch \
     --basedir "$tempdir" \
     --set auto_save.session false \
     "$@"
@@ -90,23 +95,15 @@ text () {
 graphical () {
   qutebrowser "$@"
 }
-new_graphical () {
-  firefox_new "$@"
-}
-private () {
-  qutebrowser_private "$@"
-}
-bank () {
-  qutebrowser_tmp "$@"
-}
 
-while getopts hgtpsx opt; do
+while getopts hdgpstx opt; do
   case $opt in
-    h) help; exit;;
+    d) branch=dev;;
     g) type=graphical;;
-    t) type=text;;
-    p) type=private;;
+    h) help; exit;;
+    p) mode=private;;
     s) pipe=true;;
+    t) type=text;;
     x) set -x;;
     *) usage >&2; exit 2;
   esac
