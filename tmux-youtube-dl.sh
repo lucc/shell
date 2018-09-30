@@ -2,7 +2,7 @@
 
 # Use tmux to manage some youtube-dl processes
 
-version=0.1
+version=0.2
 prog=${0##*/}
 session=youtube-dl
 dir=~/vid/tmp
