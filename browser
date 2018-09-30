@@ -28,8 +28,15 @@ help () {
 }
 
 qutebrowser () {
+  qutebrowser_stable "$@"
+}
+qutebrowser_dev () {
   #export QT_QPA_PLATFORM=wayland-egl QT_WAYLAND_DISABLE_WINDOWDECORATION=1
-  exec qutebrowser "$@"
+  export PYTHONPATH=~/vcs/qutebrowser
+  python -m qutebrowser "$@"
+}
+qutebrowser_stable () {
+  command qutebrowser "$@"
 }
 qutebrowser_tmp () {
   local tempdir=$(mktemp -d)
