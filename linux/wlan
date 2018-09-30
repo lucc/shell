@@ -53,7 +53,7 @@ while getopts fhikqtvx FLAG; do
     h) usage; help; exit;;
     f) exec $sudo systemctl restart $service;;
     i) exec systemctl --no-pager status $service;;
-    k) exec $sudo systemctl stop $service;;
+    k) exec $sudo systemctl stop $service; wifi off >/dev/null 2>&1;;
     t) test_only=true;;
     q) output='> /dev/null 2>&1';;
     v) output=;;
@@ -68,6 +68,7 @@ if ! connection; then
     exit 1
   else
     echo Reconecting to the network ...
+    wifi on >/dev/null 2>&1
     $sudo systemctl restart $service
   fi
 fi
