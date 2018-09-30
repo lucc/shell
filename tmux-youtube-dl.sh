@@ -8,10 +8,10 @@ session=youtube-dl
 dir=~/vid/tmp
 
 usage () {
-  echo "Usage: $prog [options] url [url ...]"
-  echo "       $prog [options] -l"
+  echo "Usage: $prog [options] [url ...]"
+  echo "       $prog [options] [-a]"
+  echo "       $prog [options] {-l,-q}"
   echo "       $prog [options] -p index"
-  echo "       $prog [options] -q"
   echo "       $prog [options] -t [ -- <tail-options>]"
   echo "       $prog [options] -k index"
   echo "       $prog [options] -r {url,index}"
@@ -21,12 +21,11 @@ usage () {
 }
 
 help () {
-  echo "Use tmux to manage some youtube-dl processes"
+  echo "Use tmux to manage some youtube-dl processes."
   echo
+  echo Commands:
   echo "  -h    display help"
   echo "  -v    display version"
-  echo "  -x    debugging output"
-  echo "  -d    set working directory to given argument"
   echo "  -a    attach to the tmux session for manuall interaction"
   echo "  -l    list urls of running jobs"
   # TODO poke
@@ -36,6 +35,13 @@ help () {
   echo "  -k    kill a job"
   echo "  -r    restart a job"
   echo "  -i    run the downloading loop (for internal use only)"
+  echo
+  echo Options:
+  echo "  -x    debugging output"
+  echo "  -d    set working directory to given argument"
+  echo
+  echo "The default command is 'attach' if no arguments are given.  If urls"
+  echo "are given they will be loaded in the background."
 }
 
 list_windows () {
