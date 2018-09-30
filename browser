@@ -17,13 +17,10 @@ help () {
   usage
   echo
   printf '  %s\t%s\n' \
-    -g 'open a graphical browser'                                \
-    -t 'open a text browser'                                     \
-    -s 'expect document on stdin (no url allowed)'               \
-    -n 'open a new instance with the given profile (implies -g)' \
-    -p 'start in private browsing mode (implies -g)'             \
-    -P 'start in private browsing mode (qutebrowser)'            \
-    -b 'for banking'                                             \
+    -g 'open a graphical browser'                    \
+    -t 'open a text browser'                         \
+    -s 'expect document on stdin (no url allowed)'   \
+    -p 'start in private browsing mode (implies -g)' \
 
 }
 
@@ -44,14 +41,12 @@ qutebrowser_tmp () {
   mkdir "$tempdir/data"
   cp -r ~/.local/share/qutebrowser/userscripts "$tempdir/data/userscripts"
   #trap 'rm -rf "$tempdir"' EXIT SIGTERM SIGKILL
-  command qutebrowser --basedir "$tempdir" "$@"
-  rm -rf "$tempdir"
-}
-qutebrowser_private () {
-  qutebrowser_tmp \
+  qutebrowser \
+    --basedir "$tempdir" \
     --set auto_save.session false \
-    --set content.headers.user_agent 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.106 Safari/537.36' \
     "$@"
+    #--set content.headers.user_agent 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.106 Safari/537.36' \
+  rm -rf "$tempdir"
 }
 firefox_profiles () {
   local ini=$HOME/.mozilla/firefox/profiles.ini
@@ -103,15 +98,12 @@ bank () {
   qutebrowser_tmp "$@"
 }
 
-while getopts bhgntpPsx opt; do
+while getopts hgtpsx opt; do
   case $opt in
-    b) type=bank;;
     h) help; exit;;
     g) type=graphical;;
-    n) type=new_graphical;;
     t) type=text;;
     p) type=private;;
-    P) type=firefox_private;;
     s) pipe=true;;
     x) set -x;;
     *) usage >&2; exit 2;
