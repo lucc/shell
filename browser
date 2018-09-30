@@ -18,9 +18,11 @@ help () {
   echo
   printf '  %s\t%s\n' \
     -g 'open a graphical browser'                    \
-    -t 'open a text browser'                         \
-    -s 'expect document on stdin (no url allowed)'   \
+    -h 'show this help'                              \
     -p 'start in private browsing mode (implies -g)' \
+    -s 'expect document on stdin (no url allowed)'   \
+    -t 'open a text browser'                         \
+    -x 'activate debug output'                       \
 
 }
 
