@@ -82,7 +82,10 @@ else
       break
     else
       git rebase --abort
-      upstream=$(git rev-parse "$upstream~1")
+      if ! upstream=$(git rev-parse "$upstream~1"); then
+	echo Warning: Parsing next rev failed. >&2
+	break
+      fi
     fi
   done
 fi
