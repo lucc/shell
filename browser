@@ -11,7 +11,7 @@ pipe=false
 
 usage () {
   local prog=${0##*/}
-  echo "Usage: $prog [-dgpt] [url]"
+  echo "Usage: $prog [-dgptx] [url]"
   echo "       cat file.html | $prog -s [options]"
   echo "       $prog -h"
 }
@@ -19,6 +19,7 @@ help () {
   usage
   echo
   printf '  %s\t%s\n' \
+    -d 'use development code of the browser'         \
     -g 'open a graphical browser'                    \
     -h 'show this help'                              \
     -p 'start in private browsing mode (implies -g)' \
