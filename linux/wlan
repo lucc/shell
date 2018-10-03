@@ -4,17 +4,17 @@ output='%s\n'
 test_only=false
 interface=wlp3s0
 service=netctl-auto@$interface.service
-prog=$(basename "$0")
 
 usage () {
   unset -f echo
+  prog=${0##*/}
   echo "Usage: $prog [-fikqtvx]"
   echo "       $prog -h"
 }
 help () {
   unset -f echo
   echo Test if we can connect to the internet and restart the netctl
-  echo searvice as neccessary.
+  echo service as neccessary.
   echo Options:
   echo '  -f  force reconnection'
   echo '  -i  print status'
@@ -27,10 +27,17 @@ help () {
 echo () {
   printf "$output" "$*"
 }
+ping () {
+  timeout 1s ping -c 1 -W 1 -q "$1" >/dev/null 2>&1
+}
+restart_wlan () {
+  wifi on >/dev/null 2>&1
+  exec $sudo systemctl restart $service
+}
 connection () {
-  if timeout 1s ping -c 1 -W 1 -q localhost >/dev/null 2>&1; then
+  if ping localhost; then
     # test if we can ping google
-    if timeout 1s ping -c 1 -W 1 -q google.com >/dev/null 2>&1; then
+    if ping google.com; then
       echo You seem to have internet connection.
       return 0
     else
@@ -51,9 +58,9 @@ fi
 while getopts fhikqtvx FLAG; do
   case $FLAG in
     h) usage; help; exit;;
-    f) exec $sudo systemctl restart $service;;
+    f) restart_wlan;;
     i) exec systemctl --no-pager status $service;;
-    k) exec $sudo systemctl stop $service; wifi off >/dev/null 2>&1;;
+    k) $sudo systemctl stop $service; wifi off >/dev/null 2>&1;;
     t) test_only=true;;
     q) output=;;
     v) output='%s\n';;
@@ -68,7 +75,6 @@ if ! connection; then
     exit 1
   else
     echo Reconecting to the network ...
-    wifi on >/dev/null 2>&1
-    $sudo systemctl restart $service
+    restart_wlan
   fi
 fi
