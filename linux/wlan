@@ -28,9 +28,9 @@ echo () {
   printf "$output" "$*"
 }
 connection () {
-  if eval timeout 1s ping -c 1 -W 1 -q localhost >/dev/null 2>&1; then
+  if timeout 1s ping -c 1 -W 1 -q localhost >/dev/null 2>&1; then
     # test if we can ping google
-    if eval timeout 1s ping -c 1 -W 1 -q google.com >/dev/null 2>&1; then
+    if timeout 1s ping -c 1 -W 1 -q google.com >/dev/null 2>&1; then
       echo You seem to have internet connection.
       return 0
     else
