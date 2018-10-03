@@ -55,8 +55,8 @@ while getopts fhikqtvx FLAG; do
     i) exec systemctl --no-pager status $service;;
     k) exec $sudo systemctl stop $service; wifi off >/dev/null 2>&1;;
     t) test_only=true;;
-    q) output='> /dev/null 2>&1';;
-    v) output=;;
+    q) output=;;
+    v) output='%s\n';;
     x) set -x;;
     *) usage; exit 2;;
   esac
