@@ -195,9 +195,9 @@ case $1 in
     then domain=pi
     else domain=nowip
     fi
-    backup.py -v snap \
-      -s etc -s mail -s .config \
-      -s uni --exclude=/uni/'[^si]*' --exclude='*.m4v' \
+    exec backup.py -v snapshot \
+      --source etc --source mail --source .config --source uni \
+      --exclude=/uni/'[^si]*' --exclude='*.m4v' \
       ${domain}:backup/tp/home
     ;;
   phone) # phone related subcommands (nokia)
