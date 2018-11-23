@@ -60,7 +60,7 @@ while getopts fhikqtvx FLAG; do
     h) usage; help; exit;;
     f) restart_wlan;;
     i) exec systemctl --no-pager status $service;;
-    k) $sudo systemctl stop $service; wifi off >/dev/null 2>&1;;
+    k) $sudo systemctl stop $service; wifi off >/dev/null 2>&1; exit;;
     t) test_only=true;;
     q) output=;;
     v) output='%s\n';;
