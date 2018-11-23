@@ -6,7 +6,7 @@
 
 type=graphical
 mode=normal
-branch=stable
+branch=dev
 pipe=false
 
 usage () {
