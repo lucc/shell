@@ -170,7 +170,21 @@ case $1 in
       /media/bak/home
     ret=$?
     df -h /media/bak
-    sudo umount /media/bak
+    [[ $2 != -n ]] && umount /media/bak
+    # We assume we are at home and now try to delete old backups from the pi
+    ssh pi bash <<-'EOF'
+	set -e
+	set -o pipefail
+	cd ~/backup/tp/home
+	# Only delete anything if the last successfull backup is older than
+	# half an hour.
+	[[ $(readlink latest) -lt $(date -d -30min +%Y%m%d%H%M%S) ]]
+	( ls -d 20*/ | awk -F . \
+	    -v yesterday=$(date -d -1day +%Y%m%d%H%M%S) \
+	    -v latest=$(readlink latest) \
+	    '$1 < yesterday || ($2 =="inProgress/" && $1 < latest)' | \
+	  xargs rm -rf & ) &
+	EOF
     exit $ret
     ;;
   bk-mini)
