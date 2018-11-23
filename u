@@ -162,11 +162,11 @@ case $1 in
     do
       echo Please plug in the external backup disk.
       sleep 1
-      sudo mount LABEL=bak.fs
+      mount LABEL=bak.fs
     done
     backup.py -v \
       snap \
-      --exclude=/{.cache,tmp,vid,audio,img,comic,TV-'*'.webl.h264.mp4,torrents} \
+      --exclude=/{.cache,.cargo,tmp,vid,audio,img,comic,TV-'*'.webl.h264.mp4,torrents} \
       /media/bak/home
     ret=$?
     df -h /media/bak
