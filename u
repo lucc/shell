@@ -446,6 +446,6 @@ case $1 in
     done
     ;;
   updateinfo)
-    pacman -Qquet | xargs pacman -Qi | \
+    pacman -Qquet | xargs --no-run-if-empty pacman -Qi | \
       sed -E '/(^(Version|Architecture|Licenses|Packager|Build Date|Install Date|Install Reason|Install Script|Validated By)|None$)/d; s/^Name.*/\x1b[31m&\x1b[m/'
 esac
