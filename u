@@ -367,7 +367,7 @@ case $1 in
     ;;
   bank)
     shift
-    browser -b \
+    browser -p \
       https://www.onlinebanking-vr-ll.de/banking-private/entry \
       https://banking.umweltbank.de/ $@ &
     ;;
