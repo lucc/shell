@@ -44,6 +44,11 @@ case $mimetype in
       code="set document.codepage.assume = \"$charset\""
     fi
     #-dump-color-mode 3 \
+
+    #echo '###################################################################'
+    #echo '                         elinks version'
+    #echo '###################################################################'
+
     elinks \
       -no-home \
       -force-html \
@@ -60,6 +65,19 @@ case $mimetype in
 	t m    # goto m
 	s/.//  # delete leading newline
 	'
+
+    #echo '###################################################################'
+    #echo '                         pandoc version'
+    #echo '###################################################################'
+    #pandoc --wrap=preserve --reference-links -i "$1" -f html -t plain
+    #echo '###################################################################'
+    #echo '                           npm version'
+    #echo '###################################################################'
+    #html-to-text < "$1"
+    #echo '###################################################################'
+    #echo '                    python html2text version'
+    #echo '###################################################################'
+    #html2text "$1"
     ;;
   *)
     echo "Unsuported mime type: $mimetype" >&2
