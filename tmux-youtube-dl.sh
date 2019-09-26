@@ -5,7 +5,7 @@
 version=0.2
 prog=${0##*/}
 session=youtube-dl
-dir=~/vid/tmp
+dir=~/vid/new
 
 usage () {
   echo "Usage: $prog [options] [url ...]"
