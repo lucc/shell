@@ -8,8 +8,8 @@ upstream=master
 bisect=false
 
 usage () {
-  echo "Usage: $prog [-x] [-u upstream] [-b branch]"
-  echo "       $prog [-x] [-u upstream] branch"
+  echo "Usage: $prog [-Blx] [-u upstream] [-b branch]"
+  echo "       $prog [-Blx] [-u upstream] branch"
   echo "       $prog -h"
   echo "       $prog -v"
 }
