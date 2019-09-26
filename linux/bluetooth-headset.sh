@@ -2,11 +2,12 @@
 
 # Connect to the bluetooth headset.
 
-version=1
+version=2
 prog="${0##*/}"
+cmd=connect
 
 usage () {
-  echo "Usage: $prog [-cdpsx]"
+  echo "Usage: $prog [-cdpx]"
   echo "       $prog -h"
   echo "       $prog -v"
 }
@@ -20,35 +21,44 @@ help () {
   echo
   echo "  -c    connect the headset"
   echo "  -d    disconnect the headset"
-  echo "  -s    stop the bluetooth service"
   echo "  -p    power off bluetooth"
 }
 
-bluetooth_service_running () {
-  systemctl status bluetooth | grep -q 'Status: "Running"'
+is_on () {
+  systemctl status bluetooth | grep -q 'Status: "Running"' \
+    && [ "$(bluetooth)" = "bluetooth on" ]
 }
-
-connect_to_headset () {
-  check_bluttooth
-  bluetoothctl <<EOF
+on () {
+  if ! is_on; then
+    bluetooth on
+    sudo systemctl start bluetooth
+    bluetoothctl <<EOF
 power on
 agent on
 default-agent
-scan on
-connect 00:07:04:CE:08:63
-scan off
-exit
-EOF
-}
-
-bluetooth_poweroff () {
-  if bluetooth_service_running; then
-    bluetoothctl <<EOF
-power off
-exit
 EOF
   fi
 }
+off () {
+  systemctl is-active bluetooth >/dev/null && bluetoothctl power off
+  sudo systemctl stop bluetooth
+  bluetooth off >/dev/null
+}
+connect () {
+  on
+  bluetoothctl connect 00:07:04:CE:08:63
+#power on
+#agent on
+#default-agent
+#scan on
+#connect 00:07:04:CE:08:63
+#scan off
+#exit
+}
+disconnect () {
+  bluetoothctl disconnect
+}
+
 
 check_bluttooth () {
   if ! bluetooth_service_running; then
@@ -57,16 +67,12 @@ check_bluttooth () {
   fi
 }
 
-while getopts cdhpsvx FLAG; do
+while getopts cdhpvx FLAG; do
   case $FLAG in
-    c) connect_to_headset; exit;;
-    d) echo disconnect: TODO; exit 2;;
+    c) cmd=connect;;
+    d) cmd=disconnect;;
     h) usage; echo; help; exit;;
-    p) bluetooth_poweroff; exit;;
-    s)
-      bluetooth_poweroff
-      check_bluttooth && sudo systemctl stop bluetooth
-      exit;;
+    p) cmd=off;;
     v) echo "$prog -- version $version"; exit;;
     x) set -x;;
     *) usage >&2; exit 2;;
@@ -74,5 +80,4 @@ while getopts cdhpsvx FLAG; do
 done
 shift $((OPTIND - 1))
 
-# If no option was given connect the headset.
-connect_to_headset
+"$cmd"
