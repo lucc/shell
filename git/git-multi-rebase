@@ -118,6 +118,8 @@ head=$(git rev-parse --abbrev-ref HEAD)
 # Set up the trap.
 trap trap-handler INT STOP HUP
 
+failed=( )
+
 # Do the actual rebasing.
 for branch in ${(u)branches}; do
   ((verbose)) && echo Rebasing $branch on $upstream ...
@@ -126,8 +128,15 @@ for branch in ${(u)branches}; do
     ((verbose)) && echo Rebasing $branch on $upstream failed.  Aborting rebase.
     git rebase --abort
     ((retry)) && git retry-rebase -u $upstream -b $branch -- $@
+    (( $? != 0 )) && failed+=$branch
   fi
 done
 
 # Check out the saved HEAD.
 $cmd git checkout $head 2>/dev/null
+
+if [[ $#failed != 0 ]]; then
+  echo The following branches could not be rebased:
+  echo
+  printf '%s\n' $failed | column
+fi
