@@ -152,9 +152,9 @@ case $1 in
     functions _u_helper_lp_options
     ;;
   edit|e) # edit the source of this script
-    # Use exec to suppress syntax errors if parsing continues after the file
-    # was changed.
-    exec $EDITOR $0
+    # This is all in one line in order to force the shell to read it before
+    # starting the editor.  Just in case some lines shift and such.
+    $EDITOR $0; until zsh -n $0; do $EDITOR -q <(zsh -n $0); done; exit
     ;;
   bk) # mount the backup hard disk and make a backup
     until
