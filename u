@@ -440,4 +440,10 @@ case $1 in
   updateinfo)
     pacman -Qquet | xargs --no-run-if-empty pacman -Qi | \
       sed -E '/(^(Version|Architecture|Licenses|Packager|Build Date|Install Date|Install Reason|Install Script|Validated By)|None$)/d; s/^Name.*/\x1b[31m&\x1b[m/'
+    ;;
+  nvim-nightly)
+    wget --output-document ~/.local/bin/nvim-nightly https://github.com/neovim/neovim/releases/download/nightly/nvim.appimage
+    chmod +x ~/.local/bin/nvim-nightly
+    ;;
+  *) echo Unknown command >&2; exit 2;;
 esac
