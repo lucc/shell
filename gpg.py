@@ -34,6 +34,7 @@ update = subparsers.add_parser('update', help='update the keyring')
 update.set_defaults(command='--update-keys')
 listkey = subparsers.add_parser('list', help='list key(s)')
 listkey.set_defaults(command='--list-key')
+listkey.add_argument('--all', help='list all (even expired) keys')
 listkey.add_argument('args',  nargs='*')
 
 args = parser.parse_args()
