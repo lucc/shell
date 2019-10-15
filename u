@@ -5,6 +5,7 @@
 
 prog=${0##*/}
 
+# Helper functions
 function assert () {
   "$@"
   local ret=$?
@@ -18,6 +19,122 @@ function start-bluetooth () {
     echo Starting bluetooth service ...
     sudo systemctl start bluetooth
   fi
+}
+
+# help and usage functions
+function usage () {
+  echo "$prog [options] subcommand [options] [arguments ...]"
+  echo Possible subcommands are:
+  #sed -n '/^case/,/^esac$/{s/^  \(.*\))\( *# *\(.*\)\)\{0,1\}$/\1 \3/p;}' $0
+  sed -n '
+    /^case/,/^esac$/{
+      s/^  \([[:space:]]*(\{0,1\}[^()]*\))\( *# *\(.*\)\)\{0,1\}$/\1 \3/p
+    }' $ZSH_SCRIPT \
+  | while read arg help; do
+      printf '%s\t%s\n' $arg $help
+    done
+}
+
+# completion functions
+# First define the completion function.  Avoid name colisions.
+function _lucs_util_scipt_completion_function () {
+  local state
+  # First handle global options.  Everything that does not match a global
+  # option as defined here is handled later.  The $state is set to
+  # "subcommand" in this case.
+  _arguments \
+    '(- *)-h[show help]' \
+    '(-h -x)-x[debug output]' \
+    ':subcommand:->subcommand' \
+    '*::options:->options' \
+  && return 0
+  case $state in
+    subcommand)
+      local -a subcommands_array
+      subcommands_array=(
+	'help:show help'
+	'edit:open the script itself in $EDITOR'
+	'bk:mount the external backup hd and make a backup'
+	'phone:some phone related subcommands'
+	'export-abook-for-nokia:todo'
+	'split-file-at-empty-lines:split a text files into several files'
+	'backup:foo todo'
+	'urxvt-font:set the font in this urxvt'
+	'logs:show different logs'
+	'setenv:set an environment var in a running process'
+	'bank:open the bank browser'
+	'python-profile:create a png from a python profileing run'
+	'test-vim-startup:mesure and sort nvim startup time'
+	'cmp-git-branch:run command on this branch and master (-u)'
+	'true-color-test:test true color support of the terminal'
+	'print:stage files for printing at the university (or --flush)'
+	'time-management:control the time management warnings'
+	'show-term-attributes:show all special font attributes of the terminal'
+	'updateinfo:show info about upgradable packages with pacman'
+	'nvim-nightly:'
+      )
+      # Use this array to complete the subcommands.
+      _describe -t subcommands 'util subcommands' subcommands_array \
+	&& ret=0
+      ;;
+    options)
+      # TODO what is this?
+      curcontext="${curcontext%:*}-${words[1]}:"
+      case $words[1] in
+	split-file-at-empty-lines) _arguments '*:: :_files';;
+	urxvt-font) _arguments '*:: :_x_fonts';; # doesn't work yet
+	export-abook-for-nokia) _arguments '*:: :_files';;
+	print)
+	  _arguments \
+	    '--flush[flush the print queue now]:lp options:_u_helper_lp_options' \
+	    '*:: :_files';;
+	phone)
+	  _arguments \
+	    ':subcommand:->subcommand' \
+	    '*:: :_files'
+	  subcommands_array=(
+	    put-vcf:'push contacts from a file to the phone'
+	    savecontacts:'backup all contacts from phone to a file'
+	  )
+	  [[ $state = subcommand ]] \
+	    && _describe -t subcommands 'phone subcommands' subcommands_array \
+	    && ret=0
+	  ;;
+	logs)
+	  _arguments ':subcommand:->subcommand' '*:: :_files'
+	  subcommands_array=(
+	    {fetchmail,mailin,pop}:'logs for fetchmail'
+	    {smtp,mailout}:'logs for msmtp'
+	    {backup,bk}:'logs for different backup scripts'
+	  )
+	  [[ $state = subcommand ]] \
+	    && _describe -t subcommands 'logs subcommands' subcommands_array \
+	    && ret=0
+	  ;;
+	time-management)
+	  _arguments ':subcommand:->subcommand' '*:: :_files'
+	  subcommands_array=(
+	    list:'list the timers'
+	    reset:'reset the timer'
+	    start:'start a timer'
+	    stop:'stop all timers'
+	    pause:'pause all timers'
+	    continue:'continue paused timers'
+	  )
+	  [[ $state = subcommand ]] \
+	    && _describe -t subcommands 'time management subcommands' subcommands_array \
+	    && ret=0
+	  ;;
+      esac
+      ;;
+    *) _message 'Error in completion function.';;
+  esac
+}
+#sed -n '/^case/,/^esac$/{s/^  \(.*\))\( *# *\(.*\)\)\{0,1\}$/\1 \3/p;}' $0
+# Last define some helper functions
+function _u_helper_lp_options () {
+  local service=lp
+  _lp $@
 }
 
 while getopts hx FLAG; do
@@ -36,119 +153,12 @@ fi
 
 case $1 in
   help) # show this help message
-    echo "$prog [options] subcommand [options] [arguments ...]"
-    echo Possible subcommands are:
-    #sed -n '/^case/,/^esac$/{s/^  \(.*\))\( *# *\(.*\)\)\{0,1\}$/\1 \3/p;}' $0
-    sed -n '
-      /^case/,/^esac$/{
-        s/^  \([[:space:]]*(\{0,1\}[^()]*\))\( *# *\(.*\)\)\{0,1\}$/\1 \3/p
-      }' $0 \
-    | while read arg help; do
-	printf '%s\t%s\n' $arg $help
-      done
+    usage
     ;;
   complete) # print setup code for completion (for eval-ing)
-    # First define the completion function.  Avoid name colisions.
-    function _lucs_util_scipt_completion_function () {
-      local state
-      # First handle global options.  Everything that does not match a global
-      # option as defined here is handled later.  The $state is set to
-      # "subcommand" in this case.
-      _arguments \
-	'(- *)-h[show help]' \
-	'(-h -x)-x[debug output]' \
-	':subcommand:->subcommand' \
-	'*::options:->options' \
-      && return 0
-      case $state in
-	subcommand)
-	  local -a subcommands_array
-	  subcommands_array=(
-	    'help:show help'
-	    'edit:open the script itself in $EDITOR'
-	    'bk:mount the external backup hd and make a backup'
-	    'phone:some phone related subcommands'
-	    'export-abook-for-nokia:todo'
-	    'split-file-at-empty-lines:split a text files into several files'
-	    'backup:foo todo'
-	    'urxvt-font:set the font in this urxvt'
-	    'ycm-recompile:recompile the ycm plugin'
-	    'logs:show different logs'
-	    'setenv:set an environment var in a running process'
-	    'bank:open the bank browser'
-	    'python-profile:create a png from a python profileing run'
-	    'test-vim-startup:mesure and sort nvim startup time'
-	    'cmp-git-branch:run command on this branch and master (-u)'
-	    'true-color-test:test true color support of the terminal'
-	    'print:stage files for printing at the university (or --flush)'
-	    'time-management:control the time management warnings'
-	  )
-	  # Use this array to complete the subcommands.
-	  _describe -t subcommands 'util subcommands' subcommands_array \
-	    && ret=0
-	  ;;
-	options)
-	  # TODO what is this?
-	  curcontext="${curcontext%:*}-${words[1]}:"
-	  case $words[1] in
-	    split-file-at-empty-lines) _arguments '*:: :_files';;
-	    urxvt-font) _arguments '*:: :_x_fonts';; # doesn't work yet
-	    export-abook-for-nokia) _arguments '*:: :_files';;
-	    print)
-	      _arguments \
-		'--flush[flush the print queue now]:lp options:_u_helper_lp_options' \
-		'*:: :_files';;
-	    phone)
-	      _arguments \
-		':subcommand:->subcommand' \
-		'*:: :_files'
-	      subcommands_array=(
-		put-vcf:'push contacts from a file to the phone'
-		savecontacts:'backup all contacts from phone to a file'
-	      )
-	      [[ $state = subcommand ]] \
-		&& _describe -t subcommands 'phone subcommands' subcommands_array \
-		&& ret=0
-	      ;;
-	    logs)
-	      _arguments ':subcommand:->subcommand' '*:: :_files'
-	      subcommands_array=(
-		{fetchmail,mailin,pop}:'logs for fetchmail'
-		{smtp,mailout}:'logs for msmtp'
-		{backup,bk}:'logs for different backup scripts'
-	      )
-	      [[ $state = subcommand ]] \
-		&& _describe -t subcommands 'logs subcommands' subcommands_array \
-		&& ret=0
-	      ;;
-	    time-management)
-	      _arguments ':subcommand:->subcommand' '*:: :_files'
-	      subcommands_array=(
-		list:'list the timers'
-		reset:'reset the timer'
-		start:'start a timer'
-		stop:'stop all timers'
-		pause:'pause all timers'
-		continue:'continue paused timers'
-	      )
-	      [[ $state = subcommand ]] \
-		&& _describe -t subcommands 'time management subcommands' subcommands_array \
-		&& ret=0
-	      ;;
-	  esac
-	  ;;
-	*) _message 'Error in completion function.';;
-      esac
-    }
     # Print the defined completion function and the setup code.
     functions _lucs_util_scipt_completion_function
     print compdef _lucs_util_scipt_completion_function $prog
-    #sed -n '/^case/,/^esac$/{s/^  \(.*\))\( *# *\(.*\)\)\{0,1\}$/\1 \3/p;}' $0
-    # Last define some helper functions
-    function _u_helper_lp_options () {
-      local service=lp
-      _lp $@
-    }
     functions _u_helper_lp_options
     ;;
   edit|e) # edit the source of this script
