@@ -323,7 +323,8 @@ case $1 in
 	  SYSLOG_IDENTIFIER=msmtp
 	;;
       mail|mailall|allmail)
-	journalctl --quiet --no-pager --lines=$((2*LINES)) \
+	shift
+	journalctl --quiet --no-pager --lines=$((2*LINES)) "$@" \
 	  SYSLOG_IDENTIFIER=msmtp + _SYSTEMD_USER_UNIT=fetchmail.service
 	;;
       *) print Choose one of bk, pop or smtp. >&2; exit 2;;
