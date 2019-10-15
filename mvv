@@ -1,0 +1,33 @@
+#!/bin/sh
+
+
+time=$(date +%H%M)
+date=$(date +%Y%m%d)
+
+help () {
+  echo "Usage: ${0##*/} [-t HHMM] [-d YYYYmmdd] from to"
+  echo "       ${0##*/} -h"
+  echo "       ${0##*/} -v"
+  echo "Search for a MVV connection."
+}
+
+while getopts hvt:d: FLAG; do
+  case $FLAG in
+    h) help; exit;;
+    v) echo mvv version 1; exit;;
+    t) time=$OPTARG;;
+    d) date=$OPTARG;;
+    *) help; exit 2;;
+  esac
+done
+shift $((OPTIND - 1))
+
+if [ $# -ne 2 ]; then
+  help
+  exit 2
+fi
+
+base='http://efa.mvv-muenchen.de/index.html?itdTripDateTimeDepArr=dep'
+params="itdTime=$time&itdDate=$date&name_origin=$1&name_destination=$2"
+
+browser "$base&$params"
