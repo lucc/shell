@@ -1,0 +1,14 @@
+#!/bin/sh
+
+red () {
+  printf '\e[31m%s\e[0m\n' "$*"
+}
+
+for file; do
+  case "$(file --mime-type --brief "$file")" in
+    video/mp4 | video/x-flv)
+      red "$file"
+      ffprobe -hide_banner "$file";;
+    *) file --mime-type "$file";;
+  esac
+done
