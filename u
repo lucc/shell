@@ -176,7 +176,7 @@ case $1 in
     done
     backup.py -v \
       snap \
-      --exclude=/{.cache,.cargo,.cabal,.gem,.gradle,.rustup,.stack,.recoll,tmp,vid,audio,img,comic,TV-'*'.webl.h264.mp4,torrents,.local/share/nvim/plugins,.npm,vcs} \
+      --exclude=/{.cache,.cargo,.cabal,.gem,.gradle,.rustup,.stack,.recoll,tmp,vid,audio,img,comic,TV-'*'.webl.h264.mp4,torrents,.local/share/{nvim/plugins,Zeal},.npm,vcs} \
       /media/bak/home
     ret=$?
     df -h /media/bak
