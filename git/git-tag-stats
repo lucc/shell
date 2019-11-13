@@ -1,10 +1,16 @@
 #!/bin/bash
 
-set -eu
+set -euo pipefail
 
 last_rev=$(git rev-list --max-parents=0 --abbrev-commit HEAD)
 next_rev=
-git tag | sort -V | cat - <(echo HEAD) | while read next_rev; do
+
+git tag \
+  | if [[ $# > 0 ]]; then grep "$@"; else cat; fi \
+  | sort -V \
+  | cat - <(echo HEAD) \
+  | while read next_rev
+do
   commit_count=$(git log "$last_rev...$next_rev" --oneline | wc -l)
   shortstat=$(git diff --shortstat "$last_rev...$next_rev")
   printf '%7s...%-8s %4d commits, %3d %s %s %5d %s %5d %s\n' \
