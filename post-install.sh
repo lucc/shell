@@ -35,4 +35,4 @@ echo "4. Development (compilers etc)"
 echo "5. Browsers"
 echo "6. Media stuff"
 echo "7. config files"
-echo "8. 
+echo "8. "
