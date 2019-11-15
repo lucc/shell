@@ -5,14 +5,26 @@
 
 prog=`basename "$0"`
 help () {
-  echo "Usage: $prog OPTION FILE [ FILE ... ]"
-  echo "Valid options are:"
-  sed -n '/^case "$1" in$/,/^esac$/ {
-            s/^ *\(-.*\)) *cmd=office2\(.*\);;/\1\t\2/
-	    s/|/, /g;s/pdf_2/pdf (pdf export converter)/
-	    /^-/p
-	  }' <"$0" | \
-    awk -F '\t' '{ printf("%-20s convert files to %s\n", $1, $2) }'
+	awk -P -v PROG="$prog" '
+		BEGIN{
+			printf("Usage: %s OPTION FILE [ FILE ... ]\n", PROG)
+			print("Valid options are:")
+		}
+
+		/^case "\$1" in$/,/^esac$/{
+			if(/^[[:space:]]+-/){
+				gsub(/\|/, ", ", $1)
+				sub(/)/, "", $1)
+				gsub(/;;$/, "", $2)
+				sub(/^help.*/, "display this help and exit", $2)
+				sub(/cmd=office2/, "convert files to ", $2)
+				sub(/pdf_2$/, "pdf (pdf export converter)))", $2)
+				printf("%-20s %s\n", $1, $2)
+			}
+		}
+	' "$prog"
+
+	exit $1
 }
 office2 () {
   # find path to LO
@@ -52,6 +64,7 @@ office2tex  () { office2 tex      "$@"; }
 office2txt  () { office2 txt:Text "$@"; }
 
 case "$1" in
+  -h|--help)       help 0;;
   -t|--txt|--text) cmd=office2txt;;
   --tex)           cmd=office2tex;;
   -c|--csv)        cmd=office2csv;;
@@ -60,8 +73,7 @@ case "$1" in
   -p|--pdf)        cmd=office2pdf;;
   --pdf2)          cmd=office2pdf_2;;
   --docx)          cmd=office2docx;;
-  -h|--help)       help; exit 0;;
-  *)               help >&2; exit 2;;
+  *)               help 2 >&2;;
 esac
 shift
 $cmd "$@"
