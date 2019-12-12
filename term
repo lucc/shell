@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # a script to start my favorite terminal emulator
 
 version=2.3
