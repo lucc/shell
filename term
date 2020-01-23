@@ -91,7 +91,7 @@ termite_wrapper () {
   if ((big)); then
     config=$(mktemp)
     trap 'rm -f "$config"' HUP INT QUIT TERM EXIT
-    sed '/^font/s/ 10$/ 17/' ~/.config/termite/config > "$config"
+    sed '/^font/s/ [0-9]*$/ 17/' ~/.config/termite/config > "$config"
     termite --config="$config" ${name:+--name "$name"} ${1:+-e} "${args[*]}"
   else
     exec termite ${name:+--name "$name"} ${1:+-e} "${args[*]}"
