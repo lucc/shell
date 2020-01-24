@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/usr/bin/env zsh
 
 # This is a script to collect shell snippets until I develop them into real
 # shell scripts.  "u" stands for "utils".  I got the idea from hans.

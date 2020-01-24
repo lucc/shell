@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # preferred order of monitors (highest to lowest priority)
 order=(LVDS DP HDMI VGA)
