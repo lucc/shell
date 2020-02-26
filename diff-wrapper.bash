@@ -57,7 +57,7 @@ if [[ $# -eq 2 && -e "$1" && -e "$2" ]] || \
 else
   # We are problably in a version control repository.
   if is_git_dir; then
-    exec git diff "${options[@]}" "$@"
+    exec git diff --irreversible-delete "${options[@]}" "$@"
   elif is_mercurial_dir; then
     exec hg diff "${options[@]}" "$@"
   elif is_subversion_dir; then
