@@ -97,6 +97,9 @@ termite_wrapper () {
     exec termite ${name:+--name "$name"} ${1:+-e} "${args[*]}"
   fi
 }
+alacritty_wrapper () {
+  exec alacritty ${1:+-e} "${args[@]}"
+}
 
 while getopts be:E:fhn:t:vx opt; do
   case $opt in
