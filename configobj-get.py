@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 from configobj import ConfigObj
 from os.path import expanduser
