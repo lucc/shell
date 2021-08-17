@@ -57,7 +57,6 @@ function _lucs_util_scipt_completion_function () {
 	'edit:open the script itself in $EDITOR'
 	'bk:mount the external backup hd and make a backup'
 	'phone:some phone related subcommands'
-	'export-abook-for-nokia:todo'
 	'split-file-at-empty-lines:split a text files into several files'
 	'backup:foo todo'
 	'urxvt-font:set the font in this urxvt'
@@ -84,7 +83,6 @@ function _lucs_util_scipt_completion_function () {
       case $words[1] in
 	split-file-at-empty-lines) _arguments '*:: :_files';;
 	urxvt-font) _arguments '*:: :_x_fonts';; # doesn't work yet
-	export-abook-for-nokia) _arguments '*:: :_files';;
 	print)
 	  _arguments \
 	    '--flush[flush the print queue now]:lp options:_u_helper_lp_options' \
