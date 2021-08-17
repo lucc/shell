@@ -1,16 +1,19 @@
 #!/usr/bin/env bash
 
-# preferred order of monitors (highest to lowest priority)
-order=(LVDS DP HDMI VGA)
-# preferred position of monitors (relative to previsous monitor in $order)
-position=${1:-above}
-# maximum number of monitors to use (only names from $order will be used)
-max=10
-
 if [[ "$1" = -h || "$1" = --help ]]; then
-  echo "Usage: $(basename "$0") [position]" >&2
+  echo "Usage: ${0##*/} [position]" >&2
   exit
 fi
+
+# preferred order of monitors (highest to lowest priority)
+order=(eDP LVDS DP HDMI VGA)
+# preferred position of monitors (relative to previous monitor in $order); we
+# use the positional arguments for this because they are easier to shift
+if [[ $# -eq 0 ]]; then
+  set above right
+fi
+# maximum number of monitors to use (only names from $order will be used)
+max=10
 
 connected=($(xrandr | grep ' connected ' | cut -f 1 -d ' '))
 options=()
@@ -24,7 +27,9 @@ for choice in ${order[@]}; do
 	options=(--output ${connected[$monitor]} --auto --primary)
       else
 	# put monitor in $position of the $last one
-	options=(${options[@]} --output ${connected[$monitor]} --auto --$position $last)
+	options=(${options[@]} --output ${connected[$monitor]} --auto --$1 $last)
+	# shift to the next position unless we reached the last position
+	if [[ $# -gt 1 ]]; then shift; fi
       fi
       # remember this monitor to position the next one
       last=${connected[$monitor]}
@@ -48,4 +53,4 @@ for disconnected in $(xrandr | grep disconnected | cut -f 1 -d ' ') ${connected[
   options=(${options[@]} --output $disconnected --off)
 done
 
-xrandr --verbose ${options[@]}
+xrandr ${options[@]}
