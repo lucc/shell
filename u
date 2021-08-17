@@ -1,4 +1,5 @@
 #!/usr/bin/env zsh
+# vim: foldmethod=indent
 
 # This is a script to collect shell snippets until I develop them into real
 # shell scripts.  "u" stands for "utils".  I got the idea from hans.
