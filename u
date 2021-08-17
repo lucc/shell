@@ -399,8 +399,8 @@ case $1 in
       g = (colnum*510/76);
       b = (colnum*255/76);
       if (g>255) g = 510-g;
-	printf "\033[48;2;%d;%d;%dm", r,g,b;
 	printf "\033[38;2;%d;%d;%dm", 255-r,255-g,255-b;
+	printf "\033[48;2;%d;%d;%dm", r,g,b;
 	printf "%s\033[0m", substr(s,colnum+1,1);
       }
       printf "\n";
@@ -442,9 +442,22 @@ case $1 in
     esac
     ;;
   show-term-attributes)
-    for i in {0..15}; do
-      printf 'i=%-3s --[\e[%sm terminal code test string \e[0m]--\n' $i: $i
-    done
+    shift
+    case $1 in
+      v2|2)
+	printf '%s\n' '\e[%dm %3d\e[m'
+	for i in {0..108}; do
+	  ((i%10 == 0)) && echo
+	  printf '\e[%dm %3d\e[m' $i $i
+	done
+	echo
+	;;
+      v1|1|*)
+	for i in {0..15}; do
+	  printf 'i=%-3s --[\e[%sm terminal code test string \e[0m]--\n' $i: $i
+	done
+	;;
+    esac
     ;;
   updateinfo)
     pacman -Qquet | xargs --no-run-if-empty pacman -Qi | \
