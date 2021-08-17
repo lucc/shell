@@ -9,6 +9,7 @@ upstream=origin/master
 cmd=
 verbose=0
 retry=0
+bisect=
 
 usage () {
   local prog="git ${${0##*/}#git-}"
@@ -35,6 +36,7 @@ Options:
 		string as an argument to clear the list (default $include)
 -u upstream	set the upstream branch for the rebase (default is $upstream)
 -r 		use git-retry-rebase to retry a rebase that failed (impies -a)
+-b              bisect option for git-retry-rebase
 
 Everything after "--" will be passed to git-rebase(1) as options.
 EOF
@@ -80,9 +82,10 @@ trap-handler () {
 }
 
 # Parse the command line.
-while getopts ae:hi:lnru:vx FLAG; do
+while getopts abe:hi:lnru:vx FLAG; do
   case $FLAG in
     a) abort=1;;
+    b) bisect=-B;;
     h) usage; help; exit;;
     e) if [[ -z $OPTARG ]]; then exclude=(); else exclude+=$OPTARG; fi;;
     i) if [[ -z $OPTARG ]]; then include=(); else include+=$OPTARG; fi;;
@@ -129,7 +132,7 @@ for branch in ${(u)branches}; do
     ((verbose)) && echo Rebasing $branch on $upstream failed.  Aborting rebase.
     git rebase --abort
     ((retry)) && \
-      git retry-rebase -u $upstream -b $branch -- $quiet $@
+      git retry-rebase -u $upstream -b $branch $=bisect -- $quiet $@
     (( $? != 0 )) && failed+=$branch
   fi
 done
