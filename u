@@ -136,6 +136,23 @@ function _u_helper_lp_options () {
   _lp $@
 }
 
+# SUBCOMMAND FUNCTIONS
+# The definition of these functions follows some strict rules for parsing and
+# automatic help  text extraction:
+# 1. the function name has to start with "subcommand-"
+# 2. the "function subcommand-NAME ()" has to be on its own line with now
+#    extra text
+# 3. the lines after that can be comments, they form the help text
+# 4. the opening "{" has to be on a line on its own.
+
+function subcommand-edit ()
+# edit the source of this script
+{
+  # This is all in one line in order to force the shell to read it before
+  # starting the editor.  Just in case some lines shift and such.
+  $EDITOR $ZSH_SCRIPT; until zsh -n $ZSH_SCRIPT; do $EDITOR -q <(zsh -n $ZSH_SCRIPT); done; exit
+}
+
 while getopts hx FLAG; do
   case $FLAG in
     h) set -- help; break;;
