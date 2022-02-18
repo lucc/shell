@@ -9,7 +9,7 @@ big=
 name=
 case $(uname) in
   Darwin) term=iterm;;
-  Linux)  term=termite;;
+  Linux)  term=alacritty;;
 esac
 
 usage () {
