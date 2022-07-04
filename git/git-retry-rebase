@@ -71,7 +71,10 @@ if $bisect; then
     git bisect bad "$upstream" # the rebase on the $upstream did not succeed
     git bisect good "$base"    # the rebase on the branching point should always succeed
     branch=$branch git bisect run sh -$- -c 'old=$(git rev-parse "$branch"); if git rebase $(git rev-parse BISECT_HEAD) "$branch"; then git reset --hard "$old"; exit 0; else git rebase --abort; exit 1; fi'
+    [ "$(git rev-parse refs/bisect/bad~1)" != "$upstream" ]
+    exit_code=$?
     git bisect reset
+    exit $exit_code
   fi
 else
   while true; do
