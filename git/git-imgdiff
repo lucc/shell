@@ -1,0 +1,13 @@
+#!/bin/sh
+
+# copied from https://varya.me/en/posts/image-diffs-with-git/
+# configure git with:
+#
+# [gitattributes]
+# *.gif diff=image
+# *.jpg diff=image
+# *.png diff=image
+
+compare "$2" "$1" png:- \
+  | montage -geometry +4+4 "$2" - "$1" png:- \
+  | display -title "$1" -
