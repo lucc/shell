@@ -1,0 +1,18 @@
+#!/bin/sh
+
+case $1 in
+  major|minor|patch) version=$1;;
+  *) version=minor;;
+esac
+
+git tag --list 'v*' \
+  | sort --version-sort \
+  | tail -n 1 \
+  | awk -F '[v.]' -v version="$version" '
+    version == "major" { print "v"($2+1)".0.0" }
+    version == "minor" { print "v"$2"."($3+1)".0" }
+    version == "patch" { print "v"$2"."$3"."($4+1) }
+    ' \
+  | xargs git tag
+
+git push --tags
