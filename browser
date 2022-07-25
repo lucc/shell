@@ -41,7 +41,7 @@ qutebrowser_stable () {
   command qutebrowser "$@"
 }
 qutebrowser_normal () {
-  qutebrowser_$branch "$@"
+  qutebrowser_stable "$@"
 }
 qutebrowser_private () {
   local tempdir=$(mktemp -d)
@@ -121,7 +121,7 @@ fi
 if $pipe; then
   # save stdin to a file
   file=$(mktemp -t tmp-$$-XXXXXX) || exit 3
-  trap 'trap - HUB INT TERM; rm -f "$file" "$file.html"' HUB INT TERM
+  trap 'trap - HUP INT TERM; rm -f "$file" "$file.html"' HUP INT TERM
   cat > "$file" || exit 4
   case $(file --brief --mime-type "$file") in
     text/html)
