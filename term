@@ -1,119 +1,32 @@
 #!/usr/bin/env bash
 # a script to start my favorite terminal emulator
 
-version=2.3
+version=3
 args=( )
-foreground=
 execute=
-big=
 name=
-case $(uname) in
-  Darwin) term=iterm;;
-  Linux)  term=alacritty;;
-esac
 
 usage () {
-  echo "Usage: ${0##*/} [-bfx] [-t backend] [-n name] [-E arg] [-e args ...]"
+  echo "Usage: ${0##*/} [-x] [-n name] [-E arg] [-e args ...]"
   echo "       ${0##*/} -h"
   echo "       ${0##*/} -v"
 }
-iterm_wrapper () {
-  # iTerm2.app on Mac OS X
-  exec osascript -- Default "${args[@]}" <<-EOF
-  on run argv
 
-    -- set the default values
-    set theSession to "Default"
-    set theCommand to ""
-    set theLength to length of argv
-
-    -- Parse the command line.  The first argument is the Profile name in
-    -- iTerm.  The rest is a command line to execute.
-    if theLength >= 1
-      set theSession to item 1 of argv
-      if theLength >=2
-	repeat with i from 2 to theLength
-	  set theCommand to theCommand & " " & quoted form of item i of argv
-	end repeat
-      end if
-    end if
-
-    -- open iTerm and run the command
-    tell application "iTerm" to tell current terminal
-      launch session theSession
-      if theCommand is not ""
-	tell the last session to write text "exec " & theCommand
-      end if
-      activate
-    end tell
-
-  end run
-	EOF
-}
-urxvt_wrapper () {
-  exec $urxvt \
-    ${big:+-fn "$(get_urxvt_font):size=17"} \
-    ${name:+-name "$name"} \
-    ${1:+-e} \
-    "${args[@]}"
-}
-urxvtc_wrapper () {
-  if [[ -n "$foreground" ]]; then
-    local urxvt=urxvt
-    urxvt_wrapper $1
-  else
-    local urxvt=urxvtc
-    urxvt_wrapper $1
-    if [[ $? -eq 2 ]]; then
-      urxvtd -q -o -f
-      urxvt_wrapper $1
-    fi
-  fi
-}
-get_urxvt_font () {
-  xrdb -query | sed -En 's/^urxvt\.font\s*:\s*(.*):size=[[:digit:]]+$/\1/ip'
-}
-xterm_wrapper () {
-  exec xterm ${name:+-name "$name"} ${1:+-e} "${args[@]}"
-}
-gnome_terminal_wrapper () {
-  if [[ -n "$foreground" ]]; then
-    echo "How do I run $term in the foreground?" >&2
-    exit 1
-  fi
-  # TODO gnome-terminal forks!!
-  exec gnome-terminal ${1:+-x} "${args[@]}"
-}
-konsole_wrapper () {
-  exec konsole ${foreground:+--nofork} ${1:+-e} "${args[@]}"
-}
-termite_wrapper () {
-  if ((big)); then
-    config=$(mktemp)
-    trap 'rm -f "$config"' HUP INT QUIT TERM EXIT
-    sed '/^font/s/ [0-9]*$/ 17/' ~/.config/termite/config > "$config"
-    termite --config="$config" ${name:+--name "$name"} ${1:+-e} "${args[*]}"
-  else
-    exec termite ${name:+--name "$name"} ${1:+-e} "${args[*]}"
-  fi
-}
-alacritty_wrapper () {
-  exec alacritty ${1:+-e} "${args[@]}"
-}
-
-while getopts be:E:fhn:t:vx opt; do
+while getopts e:E:fhn:t:vx opt; do
   case $opt in
     h) usage; exit;;
-    v) echo "term -- Version $version (wrapping $term)"; exit;;
+    v) echo "term -- Version $version (wrapping alacritty)"; exit;;
     x) set -x;;
-    b) big=1;;
     e) execute=1; args=("${args[@]}" "$OPTARG" "${@:$OPTIND}"); shift $#;;
     E) execute=1; args=("${args[@]}" $OPTARG);;
-    f) foreground=1;;
     n) name=$OPTARG;;
-    t) term=$OPTARG;;
     *) usage >&2; exit 2;;
   esac
 done
 
-${term}_wrapper $execute
+if [ -r "$ALACRITTY_SOCKET" ]; then
+  cmd=(alacritty msg create-window)
+else
+  cmd=(alacritty)
+fi
+exec ${cmd[@]} ${name:+--class "$name"} ${1:+-e} "${args[@]}"
