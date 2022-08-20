@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # a script to start my favorite terminal emulator
 
-version=3
+version=4
 args=( )
 execute=
 name=
@@ -24,9 +24,4 @@ while getopts e:E:fhn:t:vx opt; do
   esac
 done
 
-if [ -r "$ALACRITTY_SOCKET" ]; then
-  cmd=(alacritty msg create-window)
-else
-  cmd=(alacritty)
-fi
-exec ${cmd[@]} ${name:+--class "$name"} ${1:+-e} "${args[@]}"
+exec alacritty ${name:+--class "$name"} ${args:+-e} "${args[@]}"
