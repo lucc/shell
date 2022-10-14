@@ -1,3 +1,2 @@
-#!/bin/sh -e
-#! git diff --quiet # TODO
-test `git status --short | wc -l` -ne 0
+#!/bin/sh
+! git diff --quiet HEAD
