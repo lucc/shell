@@ -9,6 +9,8 @@
       "diff-wrapper.bash"
       "file+"
       "git/git-credential-pass"
+      "git/git-imgdiff"
+      "git/git-is-clean"
       "git/git-is-dirty"
       "git/git-multi-rebase"
       "git/git-retry-rebase"
