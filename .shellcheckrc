@@ -1,0 +1,2 @@
+# Do not prefer mapfile/read -a over x=( $(...) )
+disable=SC2207

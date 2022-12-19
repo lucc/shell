@@ -140,7 +140,7 @@ case $command in
     fi
     for ppid in "${ppids[@]}"; do
       # TODO
-      :
+      : "$ppid"
     done
     ;;
   quit) tmux kill-session -t "$session";;

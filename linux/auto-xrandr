@@ -18,24 +18,24 @@ max=10
 connected=($(xrandr | grep ' connected ' | cut -f 1 -d ' '))
 options=()
 
-for choice in ${order[@]}; do
+for choice in "${order[@]}"; do
   # iterate over the indices of the connected monitors
-  for monitor in ${!connected[@]}; do
+  for monitor in "${!connected[@]}"; do
     if [[ ${connected[$monitor]} =~ $choice ]]; then
       if [[ ${#options[@]} -eq 0 ]]; then
 	# set first match from $order as primary monitor
-	options=(--output ${connected[$monitor]} --auto --primary)
+	options=(--output "${connected["$monitor"]}" --auto --primary)
       else
 	# put monitor in $position of the $last one
-	options=(${options[@]} --output ${connected[$monitor]} --auto --$1 $last)
+	options=("${options[@]}" --output "${connected["$monitor"]}" --auto "--$1" "$last")
 	# shift to the next position unless we reached the last position
 	if [[ $# -gt 1 ]]; then shift; fi
       fi
       # remember this monitor to position the next one
       last=${connected[$monitor]}
       # delete this monitor from the list of connected monitors
-      unset connected[$monitor]
-      connected=(${connected[@]})
+      unset "connected[$monitor]"
+      connected=("${connected[@]}")
       # count down the number of monitors that is desired at most
       ((max--))
       if [[ $max -eq 0 ]]; then
@@ -49,8 +49,8 @@ done
 
 # let xrandr turn all disconnected monitors off (just in case) and also all
 # connected monitors that where above the maximum number of desired monitors
-for disconnected in $(xrandr | grep disconnected | cut -f 1 -d ' ') ${connected[@]}; do
-  options=(${options[@]} --output $disconnected --off)
+for disconnected in $(xrandr | grep disconnected | cut -f 1 -d ' ') "${connected[@]}"; do
+  options=("${options[@]}" --output "$disconnected" --off)
 done
 
-xrandr ${options[@]}
+xrandr "${options[@]}"

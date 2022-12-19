@@ -3,7 +3,6 @@
 
 version=4
 args=( )
-execute=
 name=
 
 usage () {
@@ -17,8 +16,8 @@ while getopts e:E:fhn:t:vx opt; do
     h) usage; exit;;
     v) echo "term -- Version $version (wrapping alacritty)"; exit;;
     x) set -x;;
-    e) execute=1; args=("${args[@]}" "$OPTARG" "${@:$OPTIND}"); shift $#;;
-    E) execute=1; args=("${args[@]}" $OPTARG);;
+    e) args=("${args[@]}" "$OPTARG" "${@:$OPTIND}"); shift $#;;
+    E) args=("${args[@]}" $OPTARG);;
     n) name=$OPTARG;;
     *) usage >&2; exit 2;;
   esac

@@ -6,10 +6,10 @@ last_rev=$(git rev-list --max-parents=0 --abbrev-commit HEAD)
 next_rev=
 
 git tag \
-  | if [[ $# > 0 ]]; then grep "$@"; else cat; fi \
+  | if [[ $# -gt 0 ]]; then grep "$@"; else cat; fi \
   | sort -V \
   | cat - <(echo HEAD) \
-  | while read next_rev
+  | while read -r next_rev
 do
   commit_count=$(git log "$last_rev...$next_rev" --oneline | wc -l)
   shortstat=$(git diff --shortstat "$last_rev...$next_rev")

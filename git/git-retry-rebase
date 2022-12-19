@@ -29,7 +29,7 @@ help () {
 trap_handler () {
   trap - INT STOP HUP
   echo Caught signal.  Aborting all pending rebases. >&2
-  git rebase --abort &>/dev/null
+  git rebase --abort >/dev/null 2>&1
   return $((128 + $1))
 }
 
@@ -47,7 +47,7 @@ while getopts hvu:xb:Bl FLAG; do
 done
 shift $((OPTIND - 1))
 
-if [ -z "$branch" -a $# -ge 1 ]; then
+if [ -z "$branch" ] && [ $# -ge 1 ]; then
   branch=$1
   shift
 elif [ -z "$branch" ]; then
@@ -59,7 +59,7 @@ upstream=$(git rev-parse "$upstream")
 base=$(git rev-parse "$(git merge-base "$upstream" "$branch")")
 
 # Set up the trap.
-trap trap_handler INT STOP HUP
+trap trap_handler INT HUP
 
 if $bisect; then
   # First try a normal rebase.  Only if that fails try to bisect.
@@ -82,8 +82,7 @@ else
       echo Warning: No reabase succeeded. >&2
       break
     fi
-    git rebase "$@" "$upstream" "$branch"
-    if [ $? -eq 0 ]; then
+    if git rebase "$@" "$upstream" "$branch"; then
       echo Info: Rebase succeeded >&2
       break
     else

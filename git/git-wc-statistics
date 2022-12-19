@@ -30,7 +30,7 @@ while getopts hvxlcmw FLAG; do
     h) usage; help; exit;;
     v) echo "$prog -- version $version"; exit;;
     x) set -x;;
-    c|l|m|w) wc_options=${wc_options}$FLAG;;
+    c|l|m|w) wc_options=$wc_options$FLAG;;
     *) usage >&2; exit 2;;
   esac
 done
@@ -43,5 +43,5 @@ fi
 git log --oneline | while read -r ref msg; do
   printf '%s %-70s %s\n' "$ref" "$msg" \
     "$(git archive "$ref" -- "$@" 2>/dev/null | tar -xO 2>/dev/null | \
-      wc $wc_options)"
+      wc "$wc_options")"
 done

@@ -46,7 +46,7 @@ options=()
 while [[ $# -ne 0 ]]; do
   case "$1" in
     --) shift; break;;
-    -*) options+="$1"; shift;;
+    -*) options+=("$1"); shift;;
     *) break;;
   esac
 done
