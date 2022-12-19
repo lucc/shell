@@ -21,18 +21,26 @@
       "term"
       "tmux-youtube-dl.sh"
     ];
+    zsh = [ "git/git-multi-rebase" ];
     #inherit (nixpkgs.legacyPackages.x86_64-linux) resholve;
     pkgs = import nixpkgs { inherit system; };
+    concat = pkgs.lib.strings.concatStringsSep " ";
+    inherit (pkgs.lib.lists) subtractLists;
+    scripts' = concat (subtractLists zsh scripts);
   in
 
   {
     packages.${system}.default = pkgs.stdenv.mkDerivation {
       name = "luccs-scripts";
       src = self;
-      installPhase = ''
-        install -D -t $out/bin ${pkgs.lib.strings.concatStringsSep " " scripts}
+      dontBuild = true;
+      checkPhase = ''
+        ${pkgs.shellcheck}/bin/shellcheck ${scripts'}
       '';
+      installPhase = ''
+        install -D -t $out/bin ${concat scripts}
+      '';
+
       };
-    defaultPackage.${system} = self.packages.${system}.default;
   };
 }
