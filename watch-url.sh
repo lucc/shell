@@ -8,12 +8,21 @@ test=false
 interval=60
 
 usage () {
-  echo "Usage: "${0##*/} [-i sec] [-f] [-o] url address [address ...]
-  echo "       "${0##*/} -t url
+  echo "Usage: ${0##*/} [-i sec] [-f] [-o] url address [address ...]"
+  echo "       ${0##*/} -t [-i sec] [-f] url"
 }
 help () {
   cat <<-EOF
 	Watch an URL and if it changes send a mail
+
+	The first non option argument is the url that will be watched.
+	Following arguments are email addresses that are notified on changes.
+
+	Options:
+	    -t   run in test mode
+	    -i   set the interval
+	    -f   filter to parse html before comparing
+	    -o   exit after the first change was found
 	EOF
 }
 fetch () {
@@ -26,7 +35,7 @@ while getopts fhi:ot FLAG; do
     h) usage; help; exit;;
     i) interval=$OPTARG;;
     o) once=true;;
-    t) test=true;;
+    t) test=true interval=1;;
     *) usage >&2; exit 2;;
   esac
 done
@@ -44,7 +53,7 @@ fetch "$url" > new
 
 if "$test"; then
   mv new old
-  sleep 1
+  sleep "$interval"
   fetch "$url" > new
   diff old new
   exit
