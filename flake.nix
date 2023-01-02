@@ -34,6 +34,7 @@
       name = "luccs-scripts";
       src = self;
       dontBuild = true;
+      doCheck = true;
       checkPhase = ''
         ${pkgs.shellcheck}/bin/shellcheck ${scripts'}
       '';
