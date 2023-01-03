@@ -1,4 +1,4 @@
-#/bin/sh
+#!/bin/sh
 
 # Print a file over ssh.
 # $1: the server name (possibly an alias from ~/.ssh/config
