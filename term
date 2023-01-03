@@ -6,21 +6,20 @@ args=( )
 name=
 
 usage () {
-  echo "Usage: ${0##*/} [-x] [-n name] [-E arg] [-e args ...]"
+  echo "Usage: ${0##*/} [-x] [-n name] [-e args ...]"
   echo "       ${0##*/} -h"
   echo "       ${0##*/} -v"
 }
 
-while getopts e:E:fhn:t:vx opt; do
+while getopts e:hn:vx opt; do
   case $opt in
     h) usage; exit;;
     v) echo "term -- Version $version (wrapping alacritty)"; exit;;
     x) set -x;;
-    e) args=("${args[@]}" "$OPTARG" "${@:$OPTIND}"); shift $#;;
-    E) args=("${args[@]}" $OPTARG);;
+    e) args=(-e "$OPTARG" "${@:$OPTIND}"); shift $#;;
     n) name=$OPTARG;;
     *) usage >&2; exit 2;;
   esac
 done
 
-exec alacritty ${name:+--class "$name"} ${args:+-e} "${args[@]}"
+exec alacritty ${name:+--class "$name"} "${args[@]}"
