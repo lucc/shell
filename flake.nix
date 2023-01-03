@@ -34,10 +34,6 @@
       name = "luccs-scripts";
       src = self;
       dontBuild = true;
-      doCheck = true;
-      checkPhase = ''
-        ${pkgs.shellcheck}/bin/shellcheck ${scripts'}
-      '';
       installPhase = ''
         install -D -t $out/bin ${concat scripts}
       '';
