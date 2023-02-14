@@ -65,7 +65,7 @@ while sleep "$interval"; do
   if ! diff -q old new; then
     date "+%F %T: change detected"
     mail -s "URL Watcher: $url changed" "${addresses[@]}" <<-EOF
-	The URL $url has changed during the last $iterval seconds.
+	The URL $url has changed during the last $interval seconds.
 	EOF
     if "$once"; then exit; fi
   fi
