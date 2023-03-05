@@ -1,11 +1,11 @@
-#!/bin/sh
+#!/usr/bin/env sh
 
-# print word count of tracked files for each commit
+set -eu
 
-version=2
+version=3
 prog=${0##*/}
 prog="git ${prog#git-}"
-wc_options=
+wc_options=-c
 
 usage () {
   echo "Usage: $prog [-clmwx] [file ...]"
@@ -14,12 +14,12 @@ usage () {
 }
 
 help () {
-  echo 'Print the word count of the given or all files for each commit.'
+  echo "Print the word count of the given or all files for each commit."
   echo
   echo "  -h    display help"
   echo "  -v    display version"
   echo "  -x    debugging output"
-  echo "  -c    print the byte counts"
+  echo "  -c    print the byte counts (default)"
   echo "  -m    print the character counts"
   echo "  -l    print the newline counts"
   echo "  -w    print the word counts"
@@ -36,12 +36,9 @@ while getopts hvxlcmw FLAG; do
 done
 shift $((OPTIND - 1))
 
-if [ -n "$wc_options" ]; then
-  wc_options=-$wc_options
-fi
-
 git log --oneline | while read -r ref msg; do
-  printf '%s %-70s %s\n' "$ref" "$msg" \
-    "$(git archive "$ref" -- "$@" 2>/dev/null | tar -xO 2>/dev/null | \
-      wc "$wc_options")"
+  counts=$(git archive "$ref" -- "$@" 2>/dev/null \
+    | tar -xO 2>/dev/null \
+    | wc "$wc_options")
+  printf '%s %-70s %s\n' "$ref" "$msg" "$counts"
 done
