@@ -2,14 +2,14 @@
 
 set -euo pipefail
 
-filter=(cat)
+filter=cat
 once=false
 test=false
 interval=60
 
 usage () {
-  echo "Usage: ${0##*/} [-i sec] [-f] [-o] url address [address ...]"
-  echo "       ${0##*/} -t [-i sec] [-f] url"
+  echo "Usage: ${0##*/} [-f filter] [-i sec] [-o] url address [address ...]"
+  echo "       ${0##*/} [-f filter] -t url"
 }
 help () {
   cat <<-EOF
@@ -26,13 +26,13 @@ help () {
 	EOF
 }
 fetch () {
-  curl --location --silent --connect-timeout 10 "$@" | "${filter[@]}"
+  curl --location --silent --connect-timeout 10 "$@" | $filter
 }
 
-while getopts fhi:ot FLAG; do
+while getopts hf:i:ot FLAG; do
   case $FLAG in
-    f) filter=(elinks -force-html -dump);;
     h) usage; help; exit;;
+    f) filter=$OPTARG;;
     i) interval=$OPTARG;;
     o) once=true;;
     t) test=true interval=1;;
