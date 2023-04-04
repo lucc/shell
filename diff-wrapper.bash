@@ -21,7 +21,7 @@ diff_wrapper () {
     echo "Error: Please specify at least two files." >&2
     exit 2
   elif which colordiff &>/dev/null; then
-    exec colordiff "$@"
+    exec colordiff --nobanner "$@"
   else
     exec diff "$@"
   fi
