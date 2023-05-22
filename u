@@ -383,7 +383,6 @@ case $1 in
     ;;
   test-vim-startup)
     shift
-    searchterm=${1:-sourcing}
     echo " clock   self+sourced   self:  sourced script"
     nvim --headless -c 'quitall!' --startuptime \
       >(grep ${@:-sourcing} | sort -n --key=3) \
