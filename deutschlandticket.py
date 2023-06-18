@@ -10,7 +10,7 @@ from subprocess import run
 
 def cropped(file: Path) -> Path:
     return file.with_suffix(".cropped.pdf")
-def cp(src: Path, dest: Path) -> None:
+def copy(src: Path, dest: Path) -> None:
     if not dest.exists():
         copyfile(src, dest)
 
@@ -19,7 +19,7 @@ proc = run(["notmuch", "search", "--output=files", "is:attachment",
             "from:deutschlandticket", "date:-1month..",
             'subject:"Dein Deutschlandticket ist da!"'], capture_output=True)
 
-files = []
+files: list[Path] = []
 
 for file in proc.stdout.decode().splitlines():
     with open(file, "r") as fp:
@@ -29,8 +29,8 @@ for file in proc.stdout.decode().splitlines():
     if mailpart.get_content_type() == "application/pdf":
         payload = io.BytesIO(mailpart.get_payload().encode())
         filename = mailpart.get_param("name")
-        out = Path.home()/"ticket"/filename
-        files += out
+        out = Path.home() / "ticket" / filename
+        files += [out]
         if not out.exists():
             with out.open(mode="wb") as fp:
                 base64.decode(payload, fp)
@@ -44,7 +44,7 @@ for file in proc.stdout.decode().splitlines():
 
 kindle = Path("/run/media/luc/Kindle/documents")
 if kindle.exists():
-    for file in files:
-        target = kindle / file.name
-        cp(file, target)
-        cp(cropped(file), cropped(target))
+    for src in files:
+        target = kindle / src.name
+        copy(src, target)
+        copy(cropped(src), cropped(target))
