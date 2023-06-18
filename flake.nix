@@ -6,6 +6,7 @@
   let
     system = "x86_64-linux";
     scripts = [
+      "deutschlandticket.py"
       "diff-wrapper.bash"
       "file+"
       "git/git-credential-pass"
