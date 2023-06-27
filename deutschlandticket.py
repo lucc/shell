@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
 import base64
+from datetime import datetime
 import io
 import mailbox
 from pathlib import Path
+import re
 from shutil import copyfile
 from subprocess import run
 
@@ -48,3 +50,10 @@ if kindle.exists():
         target = kindle / src.name
         copy(src, target)
         copy(cropped(src), cropped(target))
+    regex = re.compile(r"^Deutschlandticket_(\d+)\.(\d+)(\.cropped)?\.pdf$")
+    now = datetime.now()
+    for ticket in kindle.glob("Deutschlandticket_*.pdf"):
+        if match := regex.match(ticket.name):
+            if (int(match.group(2)), int(match.group(1))) < (now.year, now.month):
+                print(f"Removing {ticket}")
+                ticket.unlink()
