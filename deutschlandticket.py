@@ -16,10 +16,10 @@ def copy(src: Path, dest: Path) -> None:
     if not dest.exists():
         copyfile(src, dest)
 
-
-proc = run(["notmuch", "search", "--output=files", "is:attachment",
-            "from:deutschlandticket", "date:-1month..",
-            'subject:"Dein Deutschlandticket ist da!"'], capture_output=True)
+search_terms = ["is:attachment", "from:deutschlandticket", "date:-1month..",
+                'subject:"Dein Deutschlandticket ist da!"']
+proc = run(["notmuch", "search", "--output=files"] + search_terms,
+           capture_output=True)
 
 files: list[Path] = []
 
@@ -57,3 +57,6 @@ if kindle.exists():
             if (int(match.group(2)), int(match.group(1))) < (now.year, now.month):
                 print(f"Removing {ticket}")
                 ticket.unlink()
+
+run(["notmuch", "tag", "-inbox", "-unread"] + search_terms,
+    capture_output=True)
