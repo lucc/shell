@@ -22,15 +22,21 @@ proc = run(["notmuch", "search", "--output=files"] + search_terms,
            capture_output=True)
 
 files: list[Path] = []
+regex = re.compile(r"[^\d](\d{4}-\d\d|\d\d\.\d{4})[^\d]")
 
 for file in proc.stdout.decode().splitlines():
     with open(file, "r") as fp:
         content = fp.read()
     mail = mailbox.MaildirMessage(content)
     mailpart = mail.get_payload()[1]
-    if mailpart.get_content_type() == "application/pdf":
+    if mailpart.get_content_type() == "application/pdf" and (
+            match := regex.search(mailpart.get_param("name"))):
         payload = io.BytesIO(mailpart.get_payload().encode())
-        filename = mailpart.get_param("name")
+        if "-" in match.group(1):
+            year, month = match.group(1).split("-")
+        else:
+            month, year = match.group(1).split(".")
+        filename = f"deutschlandticket-{year}-{month}.pdf"
         out = Path.home() / "ticket" / filename
         files += [out]
         if not out.exists():
@@ -50,13 +56,12 @@ if kindle.exists():
         target = kindle / src.name
         copy(src, target)
         copy(cropped(src), cropped(target))
-    regex = re.compile(r"^Deutschlandticket_(\d+)\.(\d+)(\.cropped)?\.pdf$")
     now = datetime.now()
-    for ticket in kindle.glob("Deutschlandticket_*.pdf"):
-        if match := regex.match(ticket.name):
-            if (int(match.group(2)), int(match.group(1))) < (now.year, now.month):
-                print(f"Removing {ticket}")
-                ticket.unlink()
+    for ticket in kindle.glob("deutschlandticket-*.pdf"):
+        year, month = ticket.name.split(".")[0].split("-")[1:]
+        if (int(year), int(month)) < (now.year, now.month):
+            print(f"Removing {ticket}")
+            ticket.unlink()
 
 run(["notmuch", "tag", "-inbox", "-unread"] + search_terms,
     capture_output=True)
