@@ -117,7 +117,7 @@ case $command in
     # conditions it exits prematurely.
     tmp=$(mktemp)
     while
-      youtube-dl "$url" 2>&1 | tee "$tmp"
+      command youtube-dl "$url" 2>&1 | tee "$tmp"
       youtube_dl_return_code=${PIPESTATUS[0]}
       errors="Unsupported URL|Unable to extract (URL|encrypted data)"
       errors+="|Video .* does not exist"

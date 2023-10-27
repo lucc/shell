@@ -20,25 +20,32 @@
       "linux/auto-xrandr"
       "linux/bluetooth-headset.sh"
       "term"
-      "tmux-youtube-dl.sh"
     ];
-    zsh = [ "git/git-multi-rebase" ];
-    #inherit (nixpkgs.legacyPackages.x86_64-linux) resholve;
     pkgs = import nixpkgs { inherit system; };
-    concat = pkgs.lib.strings.concatStringsSep " ";
-    inherit (pkgs.lib.lists) subtractLists;
-    scripts' = concat (subtractLists zsh scripts);
-  in
+    concat = pkgs.lib.strings.concatMapStrings (s: " ${self}/${s}");
 
-  {
-    packages.${system}.default = pkgs.stdenv.mkDerivation {
-      name = "luccs-scripts";
-      src = self;
-      dontBuild = true;
-      installPhase = ''
-        install -D -t $out/bin ${concat scripts}
-      '';
+    #inherit (pkgs) resholve;
+    #zsh = [ "git/git-multi-rebase" ];
+    #scripts' = concat (pkgs.lib.lists.subtractLists zsh scripts);
 
+    # it seems that youtube-dl in nixpkgs is not updated, use a replacement
+    tmux-youtube-dl = pkgs.runCommandLocal "tmux-youtube-dl" {} ''
+      install -D -t "$out/bin" ${self}/tmux-youtube-dl.sh
+      substituteInPlace "$out/bin/tmux-youtube-dl.sh" \
+        --replace "command youtube-dl" ${pkgs.yt-dlp}/bin/yt-dlp
+      patchShebangs "$out/bin"
+    '';
+
+    simple-scripts = pkgs.runCommandLocal "simple-scripts" {} ''
+      install -D -t "$out/bin" ${concat scripts}
+      patchShebangs "$out/bin"
+    '';
+    in
+
+    {
+      packages.${system}.default = pkgs.buildEnv {
+        name = "luccs-scripts";
+        paths = [ simple-scripts tmux-youtube-dl ];
       };
-  };
+    };
 }
