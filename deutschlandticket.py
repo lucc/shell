@@ -57,7 +57,7 @@ if kindle.exists():
         copy(src, target)
         copy(cropped(src), cropped(target))
     now = datetime.now()
-    for ticket in kindle.glob("deutschlandticket-*.pdf"):
+    for ticket in kindle.glob("deutschlandticket-*.pd[fr]"):
         year, month = ticket.name.split(".")[0].split("-")[1:]
         if (int(year), int(month)) < (now.year, now.month):
             print(f"Removing {ticket}")
