@@ -50,8 +50,12 @@ for file in proc.stdout.decode().splitlines():
     else:
         print(f"Error processing {file}, no pdf at second mime multipart.")
 
+device = Path("/dev/disk/by-label/Kindle")
 kindle = Path("/run/media/luc/Kindle/documents")
-if kindle.exists():
+if device.exists():
+    if unmount := not kindle.exists():
+        run(["udisksctl", "mount", "--block-device", device])
+
     for src in files:
         target = kindle / src.name
         copy(src, target)
@@ -62,6 +66,9 @@ if kindle.exists():
         if (int(year), int(month)) < (now.year, now.month):
             print(f"Removing {ticket}")
             ticket.unlink()
+
+    if unmount:
+        run(["udisksctl", "unmount", "--block-device", device])
 
 run(["notmuch", "tag", "-inbox", "-unread"] + search_terms,
     capture_output=True)
