@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # a script to start my favorite terminal emulator
 
-version=4
+version=5
 args=( )
 name=
 
@@ -9,6 +9,10 @@ usage () {
   echo "Usage: ${0##*/} [-x] [-n name] [-e args ...]"
   echo "       ${0##*/} -h"
   echo "       ${0##*/} -v"
+}
+terminal () {
+  alacritty msg create-window "$@" \
+    || exec alacritty "$@"
 }
 
 while getopts e:hn:vx opt; do
@@ -22,4 +26,4 @@ while getopts e:hn:vx opt; do
   esac
 done
 
-exec alacritty ${name:+--class "$name"} "${args[@]}"
+terminal ${name:+--class "$name"} "${args[@]}"
