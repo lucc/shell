@@ -3,17 +3,18 @@
 # Rebase all local only branches on origin/master.
 
 abort=0
+bisect=
+cmd=
 exclude=(\*.bak \*.add)
 include=()
-upstream=origin/master
-cmd=
-verbose=0
+interactive=0
 retry=0
-bisect=
+upstream=origin/master
+verbose=0
 
 usage () {
   local prog="git ${${0##*/}#git-}"
-  echo "$prog [-alnrx] [-i pattern] [-e pattern] [-u upstream] [-- git-rebase(1) options]"
+  echo "$prog [-aIlnrx] [-i pattern] [-e pattern] [-u upstream] [-- git-rebase(1) options]"
   echo "$prog -h"
 }
 
@@ -28,6 +29,7 @@ Options:
 -a		abort a rabase that fails (and continue with the next one)
 -n		just print what would be done, don't do anything
 -x		give shell debuging output
+-I              open an interactive shell if a rebase fails
 -l		populate the include list with all local branches (which don't
 		have an upstream tracking branch)
 -e pattern	add pattern to the list of excluded patterns, give the empty
@@ -82,13 +84,14 @@ trap-handler () {
 }
 
 # Parse the command line.
-while getopts abe:hi:lnru:vx FLAG; do
+while getopts abe:hi:Ilnru:vx FLAG; do
   case $FLAG in
-    a) abort=1;;
+    a) abort=1 interactive=0;;
     b) bisect=-B;;
-    h) usage; help; exit;;
     e) if [[ -z $OPTARG ]]; then exclude=(); else exclude+=$OPTARG; fi;;
+    h) usage; help; exit;;
     i) if [[ -z $OPTARG ]]; then include=(); else include+=$OPTARG; fi;;
+    I) interactive=1 abort=0;;
     l) include+=( $(find-local-branches) );;
     n) cmd=echo;;
     r) retry=1 abort=1;;
@@ -133,6 +136,10 @@ for branch in ${(u)branches}; do
     git rebase --abort
     ((retry)) && \
       git retry-rebase -u $upstream -b $branch $=bisect -- $quiet $@
+    (( $? != 0 )) && failed+=$branch
+  elif (( $? != 0 && interactive )) && [[ -z $cmd ]]; then
+    ((verbose)) && echo Rebasing $branch on $upstream failed.  Starting interactive shell for resolution.  Please exit the shell when the rebase is finished.  The exit code of the sub-shell indicates if the reabse succeeded.
+    $SHELL -i
     (( $? != 0 )) && failed+=$branch
   fi
 done
