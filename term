@@ -1,29 +1,33 @@
 #!/usr/bin/env bash
 # a script to start my favorite terminal emulator
 
-version=5
+version=6
 args=( )
-name=
+foreground=false
 
 usage () {
-  echo "Usage: ${0##*/} [-x] [-n name] [-e args ...]"
+  echo "Usage: ${0##*/} [-xf] [-e args ...]"
   echo "       ${0##*/} -h"
   echo "       ${0##*/} -v"
 }
 terminal () {
-  alacritty msg create-window "$@" \
-    || exec alacritty "$@"
+  if "$foreground"; then
+    alacritty "$@"
+  else
+    alacritty msg create-window "$@" \
+      || exec alacritty "$@"
+  fi
 }
 
-while getopts e:hn:vx opt; do
+while getopts e:fhvx opt; do
   case $opt in
     h) usage; exit;;
     v) echo "term -- Version $version (wrapping alacritty)"; exit;;
     x) set -x;;
     e) args=(-e "$OPTARG" "${@:$OPTIND}"); shift $#;;
-    n) name=$OPTARG;;
+    f) foreground=true;;
     *) usage >&2; exit 2;;
   esac
 done
 
-terminal ${name:+--class "$name"} "${args[@]}"
+terminal "${args[@]}"
