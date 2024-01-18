@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # a script to start my favorite terminal emulator
 
-version=6
+version=7
 args=( )
 foreground=false
 
@@ -12,8 +12,13 @@ usage () {
 }
 terminal () {
   if "$foreground"; then
-    alacritty "$@"
+    # Choose a special socket name so that `alacritty msg` will not find this
+    # instance and block it.
+    local socket=$XDG_RUNTIME_DIR/standalone-Alacritty-$DISPLAY-$$.sock
+    exec alacritty --socket "$socket" "$@"
   else
+    # Try to connect to an existing Alacritty instance with `alacritty msg`,
+    # start a new instance otherwise.
     alacritty msg create-window "$@" \
       || exec alacritty "$@"
   fi
