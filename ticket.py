@@ -20,9 +20,10 @@ search_terms = ["is:attachment", "AND", "(",
                 # deutschlandticket
                 "(", "from:deutschlandticket", "date:-1month..",
                 'subject:"Dein Deutschlandticket ist da!"', ")",
-                "OR",
-                # other tickets from bahn.de
+                "OR", # other tickets from bahn.de
                 "(", "is:inbox", "from:buchungsbestaetigung@bahn.de", ")",
+                "OR", # tickets from flixbus
+                "(", "is:inbox", "from:noreply@booking.flixbus.com", ")",
                 ")"]
 deutschlandticket_re = re.compile(r"DTicket.*(\d{4}-\d\d)\.pdf").fullmatch
 
