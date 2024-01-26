@@ -60,7 +60,7 @@ def extract_filename(mailpart: Message) -> str|None:
     return filename
 
 
-date_re = re.compile(r"(\d{4}-\d\d(-\d\d)?|\d\d\.\d\d\.\d{4})")
+date_re = re.compile(r"\b(\d{4}-\d\d(-\d\d)?|\d\d\.\d\d\.\d{4})")
 def get_date(name: str) -> datetime|None:
     """Extract a date from a string
 
@@ -72,6 +72,12 @@ def get_date(name: str) -> datetime|None:
     >>> get_date("foo 23.12.2023 bar")
     datetime.datetime(2023, 12, 23, 0, 0)
     >>> get_date("23.12.2023 24.12.2023")
+    >>> get_date("123-2024-01-12")
+    datetime.datetime(2024, 1, 12, 0, 0)
+    >>> get_date("01235-2024-01-12")
+    datetime.datetime(2024, 1, 12, 0, 0)
+    >>> get_date("123.20.01.2024")
+    datetime.datetime(2024, 1, 20, 0, 0)
     """
     match date_re.findall(name):
         case []:
