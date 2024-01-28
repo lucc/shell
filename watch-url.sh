@@ -6,9 +6,10 @@ filter=cat
 once=false
 test=false
 interval=60
+action=mail
 
 usage () {
-  echo "Usage: ${0##*/} [-f filter] [-i sec] [-o] url address [address ...]"
+  echo "Usage: ${0##*/} [-mp] [-f filter] [-i sec] [-o] url address [address ...]"
   echo "       ${0##*/} [-f filter] -t url"
 }
 help () {
@@ -29,12 +30,14 @@ fetch () {
   curl --location --silent --connect-timeout 10 "$@" | $filter
 }
 
-while getopts hf:i:ot FLAG; do
+while getopts hf:i:mopt FLAG; do
   case $FLAG in
     h) usage; help; exit;;
     f) filter=$OPTARG;;
     i) interval=$OPTARG;;
+    m) action=mail;;
     o) once=true;;
+    p) action=print;;
     t) test=true interval=1;;
     *) usage >&2; exit 2;;
   esac
@@ -64,9 +67,11 @@ while sleep "$interval"; do
   fetch "$url" > new
   if ! diff -q old new; then
     date "+%F %T: change detected"
-    mail -s "URL Watcher: $url changed" "${addresses[@]}" <<-EOF
-	The URL $url has changed during the last $interval seconds.
-	EOF
+    if [[ $action = mail ]]; then
+      mail -s "URL Watcher: $url changed" "${addresses[@]}" <<-EOF
+		The URL $url has changed during the last $interval seconds.
+		EOF
+    fi
     if "$once"; then exit; fi
   fi
 done
