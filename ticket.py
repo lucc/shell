@@ -17,13 +17,14 @@ from typing import Generator
 
 
 search_terms = ["is:attachment", "AND", "(",
-                # deutschlandticket
-                "(", "from:deutschlandticket", "date:-1month..",
-                'subject:"Dein Deutschlandticket ist da!"', ")",
-                "OR", # other tickets from bahn.de
+                "OR", # tickets from bahn.de
                 "(", "is:inbox", "from:buchungsbestaetigung@bahn.de", ")",
+                "OR",
+                "(", "is:inbox", "from:noreply@deutschebahn.com", ")",
                 "OR", # tickets from flixbus
                 "(", "is:inbox", "from:noreply@booking.flixbus.com", ")",
+                "OR", # other manually marked tickets
+                "(", "is:inbox", "AND", "is:ticket", ")"
                 ")"]
 deutschlandticket_re = re.compile(r"DTicket.*(\d{4}-\d\d)\.pdf").fullmatch
 
@@ -37,7 +38,7 @@ def get_emails() -> list[str]:
 
 def untag_emails() -> None:
     """Untag the relevant mails in notmuch"""
-    run(["notmuch", "tag", "-inbox", "-unread"] + search_terms,
+    run(["notmuch", "tag", "-inbox", "-unread", "+ticket"] + search_terms,
         capture_output=True)
 
 
@@ -60,7 +61,7 @@ def extract_filename(mailpart: Message) -> str|None:
     return filename
 
 
-date_re = re.compile(r"\b(\d{4}-\d\d(-\d\d)?|\d\d\.\d\d\.\d{4})")
+date_re = re.compile(r"(?:\b|_)(\d{4}-\d\d(-\d\d)?|\d\d\.\d\d\.\d{4})")
 def get_date(name: str) -> datetime|None:
     """Extract a date from a string
 
@@ -78,6 +79,8 @@ def get_date(name: str) -> datetime|None:
     datetime.datetime(2024, 1, 12, 0, 0)
     >>> get_date("123.20.01.2024")
     datetime.datetime(2024, 1, 20, 0, 0)
+    >>> get_date("Ticket_123456789_31.12.2024.pdf")
+    datetime.datetime(2024, 12, 31, 0, 0)
     """
     match date_re.findall(name):
         case []:
