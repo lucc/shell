@@ -29,7 +29,7 @@ shift $((OPTIND - 1))
 
 if [[ $dest =~ ::|^rsync:// ]]; then
   cat >&2 <<-'EOF'
-	The rsync protocoll is not supported by this script, only ssh and
+	The rsync protocol is not supported by this script, only ssh and
 	local transfers.
 	EOF
   exit 1

@@ -13,9 +13,6 @@ usage () {
   echo "       $prog --help"
   echo "       $prog --version"
 }
-help () {
-  echo TOOD
-}
 diff_wrapper () {
   if [[ $# -lt 2 && -t 0 ]]; then
     echo "Error: Please specify at least two files." >&2
@@ -37,7 +34,6 @@ is_subversion_dir () {
 }
 if [[ "$1" == --help ]]; then
   usage
-  help
   exit
 elif [[ "$1" == --version ]]; then
   echo "$prog $version"
@@ -55,7 +51,7 @@ if [[ $# -eq 2 && -e "$1" && -e "$2" ]] || \
    [[ $# -eq 3 && -e "$1" && -e "$2" && -e "$3" ]]; then
   diff_wrapper "${options[@]}" "$@"
 else
-  # We are problably in a version control repository.
+  # We are probably in a version control repository.
   if is_git_dir; then
     exec git diff --irreversible-delete "${options[@]}" "$@"
   elif is_mercurial_dir; then

@@ -89,13 +89,13 @@ case $command in
 	usage >&2
 	exit 2
       fi
-      # If the tmux $session is running check if the url is alreay beeing
+      # If the tmux $session is running check if the url is already being
       # downloaded.  Else start $session and download the url.
       if has_session; then
-	# If $url is already beeing downloaded don't start a second instance.
+	# If $url is already being downloaded don't start a second instance.
 	if list_windows '#{window_name}' | grep --quiet --fixed-strings "$url"
 	then
-	  echo Alread registered: "$url"
+	  echo Already registered: "$url"
 	else
 	  if has_session 0; then
 	    append=-a

@@ -28,7 +28,7 @@ patterns.
 Options:
 -a		abort a rabase that fails (and continue with the next one)
 -n		just print what would be done, don't do anything
--x		give shell debuging output
+-x		give shell debugging output
 -I              open an interactive shell if a rebase fails
 -l		populate the include list with all local branches (which don't
 		have an upstream tracking branch)

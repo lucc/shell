@@ -15,7 +15,7 @@ usage () {
 }
 help () {
   echo "Check out each rev and execute a command.  Then print a line with the"
-  echo "ouput of the command prefixed with the commit id."
+  echo "output of the command prefixed with the commit id."
   echo "Defaults:"
   echo "  command: $command"
   echo "  files: $files"
