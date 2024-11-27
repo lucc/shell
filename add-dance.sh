@@ -6,8 +6,8 @@
 set -euo pipefail
 
 help () {
-  echo "Usage: $prog [-cnx] -d dance [file.flac [...]]"
-  echo "       $prog [-cnx] dance [file.flac [...]]"
+  echo "Usage: ${0##*/} [-cnx] -d dance [file.flac [...]]"
+  echo "       ${0##*/} [-cnx] dance [file.flac [...]]"
   echo "Add a DANCE= value to the vorbis comments of file.flac"
   echo "(or the current song of mpd(1) with -c)."
   echo "Options:"
@@ -21,45 +21,30 @@ help () {
 
 # print a canonicalized dance name
 fix_dance_name () {
-  #case `echo "$1"|sed -E 's/[ _.:,;-]+/-/g;s/.*/\L&/'` in
-  case $(echo "$1" | sed -E 's/[[:punct:]]+//g' | tr '[:upper:]' '[:lower:]') in
-    chacha|chachacha|cha)
-      echo Cha-Cha;;
-    blues)
-      echo Blues;;
-    boogie)
-      echo Boogie;;
-    dicofox|df)
-      echo Discofox;;
-    foxtrott|ft)
-      echo Foxtrott;;
-    jive)
-      echo Jive;;
-    quickstep|qs)
-      echo Quickstep;;
-    rumba)
-      echo Rumba;;
-    salsa)
-      echo Salsa;;
-    samba)
-      echo Samba;;
-    slowfox|sf)
-      echo Slow-Fox;;
-    tango)
-      echo Tango;;
-    walzer|waltz|slowwaltz|langsamerwalzer|lw)
-      echo Slow-Waltz;;
-    wiener|viennese|viennesewaltz|ww)
-      echo Viennese-Waltz;;
-    *)
-      echo Unknown dance. >&2
-      return 1
-      ;;
+  case $(sed -E 's/[[:punct:]]+//g; s/.*/\L&/' <<<"$1") in
+    blues) echo Blues;;
+    lindy|lindyhop|lindy?hop) echo Lindy-Hop;;
+    westcoast|wcs|westcoastswing|west-coast) echo Westcoast-Swing;;
+    boogie) echo Boogie;;
+    chacha|chachacha|cha) echo Cha-Cha;;
+    dicofox|df) echo Discofox;;
+    foxtrott|ft) echo Foxtrott;;
+    jive) echo Jive;;
+    quickstep|qs) echo Quickstep;;
+    rumba) echo Rumba;;
+    salsa) echo Salsa;;
+    samba) echo Samba;;
+    slowfox|sf) echo Slow-Fox;;
+    tango) echo Tango;;
+    walzer|waltz|slowwaltz|langsamerwalzer|lw) echo Slow-Waltz;;
+    wiener|viennese|viennesewaltz|ww) echo Viennese-Waltz;;
+    *) echo Unknown dance. >&2; return 1;;
   esac
 }
 
 # print the filename of the current song from mpd
 mpd_current () {
+  # TODO
   local conf dir file
   if [ -r "$HOME"/.mpdconf ]; then
     conf=$HOME/.mpdconf
@@ -79,7 +64,6 @@ beet_interface () {
 }
 
 # parse command line options
-prog=$(basename "$0")
 dance=
 just_print=
 while getopts cd:hnvx FLAG; do
