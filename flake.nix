@@ -32,8 +32,9 @@
     ticket = build "ticket" [pkgs.python3] ''
       install -D -t "$out/bin" ${self}/ticket.py
       substituteInPlace "$out/bin/ticket.py" \
-        --replace-fail '"pdftotext"' '"${pkgs.poppler_utils}/bin/pdftotext"' \
+        --replace-fail '"ebook-convert"' '"${pkgs.calibre}/bin/ebook-convert"' \
         --replace-fail '"pdfinfo"' '"${pkgs.poppler_utils}/bin/pdfinfo"' \
+        --replace-fail '"pdftotext"' '"${pkgs.poppler_utils}/bin/pdftotext"' \
         --replace-fail '"pdfcrop"' '"${pkgs.texlivePackages.pdfcrop}/bin/pdfcrop"'
     '';
     # it seems that youtube-dl in nixpkgs is not updated, use a replacement

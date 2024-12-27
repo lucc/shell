@@ -12,7 +12,7 @@ from contextlib import contextmanager
 from datetime import date
 from email.message import Message
 from pathlib import Path
-from subprocess import run
+from subprocess import DEVNULL, run
 from typing import Generator
 
 search_terms = ["is:attachment", "AND", "(",
@@ -181,12 +181,31 @@ def main() -> None:
                     logging.info("Moving old ticket %s to %s.", pdf.name, target)
                     shutil.move(pdf, target)
                 continue
+            todo.append((pdf, d))
         elif d := get_date_from_pdf(pdf):
             stem = f"{pdf.stem}-{d.isoformat()}"
             target = pdf.with_stem(stem)
             logging.info("Moving ticket %s to %s.", pdf.name, target)
             shutil.move(pdf, target)
-        todo.append((pdf, d))
+            todo.append((target, d))
+
+            # TODO check if we can use ebook-convert to convert directly from
+            # pdf to mobi
+            lines = run(["pdftohtml", "-stdout", "-dataurls", target, stem],
+                capture_output=True).stdout.decode().splitlines()
+            img_indices = [index for index, line in enumerate(lines) if "<img" in line]
+            # keep the second image, remove all others
+            del img_indices[1]
+            html = target.with_suffix(".clean.html")
+            mobi = html.with_suffix(".mobi")
+            logging.debug("Generating html version %s", html)
+            with html.open("w") as fp:
+                fp.writelines(line for index, line in enumerate(lines) if index not in img_indices)
+            logging.debug("Generating ebook version %s", mobi)
+            run(["ebook-convert", html, mobi, "--title", target.stem], stdout=DEVNULL)
+            todo.append((mobi, d))
+        else:
+            todo.append((pdf, d))
 
     device = Path("/dev/disk/by-label/Kindle")
     kindle = Path("/run/media/luc/Kindle/documents")
@@ -198,12 +217,12 @@ def main() -> None:
                 if (d := get_date(ticket.name)) and d < now:
                     logging.info("Removing old %s from ebook reader.", ticket)
                     ticket.unlink()
-            for pdf in todo:
-                target = tickets / pdf[0].name
-                if pdf[1] and pdf[1] >= now:
+            for pdf, d in todo:
+                target = tickets / pdf.name
+                if d and d >= now:
                     if not target.exists():
                         logging.info("Copying %s to ebook reader.", pdf)
-                        shutil.copyfile(pdf[0], target)
+                        shutil.copyfile(pdf, target)
                     else:
                         logging.debug("%s already exists.", target)
                 else:
