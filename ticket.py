@@ -3,18 +3,17 @@
 """Extract pdf tickets from emails and copy them to the ebook reader."""
 
 import argparse
-from calendar import monthrange
-from contextlib import contextmanager
-from datetime import datetime
-import mailbox
-from email.message import Message
 import logging
-from pathlib import Path
+import mailbox
 import re
 import shutil
+from calendar import monthrange
+from contextlib import contextmanager
+from datetime import date
+from email.message import Message
+from pathlib import Path
 from subprocess import run
 from typing import Generator
-
 
 search_terms = ["is:attachment", "AND", "(",
                 "OR", # tickets from bahn.de
@@ -52,7 +51,7 @@ def get_attachments(mailfile: str) -> Generator[Message, None, None]:
             yield part
 
 
-def extract_filename(mailpart: Message) -> str|None:
+def extract_filename(mailpart: Message) -> str | None:
     """Get the filename from a mail attachment, handle special cases"""
     filename = mailpart.get_filename()
     if filename and (match := deutschlandticket_re(filename)):
@@ -62,12 +61,14 @@ def extract_filename(mailpart: Message) -> str|None:
 
 
 date_re = re.compile(r"(?:\b|_)(\d{4}-\d\d(-\d\d)?|\d\d\.\d\d\.\d{4})")
-def get_date(name: str) -> datetime|None:
+
+
+def get_date(name: str) -> date | None:
     """Extract a date from a string
 
     >>> get_date("foo")
     >>> get_date("foo 2023-12 bar")
-    datetime.datetime(2023, 12, 31, 0, 0)
+    datetime.date(2023, 12, 31)
     >>> get_date("foo 2023-12-23 bar")
     datetime.datetime(2023, 12, 23, 0, 0)
     >>> get_date("foo 23.12.2023 bar")
@@ -85,19 +86,44 @@ def get_date(name: str) -> datetime|None:
     match date_re.findall(name):
         case []:
             logging.warning("No dates found in %s", name)
-        case [(str(date), str(day))] if "." in date:
-            day, month, year = date.split(".")
-            return datetime(year=int(year), month=int(month), day=int(day))
-        case [(str(date), "")]:
-            year, month = date.split("-")
-            return datetime(year=int(year), month=int(month), day=monthrange(int(year), int(month))[1])
-        case [(str(date), str(day))]:
-            year, month, *_ = date.split("-")
+        case [(str(d), str(day))] if "." in d:
+            day, month, year = d.split(".")
+            return date(year=int(year), month=int(month), day=int(day))
+        case [(str(d), "")]:
+            year, month = d.split("-")
+            return date(
+                year=int(year),
+                month=int(month),
+                day=monthrange(int(year), int(month))[1],
+            )
+        case [(str(d), str(day))]:
+            year, month, *_ = d.split("-")
             day = day[1:]
-            return datetime(year=int(year), month=int(month), day=int(day))
+            return date(year=int(year), month=int(month), day=int(day))
         case _:
             logging.warning("Found more than one date in %s", name)
     return None
+
+
+def get_date_from_pdf(name: Path) -> date | None:
+    info = run(["pdfinfo", name], capture_output=True)
+    lines = info.stdout.decode().splitlines()
+    try:
+        field, title = lines[0].split(maxsplit=1)
+        field2, producer = lines[1].split(maxsplit=1)
+    except IndexError:
+        return None
+    if (
+        field != "Title:"
+        or field2 != "Producer:"
+        or producer != "INFINICA"
+        or not title.startswith("Deutsche Bahn")
+    ):
+        return None
+    text = run(["pdftotext", name, "/dev/stdout"], capture_output=True)
+    lines = text.stdout.decode().splitlines()
+    if match := re.match(r"^Gültigkeit: .* bis (.*)", lines[1]):
+        return get_date(match.group(1))
 
 
 def from_notmuch_to_disk(folder: Path) -> None:
@@ -141,21 +167,26 @@ def main() -> None:
     folder = Path.home() / "ticket"
     from_notmuch_to_disk(folder)
 
-    now = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-    todo: list[Path] = []
+    now = date.today()
+    todo: list[tuple[Path, date | None]] = []
     for pdf in folder.glob("*.pdf"):
-        date = get_date(pdf.name)
-        if date and date < now:
-            if pdf.name.startswith("deutschlandticket") and pdf.name.endswith(".cropped.pdf"):
-                logging.info("Deleting old cropped ticket %s.", pdf)
-                pdf.unlink()
-            else:
-                target = folder / str(date.year)
-                target.mkdir(exist_ok=True)
-                logging.info("Moving old ticket %s to %s.", pdf.name, target)
-                shutil.move(pdf, target)
-        else:
-            todo.append(pdf)
+        if d := get_date(pdf.name):
+            if d < now:
+                if pdf.name.startswith("deutschlandticket") and pdf.name.endswith(".cropped.pdf"):
+                    logging.info("Deleting old cropped ticket %s.", pdf)
+                    pdf.unlink()
+                else:
+                    target = folder / str(d.year)
+                    target.mkdir(exist_ok=True)
+                    logging.info("Moving old ticket %s to %s.", pdf.name, target)
+                    shutil.move(pdf, target)
+                continue
+        elif d := get_date_from_pdf(pdf):
+            stem = f"{pdf.stem}-{d.isoformat()}"
+            target = pdf.with_stem(stem)
+            logging.info("Moving ticket %s to %s.", pdf.name, target)
+            shutil.move(pdf, target)
+        todo.append((pdf, d))
 
     device = Path("/dev/disk/by-label/Kindle")
     kindle = Path("/run/media/luc/Kindle/documents")
@@ -164,17 +195,15 @@ def main() -> None:
             tickets = kindle / "tickets"
             tickets.mkdir(exist_ok=True)
             for ticket in tickets.glob("*.pd[fr]"):
-                date = get_date(ticket.name)
-                if date and date < now:
+                if (d := get_date(ticket.name)) and d < now:
                     logging.info("Removing old %s from ebook reader.", ticket)
                     ticket.unlink()
             for pdf in todo:
-                date = get_date(pdf.name)
-                target = tickets / pdf.name
-                if date and date >= now:
+                target = tickets / pdf[0].name
+                if pdf[1] and pdf[1] >= now:
                     if not target.exists():
                         logging.info("Copying %s to ebook reader.", pdf)
-                        shutil.copyfile(pdf, target)
+                        shutil.copyfile(pdf[0], target)
                     else:
                         logging.debug("%s already exists.", target)
                 else:
