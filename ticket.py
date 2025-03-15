@@ -3,6 +3,7 @@
 """Extract pdf tickets from emails and copy them to the ebook reader."""
 
 import argparse
+import itertools
 import logging
 import mailbox
 import re
@@ -213,7 +214,10 @@ def main() -> None:
         with mounted(device, kindle):
             tickets = kindle / "tickets"
             tickets.mkdir(exist_ok=True)
-            for ticket in tickets.glob("*.pd[fr]"):
+            for ticket in itertools.chain(tickets.glob("*.pd[fr]"),
+                                          tickets.glob("*.mobi"),
+                                          tickets.glob("*.mbp"),
+                                          ):
                 if (d := get_date(ticket.name)) and d < now:
                     logging.info("Removing old %s from ebook reader.", ticket)
                     ticket.unlink()
