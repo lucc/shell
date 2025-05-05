@@ -30,12 +30,13 @@
       '';
     # TODO check out resholve
     ticket = build "ticket" [pkgs.python3] ''
-      install -D -t "$out/bin" ${self}/ticket.py
-      substituteInPlace "$out/bin/ticket.py" \
+      install -D ${self}/ticket.py "$out/bin/ticket"
+      substituteInPlace "$out/bin/ticket" \
         --replace-fail '"ebook-convert"' '"${pkgs.calibre}/bin/ebook-convert"' \
+        --replace-fail '"kitinerary-extractor"' '"${pkgs.kdePackages.kitinerary}/libexec/kf6/kitinerary-extractor"' \
+        --replace-fail '"pdfcrop"' '"${pkgs.texlivePackages.pdfcrop}/bin/pdfcrop"' \
         --replace-fail '"pdfinfo"' '"${pkgs.poppler_utils}/bin/pdfinfo"' \
-        --replace-fail '"pdftotext"' '"${pkgs.poppler_utils}/bin/pdftotext"' \
-        --replace-fail '"pdfcrop"' '"${pkgs.texlivePackages.pdfcrop}/bin/pdfcrop"'
+        --replace-fail '"pdftotext"' '"${pkgs.poppler_utils}/bin/pdftotext"'
     '';
     # it seems that youtube-dl in nixpkgs is not updated, use a replacement
     tmux-youtube-dl = build "tmux-youtube-dl" [] ''

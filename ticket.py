@@ -4,13 +4,14 @@
 
 import argparse
 import itertools
+import json
 import logging
 import mailbox
 import re
 import shutil
 from calendar import monthrange
 from contextlib import contextmanager
-from datetime import date
+from datetime import date, datetime
 from email.message import Message
 from pathlib import Path
 from subprocess import DEVNULL, run
@@ -107,12 +108,16 @@ def get_date(name: str) -> date | None:
 
 
 def get_date_from_pdf(name: Path) -> date | None:
+    return get_date_from_pdf_text(name) or get_date_itinerary(name)
+
+
+def get_date_from_pdf_text(name: Path) -> date | None:
     info = run(["pdfinfo", name], capture_output=True)
     lines = info.stdout.decode().splitlines()
     try:
         field, title = lines[0].split(maxsplit=1)
         field2, producer = lines[1].split(maxsplit=1)
-    except IndexError:
+    except (IndexError, ValueError):
         return None
     if (
         field != "Title:"
@@ -125,6 +130,34 @@ def get_date_from_pdf(name: Path) -> date | None:
     lines = text.stdout.decode().splitlines()
     if match := re.match(r"^Gültigkeit: .* bis (.*)", lines[1]):
         return get_date(match.group(1))
+
+
+def get_date_itinerary(name: Path) -> date | None:
+    """
+    https://apps.kde.org/de/itinerary/
+    """
+    data = run(["kitinerary-extractor", name], capture_output=True)
+    j = json.loads(data.stdout)
+    if isinstance(j, list):
+        for item in j:
+            if valid := item.get("validUntil"):
+                return parse_itinerary_date_time_value(valid)
+            if valid := item.get("validFrom"):
+                return parse_itinerary_date_time_value(valid)
+            if res := item.get("reservationFor"):
+                for key in ["arrivalTime", "departureDay", "startDate"]:
+                    if key in res:
+                        return parse_itinerary_date_time_value(res[key])
+    logging.error("Can not parse itinerary output: %s", j)
+
+
+def parse_itinerary_date_time_value(value: dict[str, str] | str) -> date:
+    if isinstance(value, str):
+        return datetime.fromisoformat(value).date()
+    if isinstance(value, dict):
+        if value.get("@type") == "QDateTime":
+            return datetime.fromisoformat(value["@value"]).date()
+    logging.error("Can not parse date/time value: %s", value)
 
 
 def from_notmuch_to_disk(folder: Path) -> None:
@@ -159,12 +192,13 @@ def mounted(device: Path, mountpoint: Path) -> Generator[None, None, None]:
         run(["udisksctl", "unmount", "--block-device", device])
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-v", "--verbose", action="store_true")
-    args = parser.parse_args()
-    logging.basicConfig(format='%(levelname)-8s%(message)s',
-                        level=logging.DEBUG if args.verbose else logging.INFO)
+def parse_file(*names: Path) -> None:
+    for name in names:
+        date = get_date_from_pdf(name)
+        print(name, date)
+
+
+def handle_tickets() -> None:
     folder = Path.home() / "ticket"
     from_notmuch_to_disk(folder)
 
@@ -233,6 +267,20 @@ def main() -> None:
                     logging.info("Ticket to old or without date: %s", pdf)
 
     untag_emails()
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-v", "--verbose", action="store_true")
+    parser.add_argument("--parse", nargs="+", type=Path)
+    args = parser.parse_args()
+    logging.basicConfig(format='%(levelname)-8s%(message)s',
+                        level=logging.DEBUG if args.verbose else logging.INFO)
+    logging.debug("Parsed command line: %s", args)
+    if args.parse:
+        parse_file(*args.parse)
+    else:
+        handle_tickets()
 
 
 if __name__ == "__main__":
