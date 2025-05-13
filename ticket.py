@@ -270,9 +270,11 @@ def handle_tickets() -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("-v", "--verbose", action="store_true")
-    parser.add_argument("--parse", nargs="+", type=Path)
+    parser.add_argument("--parse", nargs="+", type=Path,
+                        help="""parse the given files and print info, no other
+                        actions are performed""")
     args = parser.parse_args()
     logging.basicConfig(format='%(levelname)-8s%(message)s',
                         level=logging.DEBUG if args.verbose else logging.INFO)
