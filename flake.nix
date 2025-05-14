@@ -56,5 +56,6 @@
       };
       inherit ticket tmux-youtube-dl simple-scripts;
     };
+    checks.${system} = {inherit ticket tmux-youtube-dl simple-scripts;};
   };
 }
