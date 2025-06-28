@@ -17,15 +17,12 @@ from pathlib import Path
 from subprocess import DEVNULL, run
 from typing import Generator
 
-search_terms = ["is:attachment", "AND", "(",
-                "OR", # tickets from bahn.de
-                "(", "is:inbox", "from:buchungsbestaetigung@bahn.de", ")",
-                "OR",
-                "(", "is:inbox", "from:noreply@deutschebahn.com", ")",
-                "OR", # tickets from flixbus
-                "(", "is:inbox", "from:noreply@booking.flixbus.com", ")",
-                "OR", # other manually marked tickets
-                "(", "is:inbox", "AND", "is:ticket", ")"
+search_terms = ["is:attachment", "AND", "is:inbox", "AND", "(",
+                # tickets from bahn.de
+                "from:buchungsbestaetigung@bahn.de",
+                "OR", "from:noreply@deutschebahn.com",
+                "OR", "from:noreply@booking.flixbus.com", # tickets from flixbus
+                "OR", "is:ticket", # other manually marked tickets
                 ")"]
 deutschlandticket_re = re.compile(r"DTicket.*(\d{4}-\d\d)\.pdf").fullmatch
 
