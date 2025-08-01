@@ -36,6 +36,7 @@ def get_emails() -> list[str]:
 
 def untag_emails() -> None:
     """Untag the relevant mails in notmuch"""
+    logging.debug("Removing processed mails from the inbox.")
     run(["notmuch", "tag", "-inbox", "-unread", "+ticket"] + search_terms,
         capture_output=True)
 
@@ -154,7 +155,7 @@ def parse_itinerary_date_time_value(value: dict[str, str] | str) -> date:
     if isinstance(value, dict):
         if value.get("@type") == "QDateTime":
             return datetime.fromisoformat(value["@value"]).date()
-    logging.error("Can not parse date/time value: %s", value)
+    raise ValueError(f"Can not parse date/time value: {value}")
 
 
 def from_notmuch_to_disk(folder: Path) -> None:
@@ -190,16 +191,28 @@ def mounted(device: Path, mountpoint: Path) -> Generator[None, None, None]:
 
 
 def parse_file(*names: Path) -> None:
+    """Parse files and print info about them"""
     for name in names:
         date = get_date_from_pdf(name)
         print(name, date)
 
 
-def handle_tickets() -> None:
-    folder = Path.home() / "ticket"
-    from_notmuch_to_disk(folder)
+def find_external_devices() -> Generator[Path | str, None, None]:
+    """Yield devices that can be connected to, paths are mountable devices,
+    strings are adb phones"""
+    kindle_device = Path("/dev/disk/by-label/Kindle")
+    if kindle_device.exists():
+        yield kindle_device
+    adb = run(["adb", "devices"], capture_output=True)
+    devices = adb.stdout.decode().splitlines()[1:]
+    for device in devices:
+        if device:
+            yield device.split()[0]
 
-    now = date.today()
+
+def clean_up_files_in_ticket_folder(folder: Path, now: date) -> list[tuple[Path, date | None]]:
+    """Rename and move the files in the local ticket folder
+    Return a list of ticket files and dates that are still relevant"""
     todo: list[tuple[Path, date | None]] = []
     for pdf in folder.glob("*.pdf"):
         if d := get_date(pdf.name):
@@ -238,30 +251,55 @@ def handle_tickets() -> None:
             todo.append((mobi, d))
         else:
             todo.append((pdf, d))
+    return todo
 
-    device = Path("/dev/disk/by-label/Kindle")
+
+def sync_to_kindle(device: Path, todo: list[tuple[Path, date | None]], now: date) -> None:
+    """Sync the files from the local folder to some external devices"""
     kindle = Path("/run/media/luc/Kindle/documents")
-    if device.exists():
-        with mounted(device, kindle):
-            tickets = kindle / "tickets"
-            tickets.mkdir(exist_ok=True)
-            for ticket in itertools.chain(tickets.glob("*.pd[fr]"),
-                                          tickets.glob("*.mobi"),
-                                          tickets.glob("*.mbp"),
-                                          ):
-                if (d := get_date(ticket.name)) and d < now:
-                    logging.info("Removing old %s from ebook reader.", ticket)
-                    ticket.unlink()
-            for pdf, d in todo:
-                target = tickets / pdf.name
-                if d and d >= now:
-                    if not target.exists():
-                        logging.info("Copying %s to ebook reader.", pdf)
-                        shutil.copyfile(pdf, target)
-                    else:
-                        logging.debug("%s already exists.", target)
+    with mounted(device, kindle):
+        tickets = kindle / "tickets"
+        tickets.mkdir(exist_ok=True)
+        for ticket in itertools.chain(tickets.glob("*.pd[fr]"),
+                                      tickets.glob("*.mobi"),
+                                      tickets.glob("*.mbp"),
+                                      ):
+            if (d := get_date(ticket.name)) and d < now:
+                logging.info("Removing old %s from ebook reader.", ticket)
+                ticket.unlink()
+        for pdf, d in todo:
+            target = tickets / pdf.name
+            if d and d >= now:
+                if not target.exists():
+                    logging.info("Copying %s to ebook reader.", pdf)
+                    shutil.copyfile(pdf, target)
                 else:
-                    logging.info("Ticket to old or without date: %s", pdf)
+                    logging.debug("%s already exists.", target)
+            else:
+                logging.info("Ticket too old or without date: %s", pdf)
+
+
+def sync_to_phone(todo: list[tuple[Path, date | None]]) -> None:
+    # TODO check adb-sync
+    # TODO remove old tickets, check --delete and a ticket subfolder
+    if todo:
+        logging.info("Syncing tickets to phone.")
+        run(["adb", "push", "--sync", *(path for path, _date in todo),
+             "/sdcard/Documents/Tickets/"], check=True)
+
+
+def handle_tickets() -> None:
+    folder = Path.home() / "ticket"
+    from_notmuch_to_disk(folder)
+
+    now = date.today()
+    todo = clean_up_files_in_ticket_folder(folder, now)
+
+    for device in find_external_devices():
+        if isinstance(device, Path):
+            sync_to_kindle(device, todo, now)
+        else:
+            sync_to_phone(todo)
 
     untag_emails()
 
