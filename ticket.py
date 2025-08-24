@@ -179,7 +179,7 @@ def parse_file(*names: Path, all_dates: bool) -> None:
     for name in names:
         dates = sorted(d for d in get_dates_from_pdf(name))
         if not all_dates:
-            dates = [max(dates)]
+            dates = [max_date(dates)]
         print(name, *dates)
 
 
