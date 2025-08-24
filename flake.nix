@@ -29,13 +29,15 @@
         patchShebangs "$out/bin"
       '';
     # TODO check out resholve
-    ticket = build "ticket" [pkgs.python3] ''
+    ticket = build "ticket" [pkgs.python3 pkgs.ty] ''
+      ty check ${self}/ticket.py
+      python3 -m doctest ${self}/ticket.py
       install -D ${self}/ticket.py "$out/bin/ticket"
       substituteInPlace "$out/bin/ticket" \
         --replace-fail '"ebook-convert"' '"${pkgs.calibre}/bin/ebook-convert"' \
         --replace-fail '"kitinerary-extractor"' '"${pkgs.kdePackages.kitinerary}/libexec/kf6/kitinerary-extractor"' \
         --replace-fail '"pdfcrop"' '"${pkgs.texlivePackages.pdfcrop}/bin/pdfcrop"' \
-        --replace-fail '"pdfinfo"' '"${pkgs.poppler_utils}/bin/pdfinfo"' \
+        --replace-fail '"pdftohtml"' '"${pkgs.poppler_utils}/bin/pdftohtml"' \
         --replace-fail '"pdftotext"' '"${pkgs.poppler_utils}/bin/pdftotext"'
     '';
     # it seems that youtube-dl in nixpkgs is not updated, use a replacement

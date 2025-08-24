@@ -15,7 +15,7 @@ from datetime import date, datetime
 from email.message import Message
 from pathlib import Path
 from subprocess import DEVNULL, run
-from typing import Generator
+from typing import Generator, Iterable
 
 search_terms = ["is:attachment", "AND", "is:inbox", "AND", "(",
                 # tickets from bahn.de
@@ -63,74 +63,47 @@ def extract_filename(mailpart: Message) -> str | None:
 date_re = re.compile(r"(?:\b|_)(\d{4}-\d\d(-\d\d)?|\d\d\.\d\d\.\d{4})")
 
 
-def get_date(name: str) -> date | None:
-    """Extract a date from a string
+def get_dates(name: str) -> Generator[date, None, None]:
+    """Extract dates from a string
 
-    >>> get_date("foo")
-    >>> get_date("foo 2023-12 bar")
-    datetime.date(2023, 12, 31)
-    >>> get_date("foo 2023-12-23 bar")
-    datetime.datetime(2023, 12, 23, 0, 0)
-    >>> get_date("foo 23.12.2023 bar")
-    datetime.datetime(2023, 12, 23, 0, 0)
-    >>> get_date("23.12.2023 24.12.2023")
-    >>> get_date("123-2024-01-12")
-    datetime.datetime(2024, 1, 12, 0, 0)
-    >>> get_date("01235-2024-01-12")
-    datetime.datetime(2024, 1, 12, 0, 0)
-    >>> get_date("123.20.01.2024")
-    datetime.datetime(2024, 1, 20, 0, 0)
-    >>> get_date("Ticket_123456789_31.12.2024.pdf")
-    datetime.datetime(2024, 12, 31, 0, 0)
+    >>> list(get_dates("foo"))
+    []
+    >>> list(get_dates("foo 2023-12 bar"))
+    [datetime.date(2023, 12, 31)]
+    >>> list(get_dates("foo 2023-12-23 bar"))
+    [datetime.date(2023, 12, 23)]
+    >>> list(get_dates("foo 23.12.2023 bar"))
+    [datetime.date(2023, 12, 23)]
+    >>> list(get_dates("23.12.2023 24.12.2023"))
+    [datetime.date(2023, 12, 23), datetime.date(2023, 12, 24)]
+    >>> list(get_dates("123-2024-01-12"))
+    [datetime.date(2024, 1, 12)]
+    >>> list(get_dates("01235-2024-01-12"))
+    [datetime.date(2024, 1, 12)]
+    >>> list(get_dates("123.20.01.2024"))
+    [datetime.date(2024, 1, 20)]
+    >>> list(get_dates("Ticket_123456789_31.12.2024.pdf"))
+    [datetime.date(2024, 12, 31)]
     """
-    match date_re.findall(name):
-        case []:
-            logging.warning("No dates found in %s", name)
-        case [(str(d), str(day))] if "." in d:
-            day, month, year = d.split(".")
-            return date(year=int(year), month=int(month), day=int(day))
-        case [(str(d), "")]:
-            year, month = d.split("-")
-            return date(
-                year=int(year),
-                month=int(month),
-                day=monthrange(int(year), int(month))[1],
-            )
-        case [(str(d), str(day))]:
-            year, month, *_ = d.split("-")
-            day = day[1:]
-            return date(year=int(year), month=int(month), day=int(day))
-        case _:
-            logging.warning("Found more than one date in %s", name)
-    return None
+    for match in date_re.findall(name):
+        match match:
+            case (str(d), str(day)) if "." in d:
+                day, month, year = d.split(".")
+                yield date(year=int(year), month=int(month), day=int(day))
+            case (str(d), ""):
+                year, month = d.split("-")
+                yield date(
+                    year=int(year),
+                    month=int(month),
+                    day=monthrange(int(year), int(month))[1],
+                )
+            case (str(d), str(day)):
+                year, month, *_ = d.split("-")
+                day = day[1:]
+                yield date(year=int(year), month=int(month), day=int(day))
 
 
-def get_date_from_pdf(name: Path) -> date | None:
-    return get_date_from_pdf_text(name) or get_date_itinerary(name)
-
-
-def get_date_from_pdf_text(name: Path) -> date | None:
-    info = run(["pdfinfo", name], capture_output=True)
-    lines = info.stdout.decode().splitlines()
-    try:
-        field, title = lines[0].split(maxsplit=1)
-        field2, producer = lines[1].split(maxsplit=1)
-    except (IndexError, ValueError):
-        return None
-    if (
-        field != "Title:"
-        or field2 != "Producer:"
-        or producer != "INFINICA"
-        or not title.startswith("Deutsche Bahn")
-    ):
-        return None
-    text = run(["pdftotext", name, "/dev/stdout"], capture_output=True)
-    lines = text.stdout.decode().splitlines()
-    if match := re.match(r"^Gültigkeit: .* bis (.*)", lines[1]):
-        return get_date(match.group(1))
-
-
-def get_date_itinerary(name: Path) -> date | None:
+def get_dates_itinerary(name: Path) -> Generator[date, None, None]:
     """
     https://apps.kde.org/de/itinerary/
     """
@@ -139,14 +112,14 @@ def get_date_itinerary(name: Path) -> date | None:
     if isinstance(j, list):
         for item in j:
             if valid := item.get("validUntil"):
-                return parse_itinerary_date_time_value(valid)
+                yield parse_itinerary_date_time_value(valid)
             if valid := item.get("validFrom"):
-                return parse_itinerary_date_time_value(valid)
+                yield parse_itinerary_date_time_value(valid)
             if res := item.get("reservationFor"):
-                for key in ["arrivalTime", "departureDay", "startDate"]:
+                for key in ["arrivalTime", "departureDay",
+                            "endDate", "startDate"]:
                     if key in res:
-                        return parse_itinerary_date_time_value(res[key])
-    logging.error("Can not parse itinerary output: %s", j)
+                        yield parse_itinerary_date_time_value(res[key])
 
 
 def parse_itinerary_date_time_value(value: dict[str, str] | str) -> date:
@@ -156,6 +129,17 @@ def parse_itinerary_date_time_value(value: dict[str, str] | str) -> date:
         if value.get("@type") == "QDateTime":
             return datetime.fromisoformat(value["@value"]).date()
     raise ValueError(f"Can not parse date/time value: {value}")
+
+
+def get_dates_from_pdf(name: Path) -> Generator[date, None, None]:
+    text = run(["pdftotext", name, "/dev/stdout"], capture_output=True)
+    yield from get_dates(text.stdout.decode())
+    yield from get_dates_itinerary(name)
+
+
+def max_date(dates: Iterable[date]) -> date | None:
+    """Get the highest date from any iterable of dates"""
+    return max(list(dates), default=None)
 
 
 def from_notmuch_to_disk(folder: Path) -> None:
@@ -190,11 +174,13 @@ def mounted(device: Path, mountpoint: Path) -> Generator[None, None, None]:
         run(["udisksctl", "unmount", "--block-device", device])
 
 
-def parse_file(*names: Path) -> None:
+def parse_file(*names: Path, all_dates: bool) -> None:
     """Parse files and print info about them"""
     for name in names:
-        date = get_date_from_pdf(name)
-        print(name, date)
+        dates = sorted(d for d in get_dates_from_pdf(name))
+        if not all_dates:
+            dates = [max(dates)]
+        print(name, *dates)
 
 
 def find_external_devices() -> Generator[Path | str, None, None]:
@@ -215,7 +201,7 @@ def clean_up_files_in_ticket_folder(folder: Path, now: date) -> list[tuple[Path,
     Return a list of ticket files and dates that are still relevant"""
     todo: list[tuple[Path, date | None]] = []
     for pdf in folder.glob("*.pdf"):
-        if d := get_date(pdf.name):
+        if d := max_date(get_dates(pdf.name)):
             if d < now:
                 if pdf.name.startswith("deutschlandticket") and pdf.name.endswith(".cropped.pdf"):
                     logging.info("Deleting old cropped ticket %s.", pdf)
@@ -227,31 +213,38 @@ def clean_up_files_in_ticket_folder(folder: Path, now: date) -> list[tuple[Path,
                     shutil.move(pdf, target)
                 continue
             todo.append((pdf, d))
-        elif d := get_date_from_pdf(pdf):
+        elif d := max_date(get_dates_from_pdf(pdf)):
             stem = f"{pdf.stem}-{d.isoformat()}"
             target = pdf.with_stem(stem)
             logging.info("Moving ticket %s to %s.", pdf.name, target)
             shutil.move(pdf, target)
             todo.append((target, d))
 
-            # TODO check if we can use ebook-convert to convert directly from
-            # pdf to mobi
-            lines = run(["pdftohtml", "-stdout", "-dataurls", target, stem],
-                capture_output=True).stdout.decode().splitlines()
-            img_indices = [index for index, line in enumerate(lines) if "<img" in line]
-            # keep the second image, remove all others
-            del img_indices[1]
-            html = target.with_suffix(".clean.html")
-            mobi = html.with_suffix(".mobi")
-            logging.debug("Generating html version %s", html)
-            with html.open("w") as fp:
-                fp.writelines(line for index, line in enumerate(lines) if index not in img_indices)
-            logging.debug("Generating ebook version %s", mobi)
-            run(["ebook-convert", html, mobi, "--title", target.stem], stdout=DEVNULL)
-            todo.append((mobi, d))
+            #mobi = convert_pdf_to_ebook(target, stem)
+            #todo.append((mobi, d))
         else:
             todo.append((pdf, d))
     return todo
+
+
+def convert_pdf_to_ebook(pdf: Path, stem: str) -> Path:
+    """Convert a qr-code inside a pdf into an ebook"""
+    # TODO check if we can use ebook-convert to convert directly from
+    # pdf to mobi
+    lines = run(["pdftohtml", "-stdout", "-dataurls", pdf, stem],
+        capture_output=True).stdout.decode().splitlines()
+    img_indices = [index for index, line in enumerate(lines) if "<img" in line]
+    # keep the second image, remove all others (this is for DB tickets and may
+    # fail if there is no second image)
+    del img_indices[1]
+    html = pdf.with_suffix(".clean.html")
+    mobi = html.with_suffix(".mobi")
+    logging.debug("Generating html version %s", html)
+    with html.open("w") as fp:
+        fp.writelines(line for index, line in enumerate(lines) if index not in img_indices)
+    logging.debug("Generating ebook version %s", mobi)
+    run(["ebook-convert", html, mobi, "--title", pdf.stem], stdout=DEVNULL)
+    return mobi
 
 
 def sync_to_kindle(device: Path, todo: list[tuple[Path, date | None]], now: date) -> None:
@@ -264,7 +257,7 @@ def sync_to_kindle(device: Path, todo: list[tuple[Path, date | None]], now: date
                                       tickets.glob("*.mobi"),
                                       tickets.glob("*.mbp"),
                                       ):
-            if (d := get_date(ticket.name)) and d < now:
+            if (d := max_date(get_dates(ticket.name))) and d < now:
                 logging.info("Removing old %s from ebook reader.", ticket)
                 ticket.unlink()
         for pdf, d in todo:
@@ -310,12 +303,13 @@ def main() -> None:
     parser.add_argument("--parse", nargs="+", type=Path,
                         help="""parse the given files and print info, no other
                         actions are performed""")
+    parser.add_argument("--all-dates", action="store_true")
     args = parser.parse_args()
     logging.basicConfig(format='%(levelname)-8s%(message)s',
                         level=logging.DEBUG if args.verbose else logging.INFO)
     logging.debug("Parsed command line: %s", args)
     if args.parse:
-        parse_file(*args.parse)
+        parse_file(*args.parse, all_dates=args.all_dates)
     else:
         handle_tickets()
 
