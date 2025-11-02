@@ -37,8 +37,8 @@
         --replace-fail '"ebook-convert"' '"${pkgs.calibre}/bin/ebook-convert"' \
         --replace-fail '"kitinerary-extractor"' '"${pkgs.kdePackages.kitinerary}/libexec/kf6/kitinerary-extractor"' \
         --replace-fail '"pdfcrop"' '"${pkgs.texlivePackages.pdfcrop}/bin/pdfcrop"' \
-        --replace-fail '"pdftohtml"' '"${pkgs.poppler_utils}/bin/pdftohtml"' \
-        --replace-fail '"pdftotext"' '"${pkgs.poppler_utils}/bin/pdftotext"'
+        --replace-fail '"pdftohtml"' '"${pkgs.poppler-utils}/bin/pdftohtml"' \
+        --replace-fail '"pdftotext"' '"${pkgs.poppler-utils}/bin/pdftotext"'
     '';
     # it seems that youtube-dl in nixpkgs is not updated, use a replacement
     tmux-youtube-dl = build "tmux-youtube-dl" [] ''
