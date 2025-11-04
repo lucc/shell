@@ -34,6 +34,7 @@
       python3 -m doctest ${self}/ticket.py
       install -D ${self}/ticket.py "$out/bin/ticket"
       substituteInPlace "$out/bin/ticket" \
+        --replace-fail '"adb-sync"' '"${pkgs.adb-sync}/bin/adb-sync"' \
         --replace-fail '"ebook-convert"' '"${pkgs.calibre}/bin/ebook-convert"' \
         --replace-fail '"kitinerary-extractor"' '"${pkgs.kdePackages.kitinerary}/libexec/kf6/kitinerary-extractor"' \
         --replace-fail '"pdfcrop"' '"${pkgs.texlivePackages.pdfcrop}/bin/pdfcrop"' \

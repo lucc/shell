@@ -7,8 +7,10 @@ import itertools
 import json
 import logging
 import mailbox
+import os
 import re
 import shutil
+import tempfile
 from calendar import monthrange
 from contextlib import contextmanager
 from datetime import date, datetime
@@ -272,13 +274,14 @@ def sync_to_kindle(device: Path, todo: list[tuple[Path, date | None]], now: date
                 logging.info("Ticket too old or without date: %s", pdf)
 
 
-def sync_to_phone(todo: list[tuple[Path, date | None]]) -> None:
-    # TODO check adb-sync
-    # TODO remove old tickets, check --delete and a ticket subfolder
-    if todo:
-        logging.info("Syncing tickets to phone.")
-        run(["adb", "push", "--sync", *(path for path, _date in todo),
-             "/sdcard/Documents/Tickets/"], check=True)
+def sync_to_phone(folder: Path, todo: list[tuple[Path, date | None]]) -> None:
+    """Sync files with the ticket folder on an android phone"""
+    logging.info("Syncing tickets to phone.")
+    target = "/sdcard/Documents/Tickets"
+    with tempfile.TemporaryDirectory(dir=folder) as src:
+        for file, _date in todo:
+            os.link(file, os.path.join(src, file.name))
+        run(["adb-sync", "--delete", "--dry-run", src+"/", target], check=True)
 
 
 def handle_tickets() -> None:
@@ -292,7 +295,7 @@ def handle_tickets() -> None:
         if isinstance(device, Path):
             sync_to_kindle(device, todo, now)
         else:
-            sync_to_phone(todo)
+            sync_to_phone(folder, todo)
 
     untag_emails()
 
