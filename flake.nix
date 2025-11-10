@@ -21,7 +21,14 @@
       "linux/bluetooth-headset.sh"
       "term"
     ];
-    pkgs = import nixpkgs {inherit system;};
+    pkgs = import nixpkgs {
+      inherit system;
+      config.allowUnfreePredicate = pkg:
+        builtins.elem (nixpkgs.lib.getName pkg) [
+          "android-sdk-platform-tools"
+          "platform-tools"
+        ];
+    };
     concat = pkgs.lib.strings.concatMapStrings (s: " ${self}/${s}");
     build = name: buildInputs: command:
       pkgs.runCommandLocal name {inherit buildInputs;} ''
