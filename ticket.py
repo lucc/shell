@@ -281,7 +281,7 @@ def sync_to_phone(folder: Path, todo: list[tuple[Path, date | None]]) -> None:
     with tempfile.TemporaryDirectory(dir=folder) as src:
         for file, _date in todo:
             os.link(file, os.path.join(src, file.name))
-        run(["adb-sync", "--delete", "--dry-run", src+"/", target], check=True)
+        run(["adb-sync", "--delete", src+"/", target], check=True)
 
 
 def handle_tickets() -> None:
