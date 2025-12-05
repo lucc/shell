@@ -17,7 +17,7 @@ from datetime import date, datetime
 from email.message import Message
 from pathlib import Path
 from subprocess import DEVNULL, run
-from typing import Generator, Iterable
+from typing import Generator, Iterable, cast
 
 search_terms = ["is:attachment", "AND", "is:inbox", "AND", "(",
                 # tickets from bahn.de
@@ -152,7 +152,7 @@ def from_notmuch_to_disk(folder: Path) -> None:
             if filename:
                 out = folder / filename
                 if not out.exists():
-                    payload = mailpart.get_payload(decode=True)
+                    payload = cast(bytes, mailpart.get_payload(decode=True))
                     with out.open(mode="wb") as fp:
                         fp.write(payload)
                     logging.info("Extracted %s.", out)
