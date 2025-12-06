@@ -3,10 +3,10 @@
 """Extract pdf tickets from emails and copy them to the ebook reader."""
 
 import argparse
+import email
 import itertools
 import json
 import logging
-import mailbox
 import os
 import re
 import shutil
@@ -45,10 +45,9 @@ def untag_emails() -> None:
 
 def get_attachments(mailfile: str) -> Generator[Message, None, None]:
     """Read a mail from a maildir and get all pdf attachments from it"""
-    with open(mailfile, "r") as fp:
-        content = fp.read()
-    mail = mailbox.MaildirMessage(content)
-    for part in mail.get_payload():
+    with open(mailfile, "rb") as fp:
+        mail = email.message_from_binary_file(fp)
+    for part in mail.walk():
         if part.get_content_type() == "application/pdf":
             yield part
 
@@ -144,26 +143,29 @@ def max_date(dates: Iterable[date]) -> date | None:
     return max(list(dates), default=None)
 
 
-def from_notmuch_to_disk(folder: Path) -> None:
-    """Save pdf tickets from notmuch to disk"""
-    for file in get_emails():
-        for mailpart in get_attachments(file):
-            filename = extract_filename(mailpart)
-            if filename:
-                out = folder / filename
-                if not out.exists():
-                    payload = cast(bytes, mailpart.get_payload(decode=True))
-                    with out.open(mode="wb") as fp:
-                        fp.write(payload)
-                    logging.info("Extracted %s.", out)
-                    if filename.startswith("deutschlandticket"):
-                        cropped = out.with_suffix(".cropped.pdf")
-                        run(["pdfcrop", "--clip", "--margins",
-                             "-260 -110 -20 -370", out, cropped])
-                else:
-                    logging.debug("%s already exists.", out)
+def extract_pdf_attachments(file: str, folder: Path) -> None:
+    """Save pdf tickets from mail files to disk"""
+    for mailpart in get_attachments(file):
+        filename = extract_filename(mailpart)
+        if filename:
+            out = folder / filename
+            if not out.exists():
+                # all mails that I had returned bytes at this point
+                payload = cast(bytes, mailpart.get_payload(decode=True))
+                with out.open(mode="wb") as fp:
+                    fp.write(payload)
+                logging.info("Extracted %s.", out)
+                if filename.startswith("deutschlandticket"):
+                    crop(out, "-260 -110 -20 -370")
             else:
-                logging.warning("No attachment filename found in %s.", file)
+                logging.debug("%s already exists.", out)
+        else:
+            logging.warning("No attachment filename found in %s.", file)
+
+
+def crop(input: Path, margins: str) -> None:
+    cropped = input.with_suffix(".cropped.pdf")
+    run(["pdfcrop", "--clip", "--margins", margins, input, cropped])
 
 
 @contextmanager
@@ -286,7 +288,8 @@ def sync_to_phone(folder: Path, todo: list[tuple[Path, date | None]]) -> None:
 
 def handle_tickets() -> None:
     folder = Path.home() / "ticket"
-    from_notmuch_to_disk(folder)
+    for file in get_emails():
+        extract_pdf_attachments(file, folder)
 
     now = date.today()
     todo = clean_up_files_in_ticket_folder(folder, now)
