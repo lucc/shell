@@ -61,7 +61,7 @@ def extract_filename(mailpart: Message) -> str | None:
     return filename
 
 
-date_re = re.compile(r"(?:\b|_)(\d{4}-\d\d(-\d\d)?|\d\d\.\d\d\.\d{4})")
+date_re = re.compile(r"(?:\b|_)(\d{4}-\d\d(-\d\d)?|\d\d\.\d\d\.\d\d(?:\d\d)?)")
 
 
 def get_dates(name: str) -> Generator[date, None, None]:
@@ -85,11 +85,16 @@ def get_dates(name: str) -> Generator[date, None, None]:
     [datetime.date(2024, 1, 20)]
     >>> list(get_dates("Ticket_123456789_31.12.2024.pdf"))
     [datetime.date(2024, 12, 31)]
+    >>> list(get_dates("10.07.26 15:00 - 12.07.26 15:00"))
+    [datetime.date(2026, 7, 10), datetime.date(2026, 7, 12)]
     """
     for match in date_re.findall(name):
         match match:
             case (str(d), str(day)) if "." in d:
                 day, month, year = d.split(".")
+                year = int(year)
+                if year < 100:
+                    year += 2000
                 yield date(year=int(year), month=int(month), day=int(day))
             case (str(d), ""):
                 year, month = d.split("-")
