@@ -233,7 +233,7 @@ def clean_up_files_in_ticket_folder(folder: Path, now: date) -> list[tuple[Path,
             #todo.append((mobi, d))
         else:
             todo.append((pdf, d))
-    return todo
+    return list(set(todo))
 
 
 def convert_pdf_to_ebook(pdf: Path, stem: str) -> Path:
@@ -314,7 +314,9 @@ def main() -> None:
     parser.add_argument("--parse", nargs="+", type=Path,
                         help="""parse the given files and print info, no other
                         actions are performed""")
-    parser.add_argument("--all-dates", action="store_true")
+    parser.add_argument("--all-dates", action="store_true",
+                        help="""show all dates from the parsed files (only with
+                        --parse)""")
     args = parser.parse_args()
     logging.basicConfig(format='%(levelname)-8s%(message)s',
                         level=logging.DEBUG if args.verbose else logging.INFO)
