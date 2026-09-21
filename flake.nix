@@ -17,7 +17,6 @@
       "git/git-retry-rebase"
       "git/git-tag-stats"
       "git/git-wc-statistics"
-      "linux/auto-xrandr"
       "linux/bluetooth-headset.sh"
       "term"
     ];
@@ -58,14 +57,22 @@
     simple-scripts = build "simple-scripts" [pkgs.zsh] ''
       install -D -t "$out/bin" ${concat scripts}
     '';
+
+    auto-xrandr = pkgs.runCommandLocal "auto-xrandr" {
+      buildInputs = [ pkgs.patsh pkgs.xrandr ];
+    } ''
+      install -D ${linux/auto-xrandr} $out/bin/auto-xrandr
+      patsh --force $out/bin/auto-xrandr
+    '';
+
+    all = {inherit auto-xrandr ticket tmux-youtube-dl simple-scripts;};
   in {
     packages.${system} = {
       default = pkgs.buildEnv {
         name = "luccs-scripts";
-        paths = [ticket tmux-youtube-dl simple-scripts];
+        paths = builtins.attrValues all;
       };
-      inherit ticket tmux-youtube-dl simple-scripts;
-    };
-    checks.${system} = {inherit ticket tmux-youtube-dl simple-scripts;};
+    } // all;
+    checks.${system} = all;
   };
 }
