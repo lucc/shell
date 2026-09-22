@@ -63,6 +63,7 @@
     } ''
       install -D ${linux/auto-xrandr} $out/bin/auto-xrandr
       patsh --force $out/bin/auto-xrandr
+      patchShebangs $out/bin
     '';
 
     all = {inherit auto-xrandr ticket tmux-youtube-dl simple-scripts;};
